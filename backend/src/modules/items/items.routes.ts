@@ -1,0 +1,163 @@
+import { and, asc, eq, ilike, lte, or, sql, type SQL } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import type { Db } from '../../db/index.js';
+import { items } from '../../db/schema.js';
+import { conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { itemDisplayName } from '../../lib/serialize.js';
+import { validate } from '../../lib/validate.js';
+
+const rupeesToPaise = z.number().nonnegative().max(10_000_000).transform((r) => Math.round(r * 100));
+
+const itemFields = {
+  name: z.string().trim().min(1).max(80),
+  aliases: z.array(z.string().trim().min(1).max(80)).max(10).default([]),
+  unit: z.enum(['kg', 'g', 'l', 'ml', 'pc']).default('pc'),
+  unitSize: z.number().positive().max(100_000).default(1),
+  /** Price per pack in rupees; null if not known yet. */
+  price: rupeesToPaise.nullable().default(null),
+  stock: z.number().min(0).max(1_000_000).default(0),
+  stockLabel: z.string().trim().min(1).max(20).default('pc'),
+  lowStockThreshold: z.number().min(0).max(1_000_000).default(5),
+};
+
+const createItemBody = z.object(itemFields);
+const bulkBody = z.object({ items: z.array(createItemBody).min(1).max(500) });
+const updateItemBody = z
+  .object({
+    name: itemFields.name,
+    aliases: z.array(z.string().trim().min(1).max(80)).max(10),
+    unit: z.enum(['kg', 'g', 'l', 'ml', 'pc']),
+    unitSize: z.number().positive().max(100_000),
+    price: rupeesToPaise.nullable(),
+    stock: z.number().min(0).max(1_000_000),
+    stockLabel: itemFields.stockLabel,
+    lowStockThreshold: z.number().min(0).max(1_000_000),
+    isActive: z.boolean(),
+  })
+  .partial()
+  .refine((b) => Object.keys(b).length > 0, 'Provide at least one field to update');
+// Stock adjustments are deltas so two devices restocking at once don't overwrite each other.
+const adjustStockBody = z.object({ delta: z.number().min(-1_000_000).max(1_000_000) });
+const idParams = z.object({ id: z.uuid() });
+const listQuery = z.object({
+  search: z.string().trim().max(80).optional(),
+  includeInactive: z.enum(['true', 'false']).default('false'),
+});
+
+const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+const present = <T extends typeof items.$inferSelect>(item: T) => ({ ...item, displayName: itemDisplayName(item) });
+const duplicate = () => conflict('This item with the same size already exists');
+
+export default async function itemRoutes(app: FastifyInstance, { db }: { db: Db }) {
+  app.addHook('onRequest', app.requireStore);
+
+  app.get('/', async (req) => {
+    const q = validate(listQuery, req.query);
+    const filters: SQL[] = [eq(items.storeId, req.store.id)];
+    if (q.includeInactive === 'false') filters.push(eq(items.isActive, true));
+    if (q.search) {
+      const p = `%${escapeLike(q.search)}%`;
+      filters.push(or(ilike(items.name, p), sql`array_to_string(${items.aliases}, ' ') ilike ${p}`)!);
+    }
+    const rows = await db.select().from(items).where(and(...filters)).orderBy(asc(items.name), asc(items.unitSize));
+    return { data: rows.map(present) };
+  });
+
+  // "Stock kam hai" / "Kal ki kharid list"
+  app.get('/low-stock', async (req) => {
+    const rows = await db
+      .select()
+      .from(items)
+      .where(and(eq(items.storeId, req.store.id), eq(items.isActive, true), lte(items.stock, items.lowStockThreshold)))
+      .orderBy(asc(items.stock));
+    return { data: rows.map(present) };
+  });
+
+  app.post('/', async (req, reply) => {
+    const body = validate(createItemBody, req.body);
+    try {
+      const [item] = await db.insert(items).values({ ...body, storeId: req.store.id }).returning();
+      return reply.code(201).send({ item: present(item) });
+    } catch (err) {
+      if (isUniqueViolation(err)) throw duplicate();
+      throw err;
+    }
+  });
+
+  // Onboarding: add many items at once (from voice, a shelf photo or an uploaded list, parsed on the app side).
+  // Existing variants (same name + size) are updated rather than duplicated.
+  app.post('/bulk', async (req, reply) => {
+    const { items: input } = validate(bulkBody, req.body);
+    const rows = await db.transaction(async (tx) => {
+      const out = [];
+      for (const item of input) {
+        const [row] = await tx
+          .insert(items)
+          .values({ ...item, storeId: req.store.id })
+          .onConflictDoUpdate({
+            target: [items.storeId, items.nameKey, items.unit, items.unitSize],
+            set: {
+              price: sql`coalesce(excluded.price, ${items.price})`,
+              stock: sql`excluded.stock`,
+              stockLabel: sql`excluded.stock_label`,
+              aliases: sql`excluded.aliases`,
+              isActive: true,
+            },
+          })
+          .returning();
+        out.push(row);
+      }
+      return out;
+    });
+    return reply.code(201).send({ data: rows.map(present), missingPrice: rows.filter((r) => r.price === null).length });
+  });
+
+  app.get('/:id', async (req) => {
+    const { id } = validate(idParams, req.params);
+    const [item] = await db.select().from(items).where(and(eq(items.id, id), eq(items.storeId, req.store.id)));
+    if (!item) throw notFound('Item not found');
+    return { item: present(item) };
+  });
+
+  app.patch('/:id', async (req) => {
+    const { id } = validate(idParams, req.params);
+    const body = validate(updateItemBody, req.body);
+    try {
+      const [item] = await db
+        .update(items)
+        .set(body)
+        .where(and(eq(items.id, id), eq(items.storeId, req.store.id)))
+        .returning();
+      if (!item) throw notFound('Item not found');
+      return { item: present(item) };
+    } catch (err) {
+      if (isUniqueViolation(err)) throw duplicate();
+      throw err;
+    }
+  });
+
+  app.post('/:id/stock', async (req) => {
+    const { id } = validate(idParams, req.params);
+    const { delta } = validate(adjustStockBody, req.body);
+    const [item] = await db
+      .update(items)
+      .set({ stock: sql`${items.stock} + ${delta}` })
+      .where(and(eq(items.id, id), eq(items.storeId, req.store.id)))
+      .returning();
+    if (!item) throw notFound('Item not found');
+    return { item: present(item) };
+  });
+
+  // Items are deactivated, not deleted, so old bills keep their link.
+  app.delete('/:id', async (req, reply) => {
+    const { id } = validate(idParams, req.params);
+    const [item] = await db
+      .update(items)
+      .set({ isActive: false })
+      .where(and(eq(items.id, id), eq(items.storeId, req.store.id)))
+      .returning({ id: items.id });
+    if (!item) throw notFound('Item not found');
+    return reply.code(204).send();
+  });
+}

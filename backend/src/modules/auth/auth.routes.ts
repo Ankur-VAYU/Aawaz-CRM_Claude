@@ -1,43 +1,30 @@
-import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { Db } from '../../db/index.js';
-import { users } from '../../db/schema.js';
-import { forbidden } from '../../lib/errors.js';
-import { toPublicUser } from '../../lib/serialize.js';
+import { stores, users } from '../../db/schema.js';
 import { validate } from '../../lib/validate.js';
-import {
-  changePasswordBody,
-  loginBody,
-  refreshBody,
-  registerBody,
-  updateMeBody,
-} from './auth.schemas.js';
+import { refreshBody, requestOtpBody, updateMeBody, verifyOtpBody } from './auth.schemas.js';
 import type { AuthService } from './auth.service.js';
 
 interface Options {
   db: Db;
   authService: AuthService;
-  allowPublicSignup: boolean;
 }
 
-// Stricter limits on endpoints that are targets for credential stuffing.
+// Stricter per-IP limits on endpoints that are targets for abuse.
 const authRateLimit = { rateLimit: { max: 10, timeWindow: '1 minute' } };
 
 export default async function authRoutes(app: FastifyInstance, opts: Options) {
   const { db, authService } = opts;
 
-  app.post('/register', { config: authRateLimit }, async (req, reply) => {
-    if (!opts.allowPublicSignup) throw forbidden('Public sign-up is disabled');
-    const body = validate(registerBody, req.body);
-    const user = await authService.createUser(body);
-    const session = await authService.issueSession(user, crypto.randomUUID(), body.deviceName);
-    return reply.code(201).send(session);
+  app.post('/otp/request', { config: authRateLimit }, async (req) => {
+    const { phone } = validate(requestOtpBody, req.body);
+    return authService.requestOtp(phone);
   });
 
-  app.post('/login', { config: authRateLimit }, async (req) => {
-    const body = validate(loginBody, req.body);
-    return authService.login(body.email, body.password, body.deviceName);
+  app.post('/otp/verify', { config: authRateLimit }, async (req) => {
+    const body = validate(verifyOtpBody, req.body);
+    return authService.verifyOtp(body.phone, body.code, body.deviceName);
   });
 
   app.post('/refresh', { config: authRateLimit }, async (req) => {
@@ -56,27 +43,14 @@ export default async function authRoutes(app: FastifyInstance, opts: Options) {
     return reply.code(204).send();
   });
 
-  app.get('/me', { onRequest: [app.authenticate] }, async (req) => ({
-    user: toPublicUser(req.currentUser),
-  }));
+  app.get('/me', { onRequest: [app.authenticate] }, async (req) => {
+    const [store] = await db.select().from(stores).where(eq(stores.ownerId, req.currentUser.id)).limit(1);
+    return { user: req.currentUser, store: store ?? null };
+  });
 
   app.patch('/me', { onRequest: [app.authenticate] }, async (req) => {
     const body = validate(updateMeBody, req.body);
-    const [user] = await db
-      .update(users)
-      .set(body)
-      .where(eq(users.id, req.currentUser.id))
-      .returning();
-    return { user: toPublicUser(user) };
-  });
-
-  app.post('/change-password', { onRequest: [app.authenticate], config: authRateLimit }, async (req) => {
-    const body = validate(changePasswordBody, req.body);
-    return authService.changePassword(
-      req.currentUser,
-      body.currentPassword,
-      body.newPassword,
-      body.deviceName,
-    );
+    const [user] = await db.update(users).set(body).where(eq(users.id, req.currentUser.id)).returning();
+    return { user };
   });
 }

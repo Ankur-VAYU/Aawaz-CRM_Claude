@@ -1,132 +1,211 @@
-# Aawaz CRM — Backend API
+# AwaazCRM — Backend API
 
-REST API for the Aawaz CRM, used by the Android and iOS apps (and any web client).
+Backend for **AwaazCRM**, the voice-first bahi-khata for kirana shops, built from the "Aawaz CRM"
+design canvas. The shopkeeper speaks ("Ramesh ko paanch kilo atta… udhaar mein likh do") and the
+app turns it into a bill, updates stock and the customer's khata, and sends a receipt on WhatsApp.
 
 **Stack:** Node.js 20+ · TypeScript · [Fastify](https://fastify.dev) · PostgreSQL · [Drizzle ORM](https://orm.drizzle.team) · Zod · JWT
 
-Current scope: **login & user management**.
+## How the design maps to the API
+
+| Design screen | API |
+| --- | --- |
+| 4a · Welcome & number check | `POST /auth/otp/request`, `POST /auth/otp/verify` |
+| 4b · Shop details | `POST /store`, `PATCH /store` |
+| 4c · GST & PAN (optional) | `PUT /store/tax` (validates GSTIN check digit, fills PAN + state) |
+| 4d · Language & reply style | `PUT /store/preferences` |
+| 4e · Add items (saamaan) | `POST /items/bulk`, `POST /items` |
+| 4f · Ready | `POST /store/onboarding/complete` |
+| 1 · Voice billing | `POST /assistant/message` → draft · `POST /bills/:id/resolve` ("Kaunsa size?") · `PATCH /bills/:id` ("Badlo") · `POST /bills/:id/confirm` ("Haan, pakka karo") |
+| 2 · Khata — "kitna baaki hai?" | `POST /assistant/message`, `GET /customers/:id/ledger`, `POST /customers/:id/payments` ("Paisa mila"), `POST /customers/:id/reminders` ("Yaad dilao") |
+| 3 · Daily summary | `GET /summary/daily` + sent to the owner automatically at 9 pm |
+| 5 · Low confidence + weak network | `unclear` issues with best-guess options; offline bills via `POST /bills` with `clientId` |
+| 6 · Customer's receipt | WhatsApp message + `/r/:token` page, `GET /public/receipts/:token` |
+| 7 · Customer list | `GET /customers?filter=all|dues|inactive` |
+| 8 · Customer's own profile | `/c/:token` page, `GET /public/customers/:token`, opt-out and delete-request |
+
+All `/api/v1/...` paths below are relative to `/api/v1`.
 
 ## Quick start
 
 ```bash
 cd backend
-cp .env.example .env          # then edit JWT_ACCESS_SECRET and ADMIN_PASSWORD
+cp .env.example .env          # set the two secrets; OTP_DEV_ECHO=true for local testing
 npm install
-
-# Start PostgreSQL (or point DATABASE_URL at an existing server)
-docker compose up -d db
-
-npm run seed:admin            # applies migrations and creates the first admin
+docker compose up -d db       # or point DATABASE_URL at your own PostgreSQL
+npm run seed:demo             # optional: the "Sharma Kirana Store" from the design
 npm run dev                   # http://localhost:3000
 ```
 
-Run everything in Docker instead: `docker compose up --build`.
+Try it (with `OTP_DEV_ECHO=true` the code comes back in the response):
 
-### Scripts
+```bash
+curl -s localhost:3000/api/v1/auth/otp/request -H 'content-type: application/json' -d '{"phone":"9876543450"}'
+curl -s localhost:3000/api/v1/auth/otp/verify  -H 'content-type: application/json' -d '{"phone":"9876543450","code":"<devCode>"}'
+curl -s localhost:3000/api/v1/assistant/message -H "authorization: Bearer <accessToken>" -H 'content-type: application/json' \
+  -d '{"text":"Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do"}'
+```
 
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Start with auto-reload |
-| `npm run build` / `npm start` | Compile to `dist/` and run it |
-| `npm run typecheck` | Type-check without emitting |
-| `npm test` | Integration tests (needs Postgres; see below) |
-| `npm run db:generate` | Generate a SQL migration after editing `src/db/schema.ts` |
+| `npm run build` / `npm start` | Compile to `dist/` and run |
+| `npm run typecheck` | Type-check |
+| `npm test` | Unit + integration tests (needs PostgreSQL, see below) |
+| `npm run db:generate` | Create a migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (the server also does this on start-up) |
-| `npm run seed:admin` | Create the admin from `ADMIN_*` env vars (skips if it exists) |
+| `npm run seed:demo` | Demo shop, items and customers from the design (not in production) |
 
-Tests use the database in `TEST_DATABASE_URL` (default `postgres://postgres:postgres@localhost:5432/aawaz_test`) and **truncate its tables**, so never point it at real data.
+Tests use `TEST_DATABASE_URL` (default `postgres://postgres:postgres@localhost:5432/aawaz_test`) and **wipe its tables**.
 
-## Authentication model (for the mobile apps)
+## Key concepts
 
-- `login` / `register` return a short-lived **access token** (JWT, 15 min by default) and a long-lived **refresh token** (30 days).
-- Send the access token on every request: `Authorization: Bearer <accessToken>`.
-- When a request returns `401`, call `POST /api/v1/auth/refresh` with the refresh token. You get a **new pair**; the old refresh token stops working (rotation).
-- Store the refresh token in secure storage (Android Keystore / iOS Keychain, e.g. `expo-secure-store`, `flutter_secure_storage`).
-- If an already-used refresh token is presented again, the whole session is revoked (theft protection). So the app must **serialize refreshes**: if several requests get a `401` at once, call refresh once and let the others wait for it.
-- Deactivating a user or changing their role takes effect on their next request; it doesn't wait for the access token to expire.
+- **Money** is always an integer number of **paise** in responses (`74500` = ₹745). Requests take **rupees** (`"amount": 500`, `"price": 245`), which is easier to type and say.
+- **Items** are sellable variants: "Atta 5 kg" (a 5 kg bag) and "Sarson tel 500 ml" are separate items. Variants share a `name` and differ in `unit` + `unitSize`. `stock` counts packs.
+- **Bills** start as **drafts**. Nothing changes until `confirm`. On confirm the bill gets the next number, stock goes down, an udhaar bill is added to the khata, and the customer gets a receipt (if they have a phone number and haven't opted out).
+- **Issues** are the questions a draft still has to answer. `canConfirm` is true when there are none:
 
-## Roles
+  | `kind` | Meaning | Resolve with |
+  | --- | --- | --- |
+  | `choose_variant` | Product known, size not ("Kaunsa size?") | `itemId` from `options` |
+  | `unclear` | Not heard clearly ("m…l?") or sounds like several products | `itemId` from `options` |
+  | `not_found` | Not in the catalogue | `itemId`, or `name` + `unitPrice` |
+  | `price_missing` | Item has no price yet | `unitPrice` (+ `savePrice: true` to remember it) |
+  | `customer_unknown` / `customer_ambiguous` / `customer_required` | Who is this bill for? | `customerId` or `newCustomer` |
 
-| Role | Can do |
-| --- | --- |
-| `admin` | Everything, including creating/editing users and resetting passwords |
-| `manager` | View the user list and user details |
-| `agent` | Own profile only (default for new accounts) |
+  Any issue can also be dropped with `remove: true`.
+- **Khata** is an append-only ledger per customer (`bill`, `payment`, `bill_cancelled`), and each entry records `balanceAfter`. `customer.balance` is the running total (positive = customer owes the shop).
+- **Replies**: assistant responses include `reply: { text, speak }`, in the shop's language (`hinglish` or `hi`). `speak` follows the shop's reply style, so the app knows to read it aloud.
 
-Users are never hard-deleted; deactivate them with `PATCH /users/:id { "isActive": false }`.
+## Authentication
+
+Sign-in is by phone number with a 6-digit OTP. There are no passwords.
+
+1. `POST /auth/otp/request { phone }`: accepts `9876543210`, `09876543210`, `+91 98765 43210`. You can request one code every 30 s, and at most 5 per hour. Each code is valid for 5 minutes.
+2. `POST /auth/otp/verify { phone, code, deviceName? }`: returns `accessToken` (15 min), `refreshToken` (30 days), `user`, `store` (null until set up) and `isNewUser`. After 5 wrong attempts you must request a new code.
+3. Send `Authorization: Bearer <accessToken>`. On `401`, call `POST /auth/refresh { refreshToken }` to get a new pair. Each refresh token works once; reusing one ends that login on every device that shares it. Run **one refresh at a time** in the app.
+
+`POST /auth/logout { refreshToken }` · `POST /auth/logout-all` · `GET /auth/me` · `PATCH /auth/me { name }`
+
+Every shop endpoint returns `409 STORE_NOT_SET_UP` until `POST /store` has been called.
 
 ## API reference
 
-Base URL: `/api/v1`. All bodies are JSON. Errors look like:
+Errors always look like `{ "error": { "code": "...", "message": "...", "details": ... } }`.
+Codes: `VALIDATION_ERROR` (400), `BAD_REQUEST` (400), `UNAUTHORIZED` (401), `NOT_FOUND` (404), `CONFLICT` / `STORE_NOT_SET_UP` / `BILL_HAS_ISSUES` / `BILL_NOT_DRAFT` / `OPTED_OUT` / `REMINDER_TOO_SOON` (409), `RATE_LIMITED` (429).
+
+### Assistant — `POST /assistant/message`
 
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "Request validation failed", "details": [{ "path": "email", "message": "Invalid email address" }] } }
+{ "text": "Ramesh ka kitna baaki hai?", "source": "voice", "clientId": "optional-idempotency-key" }
 ```
 
-Error codes: `VALIDATION_ERROR`/`BAD_REQUEST` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409), `RATE_LIMITED` (429), `INTERNAL_ERROR` (500).
+`text` is the transcript (from the phone's speech recognition) or typed text. Response: `{ intent, reply: { text, speak }, ...data }`.
 
-### Auth — `/api/v1/auth`
+| Example | `intent` | Extra data |
+| --- | --- | --- |
+| "Ramesh ko paanch kilo atta, do sarson tel… udhaar mein likh do" | `create_bill` | `bill` (draft) |
+| "Ramesh ka kitna baaki hai?" · "Sunita ka khata" | `query_balance` | `customer`, `recentEntries` |
+| "Ramesh ne paanch sau rupaye diye UPI se" | `record_payment` | `customer`, `entry` |
+| "Ramesh ko yaad dilao" | `send_reminder` | `customer` |
+| "Grahak list dikhao" | `list_customers` | `customers`, `total`, `totalDues` |
+| "Aaj ka hisaab" | `daily_summary` | `summary` |
+| "Kaunsa stock kam hai" | `low_stock` | `items` |
+| anything else | `unknown` | — |
 
-| Method | Path | Auth | Body | Response |
-| --- | --- | --- | --- | --- |
-| POST | `/register` | — | `name, email, password, phone?, deviceName?` | `201` session |
-| POST | `/login` | — | `email, password, deviceName?` | session |
-| POST | `/refresh` | — | `refreshToken` | session (new tokens) |
-| POST | `/logout` | Bearer | `refreshToken` | `204`, ends this device's session |
-| POST | `/logout-all` | Bearer | — | `204`, ends all sessions |
-| GET | `/me` | Bearer | — | `{ user }` |
-| PATCH | `/me` | Bearer | `name?, phone?` | `{ user }` |
-| POST | `/change-password` | Bearer | `currentPassword, newPassword, deviceName?` | session (all other devices signed out) |
+When a named customer isn't found or several match, the response has `needsInput` and nothing is written.
+The parser understands romanised Hindi/Hinglish: number words (ek … sau, hazaar, aadha, dedh, dhai), units (kilo, gram, litre, ml, packet…), Devanagari digits and spelling variants (aata/atta, daal/dal).
 
-A **session** response:
+### Bills — `/bills`
 
-```json
-{
-  "user": { "id": "…", "email": "asha@example.com", "name": "Asha", "phone": null, "role": "agent", "isActive": true, "lastLoginAt": "…", "createdAt": "…", "updatedAt": "…" },
-  "accessToken": "eyJ…",
-  "accessTokenExpiresIn": 900,
-  "refreshToken": "…",
-  "tokenType": "Bearer"
-}
-```
+| Method | Path | Body | Notes |
+| --- | --- | --- | --- |
+| GET | `/` | `?status=&customerId=&from=YYYY-MM-DD&to=&page=&limit=` | Newest first |
+| POST | `/` | `{ clientId?, customerId?, paymentMode, lines: [{ itemId, quantity, unitPrice? } \| { name, quantity, unitPrice }], confirm? }` | Manual / offline bills. Same `clientId` → same bill (200), never a duplicate |
+| GET | `/:id` | — | Lines, customer, `issues`, `canConfirm`, `receiptLink` |
+| PATCH | `/:id` | `{ customerId?, paymentMode?, lines? }` | Draft only. `lines` replaces all lines |
+| POST | `/:id/resolve` | `{ issueId, itemId? \| name+unitPrice? \| unitPrice? \| customerId? \| newCustomer? \| remove? , quantity?, savePrice? }` | Answers one issue |
+| POST | `/:id/confirm` | — | Returns `bill`, `effects { stockReduced, khata { before, after }, receiptQueued, customerLink }`, `reply { title, lines }` |
+| POST | `/:id/cancel` | — | Draft: discard. Confirmed: restores stock and reverses khata |
 
-Rules: emails are case-insensitive. Passwords need 8+ characters (at most 72 bytes), including a letter and a number. Phone numbers are 7–15 digits with an optional leading `+`. `register`, `login`, `refresh` and `change-password` are limited to 10 requests per minute per IP; everything else to 300.
-`register` can be turned off with `ALLOW_PUBLIC_SIGNUP=false`, so only admins can create accounts.
+`paymentMode`: `cash` · `upi` · `udhaar`. Udhaar needs a customer and a shop with `givesCredit: true`.
 
-### Users — `/api/v1/users`
+### Store — `/store`
 
-| Method | Path | Role | Body / query | Response |
-| --- | --- | --- | --- | --- |
-| GET | `/` | admin, manager | `?page=1&limit=20&search=&role=&isActive=` | `{ data: [user], pagination: { page, limit, total, totalPages } }` |
-| GET | `/:id` | admin, manager | — | `{ user }` |
-| POST | `/` | admin | `name, email, password, phone?, role?` | `201 { user }` |
-| PATCH | `/:id` | admin | `name?, phone?, role?, isActive?` | `{ user }` |
-| POST | `/:id/reset-password` | admin | `newPassword` | `204`, signs the user out everywhere |
+`POST /` `{ name, ownerName, city, state?, pincode?, givesCredit }` · `GET /` (store + `onboarding.steps { number, shop, language, items }`) · `PATCH /` (same fields + `summaryTime "HH:MM"`) · `PUT /tax` `{ gstin?, pan?, legalName? }` (null removes) · `PUT /preferences` `{ language: hi|hinglish, replyStyle: voice_text|text }` · `POST /onboarding/complete`
 
-`search` matches name, email and phone. Admins can't deactivate or demote themselves.
+### Items — `/items`
 
-### Health
+`GET /?search=` · `GET /low-stock` · `POST /` · `POST /bulk { items: [...] }` (same name+size updates instead of duplicating; returns `missingPrice`) · `GET /:id` · `PATCH /:id` · `POST /:id/stock { delta }` · `DELETE /:id` (deactivates)
 
-`GET /health` returns `{ "status": "ok" }` when the API and the database are reachable.
+Item fields: `name, aliases[], unit (kg|g|l|ml|pc), unitSize, price (rupees or null), stock, stockLabel, lowStockThreshold`. Responses add `displayName` ("Sarson tel 500 ml").
+
+### Customers — `/customers`
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/?filter=all\|dues\|inactive&search=&page=&limit=` | Biggest dues first; `counts { all, dues, inactive }`, `totalDues`. Inactive = no purchase for 14 days |
+| POST | `/` | `{ name, phone? }` |
+| GET | `/:id` | Customer, khata summary, `shareLink` (their private page) |
+| PATCH | `/:id` | `{ name?, phone? }` |
+| GET | `/:id/ledger?page=&limit=` | Khata history, newest first |
+| POST | `/:id/payments` | `{ amount (rupees), method: cash\|upi, note? }` |
+| POST | `/:id/reminders` | WhatsApp reminder of the balance; once per 24 h; respects opt-out |
+
+### Summary — `GET /summary/daily?date=YYYY-MM-DD`
+
+Sales total, bill count (and how many by voice), cash / UPI / udhaar split, udhaar recovered, new customers, low stock, top dues. Days follow the shop's time zone (`Asia/Kolkata`). The same summary is sent to the owner each day at `summaryTime` (default 21:00).
+
+### Customer-facing (no login, token in the link)
+
+- Pages: `GET /c/:token` (khata) and `GET /r/:token` (receipt). These are the links in WhatsApp messages.
+- JSON: `GET /public/customers/:token`, `GET /public/receipts/:token`
+- `POST /public/customers/:token/opt-out` / `opt-in` ("Messages band karo")
+- `POST /public/customers/:token/delete-request` ("Meri jaankari hatao"): with nothing due, personal details are removed at once. Otherwise the request is flagged for the shopkeeper (`deletionRequestedAt`) and `{ deleted: false, reason: "BALANCE_DUE" }` is returned.
+
+## Messages (OTP, receipts, reminders, summaries)
+
+Outgoing messages go through the `MessageSender` interface (`src/messaging/sender.ts`). Receipts, reminders and summaries are written to an `outbound_messages` queue in the same transaction as the change that caused them. A background worker then delivers them with retries and backoff (`src/messaging/workers.ts`, safe to run on several instances).
+
+**Right now messages are only logged** (`LogSender`). To send real WhatsApp/SMS messages, implement `MessageSender` for your provider (for example the WhatsApp Business Platform, or an SMS gateway for OTPs) and pass it in `src/server.ts`.
+
+## Not included yet
+
+These need an external provider or a product decision, so they're not built:
+
+- **Speech-to-text.** The API takes the transcript. Use on-device recognition (Android `SpeechRecognizer`, iOS `SFSpeechRecognizer`, both support `hi-IN` / `en-IN`) or add a cloud STT service.
+- **Reading photos:** GST certificate, shelf photo, or an old list from Excel/PDF (screens 4c and 4e). The app can send the extracted items to `POST /items/bulk` and the GSTIN to `PUT /store/tax`.
+- **WhatsApp delivery:** see above.
+- **Language coverage.** The rule-based parser handles common romanised Hinglish phrasing, not free-form Devanagari sentences. An LLM-based parser could be plugged in behind `parseCommand` later. The Hindi reply texts in `src/lib/replies.ts` should be reviewed by a native speaker.
+- **Staff accounts.** One owner per shop for now.
 
 ## Project layout
 
 ```
 src/
-  app.ts                 Fastify app: plugins, error handling, route registration
-  server.ts              Entry point: migrate, listen, graceful shutdown
-  config.ts              Validated environment variables
-  db/                    Drizzle schema, connection pool, migration runner
-  plugins/auth.ts        JWT + `authenticate` / `requireRole` guards
-  modules/auth/          Register, login, refresh, logout, profile, password
-  modules/users/         Admin user management
-  lib/                   Errors, validation, password hashing, token helpers
-drizzle/                 Generated SQL migrations (commit these)
-test/                    Integration tests (Vitest + real PostgreSQL)
+  app.ts                     Fastify app: plugins, errors, routes
+  server.ts                  Entry: migrations, workers, graceful shutdown
+  config.ts                  Validated environment variables
+  db/schema.ts               Tables: users, otp_codes, refresh_tokens, stores, items,
+                             customers, bills, bill_items, ledger_entries, outbound_messages
+  plugins/auth.ts            JWT, `authenticate`, `requireStore`
+  modules/
+    auth/                    Phone OTP sign-in, sessions
+    store/                   Shop profile, GST/PAN, preferences, onboarding
+    items/                   Catalogue and stock
+    customers/               Customers, khata, payments, reminders
+    bills/                   Drafts, issue resolution, confirm/cancel, catalogue matching
+    assistant/               Hinglish command parser + /assistant/message
+    summary/                 Daily summary
+    public/                  Customer receipt/khata pages and endpoints
+  messaging/                 MessageSender interface, outbox worker, summary scheduler
+  lib/                       Phone, GST, money, text matching, replies, tokens
+drizzle/                     SQL migrations (commit these)
+test/                        Vitest: parser unit tests + API tests on real PostgreSQL
 ```
 
 ## Production notes
 
-- Set a long random `JWT_ACCESS_SECRET` and `NODE_ENV=production`. Serve over HTTPS (behind a load balancer or reverse proxy).
-- The API is stateless, so you can run several instances behind a load balancer. Note that the rate limiter keeps counts in memory per instance; use a Redis store for `@fastify/rate-limit` if you need shared limits.
-- Expired and revoked refresh tokens stay in `refresh_tokens`. Add a periodic cleanup (e.g. `DELETE FROM refresh_tokens WHERE expires_at < now() - interval '7 days'`) once volume grows.
+- Set `NODE_ENV=production`, long random `JWT_ACCESS_SECRET` and `OTP_SECRET`, and `OTP_DEV_ECHO=false` (the server refuses to start with it on in production). Set `PUBLIC_BASE_URL` to the public HTTPS address.
+- The API is stateless, so it can run several instances behind a load balancer. The rate limiter counts per instance (use a Redis store for shared limits). Workers are safe to run on every instance, or set `RUN_WORKERS=false` on all but one.
+- Clean up old rows periodically once volume grows: expired `otp_codes` and `refresh_tokens`, and sent `outbound_messages`.

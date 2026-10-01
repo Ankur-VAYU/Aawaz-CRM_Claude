@@ -1,69 +1,110 @@
 import crypto from 'node:crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { Db } from '../../db/index.js';
-import { refreshTokens, users, type User } from '../../db/schema.js';
-import { conflict, unauthorized } from '../../lib/errors.js';
-import { fakeVerify, hashPassword, verifyPassword } from '../../lib/password.js';
-import { toPublicUser } from '../../lib/serialize.js';
+import { otpCodes, refreshTokens, stores, users, type User } from '../../db/schema.js';
+import { tooManyRequests, unauthorized } from '../../lib/errors.js';
 import { generateRefreshToken, hashToken } from '../../lib/tokens.js';
+import type { MessageSender } from '../../messaging/sender.js';
 
-const PG_UNIQUE_VIOLATION = '23505';
+const OTP_RESEND_SECONDS = 30;
+const OTP_MAX_PER_HOUR = 5;
+const OTP_MAX_ATTEMPTS = 5;
 
-export function isUniqueViolation(err: unknown) {
-  const e = err as { code?: string; cause?: { code?: string } };
-  return e?.code === PG_UNIQUE_VIOLATION || e?.cause?.code === PG_UNIQUE_VIOLATION;
+export interface AuthOptions {
+  otpSecret: string;
+  otpTtlSeconds: number;
+  otpDevEcho: boolean;
+  refreshTtlDays: number;
 }
 
 export class AuthService {
   constructor(
     private readonly app: FastifyInstance,
     private readonly db: Db,
-    private readonly refreshTtlDays: number,
+    private readonly sender: MessageSender,
+    private readonly opts: AuthOptions,
   ) {}
 
-  async createUser(input: {
-    name: string;
-    email: string;
-    password: string;
-    phone?: string | null;
-    role?: User['role'];
-  }) {
-    const passwordHash = await hashPassword(input.password);
-    try {
-      const [user] = await this.db
-        .insert(users)
-        .values({
-          name: input.name,
-          email: input.email,
-          passwordHash,
-          phone: input.phone ?? null,
-          role: input.role ?? 'agent',
-        })
-        .returning();
-      return user;
-    } catch (err) {
-      if (isUniqueViolation(err)) throw conflict('An account with this email already exists');
-      throw err;
-    }
+  private hashOtp(phone: string, code: string) {
+    return crypto.createHmac('sha256', this.opts.otpSecret).update(`${phone}:${code}`).digest('hex');
   }
 
-  async login(emailAddr: string, plainPassword: string, deviceName?: string) {
-    const [user] = await this.db.select().from(users).where(eq(users.email, emailAddr)).limit(1);
-    if (!user) {
-      await fakeVerify(plainPassword);
-      throw unauthorized('Invalid email or password');
-    }
-    const ok = await verifyPassword(plainPassword, user.passwordHash);
-    if (!ok) throw unauthorized('Invalid email or password');
-    if (!user.isActive) throw unauthorized('Account is deactivated');
+  async requestOtp(phone: string) {
+    const [stats] = await this.db
+      .select({
+        lastHour: sql<number>`count(*)::int`,
+        latest: sql<Date | null>`max(${otpCodes.createdAt})`,
+      })
+      .from(otpCodes)
+      .where(and(eq(otpCodes.phone, phone), gt(otpCodes.createdAt, sql`now() - interval '1 hour'`)));
 
-    const [updated] = await this.db
-      .update(users)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(users.id, user.id))
-      .returning();
-    return this.issueSession(updated, crypto.randomUUID(), deviceName);
+    if (stats.latest) {
+      const waited = (Date.now() - new Date(stats.latest).getTime()) / 1000;
+      if (waited < OTP_RESEND_SECONDS) {
+        throw tooManyRequests('Please wait before requesting another code', Math.ceil(OTP_RESEND_SECONDS - waited));
+      }
+    }
+    if (stats.lastHour >= OTP_MAX_PER_HOUR) {
+      throw tooManyRequests('Too many codes requested. Try again in an hour', 3600);
+    }
+
+    const code = crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+    await this.db.insert(otpCodes).values({
+      phone,
+      codeHash: this.hashOtp(phone, code),
+      expiresAt: new Date(Date.now() + this.opts.otpTtlSeconds * 1000),
+    });
+    await this.sender.send({
+      to: phone,
+      kind: 'otp',
+      body: `AwaazCRM code: ${code}. Kisi ko na batayein. ${Math.round(this.opts.otpTtlSeconds / 60)} minute mein khatam.`,
+    });
+    return {
+      expiresIn: this.opts.otpTtlSeconds,
+      resendAfter: OTP_RESEND_SECONDS,
+      ...(this.opts.otpDevEcho ? { devCode: code } : {}),
+    };
+  }
+
+  async verifyOtp(phone: string, code: string, deviceName?: string) {
+    const [otp] = await this.db
+      .select()
+      .from(otpCodes)
+      .where(and(eq(otpCodes.phone, phone), isNull(otpCodes.consumedAt), gt(otpCodes.expiresAt, new Date())))
+      .orderBy(desc(otpCodes.createdAt))
+      .limit(1);
+    if (!otp) throw unauthorized('Code expired or not requested. Request a new code');
+    if (otp.attempts >= OTP_MAX_ATTEMPTS) throw tooManyRequests('Too many wrong attempts. Request a new code');
+
+    const expected = Buffer.from(otp.codeHash, 'hex');
+    const given = Buffer.from(this.hashOtp(phone, code), 'hex');
+    if (!crypto.timingSafeEqual(expected, given)) {
+      await this.db.update(otpCodes).set({ attempts: sql`${otpCodes.attempts} + 1` }).where(eq(otpCodes.id, otp.id));
+      throw unauthorized('Wrong code');
+    }
+
+    // Consume atomically so the same code can't be used twice in parallel.
+    const consumed = await this.db
+      .update(otpCodes)
+      .set({ consumedAt: new Date() })
+      .where(and(eq(otpCodes.id, otp.id), isNull(otpCodes.consumedAt)))
+      .returning({ id: otpCodes.id });
+    if (!consumed.length) throw unauthorized('Code already used. Request a new code');
+
+    const [existing] = await this.db.select().from(users).where(eq(users.phone, phone)).limit(1);
+    if (existing && !existing.isActive) throw unauthorized('Account is deactivated');
+    const [user] = existing
+      ? await this.db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, existing.id)).returning()
+      : await this.db
+          .insert(users)
+          .values({ phone, lastLoginAt: new Date() })
+          .onConflictDoUpdate({ target: users.phone, set: { lastLoginAt: new Date() } })
+          .returning();
+
+    const [store] = await this.db.select().from(stores).where(eq(stores.ownerId, user.id)).limit(1);
+    const session = await this.issueSession(user, crypto.randomUUID(), deviceName);
+    return { ...session, isNewUser: !existing, store: store ?? null };
   }
 
   /** Issues an access token plus a new refresh token in the given family. */
@@ -74,12 +115,12 @@ export class AuthService {
       tokenHash: hashToken(refreshToken),
       familyId,
       deviceName: deviceName ?? null,
-      expiresAt: new Date(Date.now() + this.refreshTtlDays * 24 * 60 * 60 * 1000),
+      expiresAt: new Date(Date.now() + this.opts.refreshTtlDays * 24 * 60 * 60 * 1000),
     });
-    const accessToken = this.app.jwt.sign({ sub: user.id, role: user.role });
+    const accessToken = this.app.jwt.sign({ sub: user.id });
     const { exp } = this.app.jwt.decode<{ exp: number }>(accessToken)!;
     return {
-      user: toPublicUser(user),
+      user,
       accessToken,
       accessTokenExpiresIn: exp - Math.floor(Date.now() / 1000),
       refreshToken,
@@ -92,11 +133,10 @@ export class AuthService {
    * Presenting an already-revoked token is treated as theft and revokes the whole family.
    */
   async refresh(presented: string) {
-    const tokenHash = hashToken(presented);
     const [row] = await this.db
       .select()
       .from(refreshTokens)
-      .where(eq(refreshTokens.tokenHash, tokenHash))
+      .where(eq(refreshTokens.tokenHash, hashToken(presented)))
       .limit(1);
     if (!row) throw unauthorized('Invalid refresh token');
 
@@ -109,7 +149,8 @@ export class AuthService {
     const [user] = await this.db.select().from(users).where(eq(users.id, row.userId)).limit(1);
     if (!user || !user.isActive) throw unauthorized('Account is not active');
 
-    const session = await this.db.transaction(async (tx) => {
+    const session = await this.db.transaction(async (txRaw) => {
+      const tx = txRaw as unknown as Db;
       // Conditional update guards against two concurrent refreshes with the same token.
       const revoked = await tx
         .update(refreshTokens)
@@ -117,7 +158,7 @@ export class AuthService {
         .where(and(eq(refreshTokens.id, row.id), isNull(refreshTokens.revokedAt)))
         .returning({ id: refreshTokens.id });
       if (revoked.length === 0) return null;
-      return this.issueSession(user, row.familyId, row.deviceName, tx as unknown as Db);
+      return this.issueSession(user, row.familyId, row.deviceName, tx);
     });
     if (!session) {
       await this.revokeFamily(row.familyId);
@@ -136,8 +177,8 @@ export class AuthService {
     if (row) await this.revokeFamily(row.familyId);
   }
 
-  async revokeAllForUser(userId: string, tx: Db = this.db) {
-    await tx
+  async revokeAllForUser(userId: string) {
+    await this.db
       .update(refreshTokens)
       .set({ revokedAt: new Date() })
       .where(and(eq(refreshTokens.userId, userId), isNull(refreshTokens.revokedAt)));
@@ -148,22 +189,5 @@ export class AuthService {
       .update(refreshTokens)
       .set({ revokedAt: new Date() })
       .where(and(eq(refreshTokens.familyId, familyId), isNull(refreshTokens.revokedAt)));
-  }
-
-  async changePassword(user: User, currentPassword: string, newPassword: string, deviceName?: string) {
-    const ok = await verifyPassword(currentPassword, user.passwordHash);
-    if (!ok) throw unauthorized('Current password is incorrect');
-    const passwordHash = await hashPassword(newPassword);
-    // Signs out every device, then starts a fresh session for the caller.
-    return this.db.transaction(async (txRaw) => {
-      const tx = txRaw as unknown as Db;
-      const [updated] = await tx
-        .update(users)
-        .set({ passwordHash })
-        .where(eq(users.id, user.id))
-        .returning();
-      await this.revokeAllForUser(user.id, tx);
-      return this.issueSession(updated, crypto.randomUUID(), deviceName, tx);
-    });
   }
 }

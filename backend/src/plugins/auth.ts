@@ -3,28 +3,24 @@ import jwt from '@fastify/jwt';
 import { eq } from 'drizzle-orm';
 import type { FastifyRequest } from 'fastify';
 import type { Db } from '../db/index.js';
-import { users, type User, type UserRole } from '../db/schema.js';
-import { forbidden, unauthorized } from '../lib/errors.js';
-
-export interface AccessTokenPayload {
-  sub: string;
-  role: UserRole;
-}
+import { stores, users, type Store, type User } from '../db/schema.js';
+import { AppError, unauthorized } from '../lib/errors.js';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: AccessTokenPayload;
-    user: AccessTokenPayload;
+    payload: { sub: string };
+    user: { sub: string };
   }
 }
 
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest) => Promise<void>;
-    requireRole: (...roles: UserRole[]) => (req: FastifyRequest) => Promise<void>;
+    requireStore: (req: FastifyRequest) => Promise<void>;
   }
   interface FastifyRequest {
     currentUser: User;
+    store: Store;
   }
 }
 
@@ -38,8 +34,9 @@ export default fp<AuthPluginOptions>(async (app, opts) => {
   await app.register(jwt, { secret: opts.secret, sign: { expiresIn: opts.accessTokenTtl } });
 
   app.decorateRequest('currentUser', null as unknown as User);
+  app.decorateRequest('store', null as unknown as Store);
 
-  // Verifies the token and loads the user, so deactivation and role changes take effect immediately
+  // Verifies the token and loads the user, so deactivation takes effect immediately
   // instead of waiting for the access token to expire.
   app.decorate('authenticate', async (req: FastifyRequest) => {
     try {
@@ -52,8 +49,11 @@ export default fp<AuthPluginOptions>(async (app, opts) => {
     req.currentUser = user;
   });
 
-  app.decorate('requireRole', (...roles: UserRole[]) => async (req: FastifyRequest) => {
+  /** Authenticates and loads the shopkeeper's store; every shop endpoint is scoped to it. */
+  app.decorate('requireStore', async (req: FastifyRequest) => {
     await app.authenticate(req);
-    if (!roles.includes(req.currentUser.role)) throw forbidden();
+    const [store] = await opts.db.select().from(stores).where(eq(stores.ownerId, req.currentUser.id)).limit(1);
+    if (!store) throw new AppError(409, 'STORE_NOT_SET_UP', 'Set up your shop first (POST /api/v1/store)');
+    req.store = store;
   });
 });

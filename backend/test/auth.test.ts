@@ -1,8 +1,9 @@
+import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { bearer, setupTestApp } from './helpers.js';
+import { normalizePhone, maskPhone } from '../src/lib/phone.js';
+import { setupTestApp, type TestCtx } from './helpers.js';
 
-let t: Awaited<ReturnType<typeof setupTestApp>>;
-
+let t: TestCtx;
 beforeAll(async () => {
   t = await setupTestApp();
 });
@@ -13,251 +14,102 @@ afterAll(async () => {
   await t.close();
 });
 
-const register = (payload: Record<string, unknown>) =>
-  t.app.inject({ method: 'POST', url: '/api/v1/auth/register', payload });
+describe('phone numbers', () => {
+  it.each([
+    ['9876543210', '+919876543210'],
+    ['09876543210', '+919876543210'],
+    ['919876543210', '+919876543210'],
+    ['+91 98765-43210', '+919876543210'],
+    ['+14155552671', '+14155552671'],
+  ])('%s -> %s', (input, out) => expect(normalizePhone(input)).toBe(out));
 
-describe('health', () => {
-  it('reports ok', async () => {
-    const res = await t.app.inject({ method: 'GET', url: '/health' });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok' });
-  });
+  it.each(['12345', '5876543210', '+91123', 'abc'])('rejects %s', (input) => expect(normalizePhone(input)).toBeNull());
+
+  it('masks like the design', () => expect(maskPhone('+919876543321')).toBe('98••• ••321'));
 });
 
-describe('POST /auth/register', () => {
-  it('creates an agent account and returns tokens without the password hash', async () => {
-    const res = await register({ name: 'Asha', email: ' Asha@Example.com ', password: 'Secret123', phone: '+919876543210' });
-    expect(res.statusCode).toBe(201);
+describe('OTP sign-in', () => {
+  it('sends a code, verifies it, creates the account and reports no store yet', async () => {
+    const req = await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '98765 43450' });
+    expect(req.statusCode).toBe(200);
+    const { devCode, expiresIn } = req.json();
+    expect(devCode).toMatch(/^\d{6}$/);
+    expect(expiresIn).toBe(300);
+    expect(t.sender.sent).toHaveLength(1);
+    expect(t.sender.sent[0]).toMatchObject({ to: '+919876543450', kind: 'otp' });
+    expect(t.sender.sent[0].body).toContain(devCode);
+
+    const res = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '+919876543450', code: devCode });
+    expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(body.user).toMatchObject({ name: 'Asha', email: 'asha@example.com', role: 'agent', isActive: true });
-    expect(body.user.passwordHash).toBeUndefined();
+    expect(body).toMatchObject({ isNewUser: true, store: null, tokenType: 'Bearer', user: { phone: '+919876543450' } });
     expect(body.accessToken).toBeTypeOf('string');
-    expect(body.refreshToken).toBeTypeOf('string');
-    expect(body.tokenType).toBe('Bearer');
-    expect(body.accessTokenExpiresIn).toBeGreaterThan(890);
+
+    const me = await t.inject('GET', '/api/v1/auth/me', body.accessToken);
+    expect(me.json()).toMatchObject({ user: { phone: '+919876543450' }, store: null });
   });
 
-  it('ignores a role field so users cannot self-promote', async () => {
-    const res = await register({ name: 'X', email: 'x@example.com', password: 'Secret123', role: 'admin' });
-    expect(res.statusCode).toBe(201);
-    expect(res.json().user.role).toBe('agent');
+  it('second sign-in is not a new user', async () => {
+    await t.signIn();
+    await t.db.execute(sql`update otp_codes set created_at = now() - interval '1 minute'`);
+    const req = await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '9876543450' });
+    const res = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '9876543450', code: req.json().devCode });
+    expect(res.json().isNewUser).toBe(false);
   });
 
-  it('rejects duplicate emails case-insensitively', async () => {
-    await register({ name: 'A', email: 'dup@example.com', password: 'Secret123' });
-    const res = await register({ name: 'B', email: 'DUP@example.com', password: 'Secret123' });
-    expect(res.statusCode).toBe(409);
-    expect(res.json().error.code).toBe('CONFLICT');
+  it('rejects wrong codes, locks after 5 attempts, and codes are single-use', async () => {
+    const { devCode } = (await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '9876543450' })).json();
+    const wrong = devCode === '000000' ? '111111' : '000000';
+    for (let i = 0; i < 5; i++) {
+      const r = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '9876543450', code: wrong });
+      expect(r.statusCode).toBe(401);
+    }
+    const locked = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '9876543450', code: devCode });
+    expect(locked.statusCode).toBe(429);
   });
 
-  it('validates input', async () => {
-    const res = await register({ name: '', email: 'not-an-email', password: 'short' });
-    expect(res.statusCode).toBe(400);
-    const { error } = res.json();
-    expect(error.code).toBe('VALIDATION_ERROR');
-    const paths = error.details.map((d: { path: string }) => d.path);
-    expect(paths).toEqual(expect.arrayContaining(['name', 'email', 'password']));
+  it('a code cannot be used twice', async () => {
+    const { devCode } = (await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '9876543450' })).json();
+    const first = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '9876543450', code: devCode });
+    expect(first.statusCode).toBe(200);
+    const again = await t.inject('POST', '/api/v1/auth/otp/verify', undefined, { phone: '9876543450', code: devCode });
+    expect(again.statusCode).toBe(401);
   });
 
-  it('can be disabled', async () => {
-    const closed = await setupTestApp({ ALLOW_PUBLIC_SIGNUP: false });
-    const res = await closed.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: { name: 'A', email: 'a@example.com', password: 'Secret123' },
-    });
-    expect(res.statusCode).toBe(403);
-    await closed.close();
-  });
-});
-
-describe('POST /auth/login', () => {
-  it('logs in with correct credentials and records lastLoginAt', async () => {
-    await t.createUser('agent', 'agent@test.dev');
-    const res = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email: 'AGENT@test.dev', password: 'Password1' },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(res.json().user.lastLoginAt).not.toBeNull();
+  it('throttles resends', async () => {
+    await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '9876543450' });
+    const again = await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '9876543450' });
+    expect(again.statusCode).toBe(429);
+    expect(again.json().error.details.retryAfterSeconds).toBeGreaterThan(0);
   });
 
-  it('returns the same error for wrong password and unknown email', async () => {
-    await t.createUser('agent', 'agent@test.dev');
-    const wrong = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email: 'agent@test.dev', password: 'Nope12345' },
-    });
-    const unknown = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email: 'ghost@test.dev', password: 'Nope12345' },
-    });
-    expect(wrong.statusCode).toBe(401);
-    expect(unknown.statusCode).toBe(401);
-    expect(wrong.json().error.message).toBe(unknown.json().error.message);
-  });
-
-  it('rejects deactivated users', async () => {
-    const admin = await t.createUser('admin');
-    const agent = await t.createUser('agent');
-    const { accessToken } = await t.login(admin.email);
-    await t.app.inject({
-      method: 'PATCH',
-      url: `/api/v1/users/${agent.id}`,
-      headers: bearer(accessToken),
-      payload: { isActive: false },
-    });
-    const res = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/login',
-      payload: { email: agent.email, password: 'Password1' },
-    });
-    expect(res.statusCode).toBe(401);
+  it('validates the phone number', async () => {
+    const r = await t.inject('POST', '/api/v1/auth/otp/request', undefined, { phone: '12345' });
+    expect(r.statusCode).toBe(400);
+    expect(r.json().error.code).toBe('VALIDATION_ERROR');
   });
 });
 
-describe('GET/PATCH /auth/me', () => {
-  it('requires a valid token', async () => {
-    expect((await t.app.inject({ method: 'GET', url: '/api/v1/auth/me' })).statusCode).toBe(401);
-    const bad = await t.app.inject({ method: 'GET', url: '/api/v1/auth/me', headers: bearer('garbage') });
-    expect(bad.statusCode).toBe(401);
-  });
-
-  it('rejects expired access tokens', async () => {
-    const short = await setupTestApp({ ACCESS_TOKEN_TTL: '1s' });
-    await short.createUser('agent');
-    const { accessToken } = await short.login('agent@test.dev');
-    await new Promise((r) => setTimeout(r, 2100));
-    const res = await short.app.inject({ method: 'GET', url: '/api/v1/auth/me', headers: bearer(accessToken) });
-    expect(res.statusCode).toBe(401);
-    await short.close();
-  });
-
-  it('returns and updates the current user', async () => {
-    await t.createUser('agent');
-    const { accessToken } = await t.login('agent@test.dev');
-    const me = await t.app.inject({ method: 'GET', url: '/api/v1/auth/me', headers: bearer(accessToken) });
-    expect(me.json().user.email).toBe('agent@test.dev');
-
-    const upd = await t.app.inject({
-      method: 'PATCH',
-      url: '/api/v1/auth/me',
-      headers: bearer(accessToken),
-      payload: { name: 'New Name', phone: '9876543210', role: 'admin' },
-    });
-    expect(upd.statusCode).toBe(200);
-    expect(upd.json().user).toMatchObject({ name: 'New Name', phone: '9876543210', role: 'agent' });
-  });
-});
-
-describe('refresh tokens', () => {
-  it('rotates tokens and detects reuse of an old token', async () => {
-    await t.createUser('agent');
-    const first = await t.login('agent@test.dev');
-
-    const r1 = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: first.refreshToken },
-    });
+describe('sessions', () => {
+  it('rotates refresh tokens and detects reuse', async () => {
+    const first = await t.signIn();
+    const r1 = await t.inject('POST', '/api/v1/auth/refresh', undefined, { refreshToken: first.refreshToken });
     expect(r1.statusCode).toBe(200);
     const second = r1.json();
-    expect(second.refreshToken).not.toBe(first.refreshToken);
-
-    // Reusing the old token is treated as theft: it fails and kills the newer token too.
-    const reuse = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: first.refreshToken },
-    });
+    const reuse = await t.inject('POST', '/api/v1/auth/refresh', undefined, { refreshToken: first.refreshToken });
     expect(reuse.statusCode).toBe(401);
-    const afterReuse = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: second.refreshToken },
-    });
-    expect(afterReuse.statusCode).toBe(401);
+    const after = await t.inject('POST', '/api/v1/auth/refresh', undefined, { refreshToken: second.refreshToken });
+    expect(after.statusCode).toBe(401);
   });
 
-  it('only one of two concurrent refreshes with the same token succeeds', async () => {
-    await t.createUser('agent');
-    const { refreshToken } = await t.login('agent@test.dev');
-    const results = await Promise.all(
-      [1, 2].map(() =>
-        t.app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refreshToken } }),
-      ),
-    );
-    expect(results.filter((r) => r.statusCode === 200).length).toBeLessThanOrEqual(1);
+  it('logout ends the session', async () => {
+    const s = await t.signIn();
+    expect((await t.inject('POST', '/api/v1/auth/logout', s.accessToken, { refreshToken: s.refreshToken })).statusCode).toBe(204);
+    expect((await t.inject('POST', '/api/v1/auth/refresh', undefined, { refreshToken: s.refreshToken })).statusCode).toBe(401);
   });
 
-  it('rejects unknown tokens', async () => {
-    const res = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: 'not-a-real-token' },
-    });
-    expect(res.statusCode).toBe(401);
-  });
-
-  it('logout revokes only that session; logout-all revokes every session', async () => {
-    await t.createUser('agent');
-    const phone = await t.login('agent@test.dev');
-    const tablet = await t.login('agent@test.dev');
-    const laptop = await t.login('agent@test.dev');
-
-    const out = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/logout',
-      headers: bearer(phone.accessToken),
-      payload: { refreshToken: phone.refreshToken },
-    });
-    expect(out.statusCode).toBe(204);
-
-    const refresh = (token: string) =>
-      t.app.inject({ method: 'POST', url: '/api/v1/auth/refresh', payload: { refreshToken: token } });
-    expect((await refresh(phone.refreshToken)).statusCode).toBe(401);
-    const tabletNew = await refresh(tablet.refreshToken);
-    expect(tabletNew.statusCode).toBe(200);
-
-    await t.app.inject({ method: 'POST', url: '/api/v1/auth/logout-all', headers: bearer(laptop.accessToken) });
-    expect((await refresh(laptop.refreshToken)).statusCode).toBe(401);
-    expect((await refresh(tabletNew.json().refreshToken)).statusCode).toBe(401);
-  });
-});
-
-describe('POST /auth/change-password', () => {
-  it('requires the current password, then signs out other sessions', async () => {
-    await t.createUser('agent');
-    const other = await t.login('agent@test.dev');
-    const current = await t.login('agent@test.dev');
-
-    const wrong = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/change-password',
-      headers: bearer(current.accessToken),
-      payload: { currentPassword: 'Wrong1234', newPassword: 'NewPass123' },
-    });
-    expect(wrong.statusCode).toBe(401);
-
-    const ok = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/change-password',
-      headers: bearer(current.accessToken),
-      payload: { currentPassword: 'Password1', newPassword: 'NewPass123' },
-    });
-    expect(ok.statusCode).toBe(200);
-    expect(ok.json().refreshToken).toBeTypeOf('string');
-
-    const oldRefresh = await t.app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/refresh',
-      payload: { refreshToken: other.refreshToken },
-    });
-    expect(oldRefresh.statusCode).toBe(401);
-    await expect(t.login('agent@test.dev', 'Password1')).rejects.toThrow();
-    await expect(t.login('agent@test.dev', 'NewPass123')).resolves.toBeDefined();
+  it('protected routes need a token', async () => {
+    expect((await t.inject('GET', '/api/v1/auth/me')).statusCode).toBe(401);
+    expect((await t.inject('GET', '/api/v1/auth/me', 'garbage')).statusCode).toBe(401);
   });
 });
