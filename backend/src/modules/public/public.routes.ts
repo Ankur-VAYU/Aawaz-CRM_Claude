@@ -32,7 +32,7 @@ async function khataView(db: Db, token: string) {
     where: eq(ledgerEntries.customerId, c.id),
     orderBy: [desc(ledgerEntries.createdAt)],
     limit: 20,
-    with: { bill: { columns: { billNumber: true }, with: { items: { columns: { id: true } } } } },
+    with: { bill: { columns: { invoiceNumber: true }, with: { items: { columns: { id: true } } } } },
   });
   return {
     store: { name: storeName },
@@ -47,7 +47,7 @@ async function khataView(db: Db, token: string) {
       type: e.type,
       amount: e.amount,
       method: e.method,
-      billNumber: e.bill?.billNumber ?? null,
+      invoiceNumber: e.bill?.invoiceNumber ?? null,
       itemCount: e.bill?.items.length ?? null,
     })),
   };
@@ -60,15 +60,57 @@ async function receiptView(db: Db, token: string) {
   });
   if (!bill) throw notFound('Receipt not found');
   const [store] = await db.select().from(stores).where(eq(stores.id, bill.storeId));
+  const registered = bill.documentType === 'tax_invoice' || bill.documentType === 'bill_of_supply';
+  const customer = bill.customer && !bill.customer.anonymizedAt ? bill.customer : null;
+  // Tax summary by rate, as required on a tax invoice.
+  const byRate = new Map<number, { rate: number; taxableValue: number; cgst: number; sgst: number; igst: number }>();
+  if (bill.documentType === 'tax_invoice') {
+    for (const l of bill.items) {
+      const rate = l.gstRate ?? 0;
+      const row = byRate.get(rate) ?? { rate, taxableValue: 0, cgst: 0, sgst: 0, igst: 0 };
+      row.taxableValue += l.taxableValue;
+      row.cgst += l.cgst;
+      row.sgst += l.sgst;
+      row.igst += l.igst;
+      byRate.set(rate, row);
+    }
+  }
   return {
-    store: { name: store.name, city: store.city, gstin: store.gstin },
+    documentType: bill.documentType,
+    store: {
+      name: store.name,
+      legalName: registered ? store.legalName : null,
+      address: store.address,
+      city: store.city,
+      state: store.state,
+      // Only registered shops print a GSTIN.
+      gstin: registered ? store.gstin : null,
+    },
+    invoiceNumber: bill.invoiceNumber,
     billNumber: bill.billNumber,
     date: bill.confirmedAt,
-    customer: bill.customer && !bill.customer.anonymizedAt ? { name: bill.customer.name } : null,
-    lines: bill.items.map((l) => ({ name: l.name, sizeLabel: l.sizeLabel, quantity: l.quantity, unitPrice: l.unitPrice, amount: l.amount })),
+    placeOfSupply: bill.placeOfSupply,
+    customer: customer ? { name: customer.name, gstin: customer.gstin } : null,
+    lines: bill.items.map((l) => ({
+      name: l.name,
+      sizeLabel: l.sizeLabel,
+      hsnCode: l.hsnCode,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      gstRate: bill.documentType === 'tax_invoice' ? l.gstRate : null,
+      taxableValue: l.taxableValue,
+      amount: l.amount,
+    })),
+    taxSummary: [...byRate.values()].sort((a, b) => a.rate - b.rate),
+    taxableTotal: bill.taxableTotal,
+    cgstTotal: bill.cgstTotal,
+    sgstTotal: bill.sgstTotal,
+    igstTotal: bill.igstTotal,
     total: bill.total,
     paymentMode: bill.paymentMode,
-    balance: bill.paymentMode === 'udhaar' && bill.customer ? bill.customer.balance : null,
+    paidNow: bill.paidCash + bill.paidUpi,
+    creditAmount: bill.creditAmount,
+    balance: bill.creditAmount > 0 && customer ? customer.balance : null,
   };
 }
 
@@ -99,9 +141,11 @@ function khataHtml(v: Awaited<ReturnType<typeof khataView>>) {
       const label =
         e.type === 'payment'
           ? `Jama kiya${e.method ? ` · ${e.method.toUpperCase()}` : ''}`
-          : e.type === 'bill_cancelled'
-            ? 'Bill radd hua'
-            : `Bill #${String(e.billNumber ?? '').padStart(4, '0')}${e.itemCount ? ` · ${e.itemCount} item` : ''}`;
+          : e.type === 'payment_reversed'
+            ? 'Galat entry hataayi'
+            : e.type === 'bill_cancelled'
+              ? 'Bill radd hua'
+              : `Bill ${e.invoiceNumber ?? ''}${e.itemCount ? ` · ${e.itemCount} item` : ''}`;
       const amt = e.amount < 0 ? `<span class="green">− ${esc(formatRupees(-e.amount))}</span>` : esc(formatRupees(e.amount));
       return `<div class="row"><span class="muted">${esc(fmtDate(e.date))}</span><span style="flex:1">${esc(label)}</span><b>${amt}</b></div>`;
     })
@@ -119,20 +163,43 @@ function khataHtml(v: Awaited<ReturnType<typeof khataView>>) {
   );
 }
 
+const DOC_TITLE = { tax_invoice: 'Tax Invoice', bill_of_supply: 'Bill of Supply', bill: 'Rasid' } as const;
+
 function receiptHtml(v: Awaited<ReturnType<typeof receiptView>>) {
+  const r = (n: number) => esc(formatRupees(n));
   const rows = v.lines
     .map(
       (l) =>
-        `<div class="row"><span>${esc(l.name)}${l.sizeLabel ? ` · ${esc(l.sizeLabel)}` : ''} × ${l.quantity}</span><b>${esc(formatRupees(l.amount))}</b></div>`,
+        `<div class="row"><span>${esc(l.name)}${l.sizeLabel ? ` · ${esc(l.sizeLabel)}` : ''} × ${l.quantity}` +
+        `${l.hsnCode ? `<br><span class="muted">HSN ${esc(l.hsnCode)}${l.gstRate !== null ? ` · GST ${l.gstRate}%` : ''}</span>` : l.gstRate !== null ? `<br><span class="muted">GST ${l.gstRate}%</span>` : ''}</span>` +
+        `<b>${r(l.amount)}</b></div>`,
     )
     .join('');
+  const tax = v.taxSummary
+    .map(
+      (t) =>
+        `<div class="row muted"><span>${t.rate}% · Taxable ${r(t.taxableValue)}</span><span>${
+          t.igst ? `IGST ${r(t.igst)}` : `CGST ${r(t.cgst)} · SGST ${r(t.sgst)}`
+        }</span></div>`,
+    )
+    .join('');
+  const doc = v.documentType ?? 'bill';
+  const seller = [v.store.legalName && v.store.legalName !== v.store.name ? v.store.legalName : null, v.store.address, v.store.city, v.store.state]
+    .filter(Boolean)
+    .map((x) => esc(String(x)))
+    .join(', ');
   return page(
-    `${v.store.name} · Rasid`,
+    `${v.store.name} · ${DOC_TITLE[doc]}`,
     `<header>${esc(v.store.name)}</header><main><div class="card">
-<div class="pad"><h1>${v.customer ? `Namaste ${esc(v.customer.name)} ji` : 'Rasid'}</h1>
-<div class="muted">Rasid · Bill #${String(v.billNumber).padStart(4, '0')} · ${esc(fmtDate(v.date))}${v.store.gstin ? ` · GSTIN ${esc(v.store.gstin)}` : ''}</div></div>
-${rows}<div class="row"><span>Total</span><span class="big">${esc(formatRupees(v.total))}</span></div>
-${v.balance !== null ? `<div class="due"><div><b style="color:#8A5A00">Udhaar mein likha</b><div class="muted">Aapka kul baaki</div></div><b style="font-size:24px">${esc(formatRupees(v.balance))}</b></div>` : ''}
+<div class="pad"><h1>${v.customer ? `Namaste ${esc(v.customer.name)} ji` : DOC_TITLE[doc]}</h1>
+<div class="muted"><b>${DOC_TITLE[doc]}</b> · ${esc(v.invoiceNumber ?? '')} · ${esc(fmtDate(v.date))}</div>
+${seller ? `<div class="muted">${seller}</div>` : ''}
+${v.store.gstin ? `<div class="muted">GSTIN ${esc(v.store.gstin)}${v.placeOfSupply ? ` · Place of supply: ${esc(v.placeOfSupply)}` : ''}</div>` : ''}
+${v.customer?.gstin ? `<div class="muted">Buyer GSTIN ${esc(v.customer.gstin)}</div>` : ''}
+${doc === 'bill_of_supply' ? '<div class="muted">Composition taxable person, not eligible to collect tax on supplies</div>' : ''}</div>
+${rows}${tax}<div class="row"><span>Total</span><span class="big">${r(v.total)}</span></div>
+${v.paidNow > 0 && v.creditAmount > 0 ? `<div class="row"><span>Abhi diye</span><b class="green">${r(v.paidNow)}</b></div>` : ''}
+${v.balance !== null ? `<div class="due"><div><b style="color:#8A5A00">Udhaar mein likha ${r(v.creditAmount)}</b><div class="muted">Aapka kul baaki</div></div><b style="font-size:24px">${r(v.balance)}</b></div>` : ''}
 <div class="pad muted">Dhanyavaad! Kisi galti ke liye dukaan par bataiye.</div></div></main>`,
   );
 }
@@ -150,7 +217,15 @@ export async function publicApiRoutes(app: FastifyInstance, { db }: { db: Db }) 
 
   app.post('/customers/:token/opt-in', async (req) => {
     const { customer } = await customerByToken(db, validate(tokenParams, req.params).token);
-    await db.update(customers).set({ messagesOptedOutAt: null }).where(eq(customers.id, customer.id));
+    // The customer agreeing from their own link counts as consent.
+    await db
+      .update(customers)
+      .set({
+        messagesOptedOutAt: null,
+        messagingConsentAt: new Date(),
+        messagingConsentSource: 'customer_link',
+      })
+      .where(eq(customers.id, customer.id));
     return { messagesOptedOut: false };
   });
 

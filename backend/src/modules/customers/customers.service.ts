@@ -40,12 +40,13 @@ export async function postLedgerEntry(
   entry: {
     storeId: string;
     customerId: string;
-    type: 'bill' | 'payment' | 'bill_cancelled';
+    type: 'bill' | 'payment' | 'bill_cancelled' | 'payment_reversed';
     amount: number;
     billId?: string;
     method?: 'cash' | 'upi';
     note?: string;
     clientId?: string;
+    reversesEntryId?: string;
   },
 ) {
   const [before] = await tx
@@ -57,7 +58,9 @@ export async function postLedgerEntry(
     .update(customers)
     .set({
       balance: sql`${customers.balance} + ${entry.amount}`,
-      ...(entry.type === 'payment' ? { totalPaid: sql`${customers.totalPaid} + ${-entry.amount}` } : {}),
+      ...(entry.type === 'payment' || entry.type === 'payment_reversed'
+        ? { totalPaid: sql`${customers.totalPaid} + ${-entry.amount}` }
+        : {}),
     })
     .where(eq(customers.id, entry.customerId))
     .returning();
@@ -72,7 +75,10 @@ export function shareLink(baseUrl: string, customer: Pick<Customer, 'shareToken'
   return `${baseUrl.replace(/\/$/, '')}/c/${customer.shareToken}`;
 }
 
-/** Queues a WhatsApp message to a customer, unless they've opted out or have no number. */
+export const canMessage = (c: Customer) =>
+  Boolean(c.phone && c.messagingConsentAt && !c.messagesOptedOutAt && !c.anonymizedAt);
+
+/** Queues a WhatsApp message to a customer: needs a number, recorded consent and no opt-out. */
 export async function enqueueCustomerMessage(
   tx: Db,
   store: Store,
@@ -81,11 +87,11 @@ export async function enqueueCustomerMessage(
   body: string,
   payload: Record<string, unknown> = {},
 ) {
-  if (!customer.phone || customer.messagesOptedOutAt || customer.anonymizedAt) return false;
+  if (!canMessage(customer)) return false;
   await tx.insert(outboundMessages).values({
     storeId: store.id,
     customerId: customer.id,
-    toPhone: customer.phone,
+    toPhone: customer.phone!, // checked by canMessage
     type,
     body,
     payload,
@@ -98,6 +104,9 @@ export async function sendReminder(db: Db, store: Store, c: Customer, publicBase
   if (c.balance <= 0) throw badRequest('Nothing is due from this customer');
   if (!c.phone) throw badRequest('Add the customer’s phone number to send reminders');
   if (c.messagesOptedOutAt) throw conflict('This customer has turned off messages', 'OPTED_OUT');
+  if (!c.messagingConsentAt) {
+    throw new AppError(409, 'NO_CONSENT', 'Ask the customer if they agree to get WhatsApp messages, then record it');
+  }
   const [recent] = await db
     .select({ id: outboundMessages.id })
     .from(outboundMessages)
@@ -155,6 +164,36 @@ export async function recordPayment(
   } catch (err) {
     const raced = isUniqueViolation(err) ? await existing() : null;
     if (raced) return raced;
+    throw err;
+  }
+}
+
+/**
+ * Undoes a payment recorded by mistake ("galti se 500 likh diya"). The original entry stays in the
+ * history; a 'payment_reversed' entry adds the amount back. Each payment can be reversed once.
+ */
+export async function reversePayment(db: Db, storeId: string, customerId: string, entryId: string, note?: string) {
+  try {
+    return await db.transaction(async (txRaw) => {
+      const tx = txRaw as unknown as Db;
+      const [entry] = await tx
+        .select()
+        .from(ledgerEntries)
+        .where(and(eq(ledgerEntries.id, entryId), eq(ledgerEntries.customerId, customerId), eq(ledgerEntries.storeId, storeId)));
+      if (!entry) throw new AppError(404, 'NOT_FOUND', 'Entry not found');
+      if (entry.type !== 'payment') throw badRequest('Only payments can be reversed; cancel the bill instead');
+      return postLedgerEntry(tx, {
+        storeId,
+        customerId,
+        type: 'payment_reversed',
+        amount: -entry.amount,
+        method: entry.method ?? undefined,
+        reversesEntryId: entry.id,
+        note: note ?? 'Galat entry hataayi',
+      });
+    });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw conflict('This payment was already reversed', 'ALREADY_REVERSED');
     throw err;
   }
 }

@@ -33,3 +33,61 @@ const STATE_CODES: Record<string, string> = {
 };
 
 export const stateFromGstin = (gstin: string): string | null => STATE_CODES[gstin.slice(0, 2)] ?? null;
+
+/* ---------- Invoices ---------- */
+
+export type DocType = 'tax_invoice' | 'bill_of_supply' | 'bill';
+
+/**
+ * Which document a shop issues:
+ * - GST-registered, regular scheme -> tax invoice (with CGST/SGST or IGST)
+ * - GST-registered, composition scheme -> bill of supply (no tax may be charged)
+ * - not registered -> plain bill (no GSTIN, no tax)
+ */
+export function documentTypeFor(store: { gstin: string | null; gstScheme: 'regular' | 'composition' | null }): DocType {
+  if (!store.gstin || !store.gstScheme) return 'bill';
+  return store.gstScheme === 'regular' ? 'tax_invoice' : 'bill_of_supply';
+}
+
+/** Indian financial year label for a local date, e.g. 2026-10-03 -> "2026-27". */
+export function financialYear(localDate: string): string {
+  const [y, m] = localDate.split('-').map(Number);
+  const start = m >= 4 ? y : y - 1;
+  return `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
+}
+
+/** "2026-27/0142" (max 16 characters, unique per financial year). */
+export const invoiceNumber = (fy: string, seq: number) => `${fy}/${String(seq).padStart(4, '0')}`;
+
+export interface LineTax {
+  amount: number; // what the customer pays (paise)
+  taxableValue: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+}
+
+/**
+ * Splits a line into taxable value and GST. With tax-inclusive prices (MRP) the customer pays
+ * `gross`; otherwise tax is added on top. Intra-state sales split tax equally into CGST + SGST.
+ */
+export function lineTax(gross: number, ratePercent: number, opts: { inclusive: boolean; interState: boolean }): LineTax {
+  let taxableValue: number;
+  let tax: number;
+  if (opts.inclusive) {
+    taxableValue = Math.round((gross * 100) / (100 + ratePercent));
+    tax = gross - taxableValue;
+  } else {
+    taxableValue = gross;
+    tax = Math.round((gross * ratePercent) / 100);
+  }
+  const amount = taxableValue + tax;
+  if (opts.interState) return { amount, taxableValue, cgst: 0, sgst: 0, igst: tax };
+  const cgst = Math.round(tax / 2);
+  return { amount, taxableValue, cgst, sgst: tax - cgst, igst: 0 };
+}
+
+/** Customer in another state (by GSTIN state code) -> IGST. Over-the-counter retail sales are intra-state. */
+export function isInterState(storeGstin: string | null, customerGstin: string | null): boolean {
+  return Boolean(storeGstin && customerGstin && storeGstin.slice(0, 2) !== customerGstin.slice(0, 2));
+}

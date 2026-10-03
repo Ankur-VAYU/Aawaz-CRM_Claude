@@ -48,15 +48,22 @@ describe('onboarding (design screens 4a–4f)', () => {
 
     // 4c · GST & PAN (optional)
     const gstin = makeGstin('09', 'ABCDE1234F');
-    const tax = await t.inject('PUT', '/api/v1/store/tax', token, { gstin: gstin.toLowerCase(), legalName: 'Rajesh Sharma' });
+    const noScheme = await t.inject('PUT', '/api/v1/store/tax', token, { gstin });
+    expect(noScheme.statusCode).toBe(400);
+    expect(noScheme.json().error.details).toEqual({ field: 'gstScheme' });
+    const tax = await t.inject('PUT', '/api/v1/store/tax', token, {
+      gstin: gstin.toLowerCase(),
+      gstScheme: 'regular',
+      legalName: 'Rajesh Sharma',
+    });
     expect(tax.statusCode).toBe(200);
-    expect(tax.json().store).toMatchObject({ gstin, pan: 'ABCDE1234F', state: 'Uttar Pradesh', legalName: 'Rajesh Sharma' });
+    expect(tax.json().store).toMatchObject({ gstin, gstScheme: 'regular', pan: 'ABCDE1234F', state: 'Uttar Pradesh', legalName: 'Rajesh Sharma' });
     const badGst = await t.inject('PUT', '/api/v1/store/tax', token, { gstin: gstin.slice(0, 14) + (gstin[14] === 'A' ? 'B' : 'A') });
     expect(badGst.statusCode).toBe(400);
     const mismatch = await t.inject('PUT', '/api/v1/store/tax', token, { gstin, pan: 'ZZZZZ9999Z' });
     expect(mismatch.statusCode).toBe(400);
     const panOnly = await t.inject('PUT', '/api/v1/store/tax', token, { gstin: null, pan: 'abcde1234f' });
-    expect(panOnly.json().store).toMatchObject({ gstin: null, pan: 'ABCDE1234F' });
+    expect(panOnly.json().store).toMatchObject({ gstin: null, gstScheme: null, pan: 'ABCDE1234F' });
 
     // 4d · Language & reply style
     const prefs = await t.inject('PUT', '/api/v1/store/preferences', token, { language: 'hi', replyStyle: 'text' });

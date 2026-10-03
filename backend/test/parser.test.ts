@@ -51,6 +51,18 @@ describe('parseCommand: bills', () => {
     expect(parseLine('ek packet maggi')).toMatchObject({ name: 'maggi', count: 1, measure: null });
   });
 
+  it('reads a part payment on an udhaar bill', () => {
+    const intent = parseCommand('Ramesh ko paanch kilo atta, ek kilo toor dal, 200 abhi diye baaki udhaar mein likh do');
+    expect(intent).toMatchObject({ type: 'create_bill', paymentMode: 'udhaar', upfront: { amount: 20000, method: 'cash' } });
+    if (intent.type !== 'create_bill') throw new Error();
+    expect(intent.lines.map((l) => l.name)).toEqual(['atta', 'toor dal']);
+
+    const upi = parseCommand('Sunita ko do kilo cheeni, teen sau UPI se diye, baaki khate mein');
+    expect(upi).toMatchObject({ upfront: { amount: 30000, method: 'upi' } });
+    if (upi.type !== 'create_bill') throw new Error();
+    expect(upi.lines.map((l) => l.name)).toEqual(['cheeni']);
+  });
+
   it('handles Devanagari digits', () => {
     expect(parseLine('५ kg atta')).toMatchObject({ name: 'atta', measure: { value: 5, unit: 'kg' } });
   });
@@ -95,5 +107,43 @@ describe('parseAmount', () => {
     ['₹1,985', 1985],
   ])('%s -> %d', (phrase, expected) => {
     expect(parseAmount(phrase)).toBe(expected);
+  });
+});
+
+import { financialYear, invoiceNumber, isInterState, lineTax } from '../src/lib/gst.js';
+
+describe('GST helpers', () => {
+  it('financial year runs April to March', () => {
+    expect(financialYear('2026-10-03')).toBe('2026-27');
+    expect(financialYear('2027-03-31')).toBe('2026-27');
+    expect(financialYear('2027-04-01')).toBe('2027-28');
+    expect(invoiceNumber('2026-27', 142)).toBe('2026-27/0142');
+  });
+
+  it('splits tax-inclusive prices into taxable value + CGST/SGST', () => {
+    // ₹245 MRP at 5%: taxable 233.33, tax 11.67
+    expect(lineTax(24500, 5, { inclusive: true, interState: false })).toEqual({
+      amount: 24500,
+      taxableValue: 23333,
+      cgst: 584,
+      sgst: 583,
+      igst: 0,
+    });
+  });
+
+  it('adds tax on top for exclusive prices, and uses IGST across states', () => {
+    expect(lineTax(10000, 18, { inclusive: false, interState: true })).toEqual({
+      amount: 11800,
+      taxableValue: 10000,
+      cgst: 0,
+      sgst: 0,
+      igst: 1800,
+    });
+    expect(isInterState('09ABCDE1234F1Z5', '27ABCDE1234F1Z5')).toBe(true);
+    expect(isInterState('09ABCDE1234F1Z5', null)).toBe(false);
+  });
+
+  it('zero-rated items have no tax', () => {
+    expect(lineTax(6000, 0, { inclusive: true, interState: false })).toMatchObject({ taxableValue: 6000, cgst: 0, sgst: 0 });
   });
 });

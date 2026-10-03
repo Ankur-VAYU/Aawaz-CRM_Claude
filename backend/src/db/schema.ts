@@ -83,6 +83,7 @@ export const refreshTokens = pgTable(
 
 /* ---------- Store (dukaan) ---------- */
 
+export const gstScheme = pgEnum('gst_scheme', ['regular', 'composition']);
 export const storeLanguage = pgEnum('store_language', ['hi', 'hinglish']);
 export const replyStyle = pgEnum('reply_style', ['voice_text', 'text']);
 
@@ -102,6 +103,12 @@ export const stores = pgTable(
     gstin: varchar('gstin', { length: 15 }),
     pan: varchar('pan', { length: 10 }),
     legalName: varchar('legal_name', { length: 160 }),
+    // Printed on invoices.
+    address: varchar('address', { length: 200 }),
+    // regular -> tax invoices with CGST/SGST; composition -> "bill of supply" without tax.
+    gstScheme: gstScheme('gst_scheme'),
+    // Kirana prices are usually MRP, i.e. tax-inclusive.
+    pricesIncludeTax: boolean('prices_include_tax').notNull().default(true),
     language: storeLanguage('language').notNull().default('hinglish'),
     replyStyle: replyStyle('reply_style').notNull().default('voice_text'),
     preferencesSetAt: timestamp('preferences_set_at', { withTimezone: true }),
@@ -109,7 +116,9 @@ export const stores = pgTable(
     // Local time (HH:MM) at which the daily summary is sent to the owner.
     summaryTime: varchar('summary_time', { length: 5 }).notNull().default('21:00'),
     lastSummaryDate: date('last_summary_date', { mode: 'string' }),
+    // Invoice numbers restart every financial year (April–March), e.g. "2026-27/0001".
     billCounter: integer('bill_counter').notNull().default(0),
+    billCounterFy: varchar('bill_counter_fy', { length: 7 }),
     onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -140,6 +149,8 @@ export const items = pgTable(
     unit: itemUnit('unit').notNull().default('pc'),
     unitSize: qty('unit_size').notNull().default(1),
     price: money('price'), // paise per pack; null = not known yet
+    hsnCode: varchar('hsn_code', { length: 8 }),
+    gstRate: numeric('gst_rate', { precision: 5, scale: 2, mode: 'number' }), // percent; null = not set
     stock: qty('stock').notNull().default(0),
     stockLabel: varchar('stock_label', { length: 20 }).notNull().default('pc'), // e.g. bag, pc
     lowStockThreshold: qty('low_stock_threshold').notNull().default(5),
@@ -173,6 +184,11 @@ export const customers = pgTable(
     lastPurchaseAt: timestamp('last_purchase_at', { withTimezone: true }),
     // Unguessable token for the customer's read-only khata link.
     shareToken: varchar('share_token', { length: 64 }).notNull(),
+    // Customer's GSTIN for B2B tax invoices.
+    gstin: varchar('gstin', { length: 15 }),
+    // WhatsApp messages are only sent after consent is recorded (and not opted out since).
+    messagingConsentAt: timestamp('messaging_consent_at', { withTimezone: true }),
+    messagingConsentSource: varchar('messaging_consent_source', { length: 30 }),
     messagesOptedOutAt: timestamp('messages_opted_out_at', { withTimezone: true }),
     deletionRequestedAt: timestamp('deletion_requested_at', { withTimezone: true }),
     anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
@@ -188,8 +204,10 @@ export const customers = pgTable(
 
 export const billStatus = pgEnum('bill_status', ['draft', 'confirmed', 'cancelled']);
 export const paymentMode = pgEnum('payment_mode', ['cash', 'upi', 'udhaar']);
+export const paymentMethod = pgEnum('payment_method', ['cash', 'upi']);
 export const billSource = pgEnum('bill_source', ['voice', 'text', 'manual']);
 
+export type DocumentType = (typeof documentType.enumValues)[number];
 export type BillIssueKind =
   | 'choose_variant' // product known, size not ("Kaunsa size?")
   | 'unclear' // not heard clearly / sounds like several products
@@ -218,6 +236,8 @@ export interface BillIssue {
   options: BillIssueOption[];
 }
 
+export const documentType = pgEnum('document_type', ['tax_invoice', 'bill_of_supply', 'bill']);
+
 export const bills = pgTable(
   'bills',
   {
@@ -231,6 +251,21 @@ export const bills = pgTable(
     status: billStatus('status').notNull().default('draft'),
     paymentMode: paymentMode('payment_mode').notNull().default('cash'),
     total: money('total').notNull().default(0),
+    // Part payment on an udhaar bill ("500 abhi diye, baaki udhaar").
+    upfrontAmount: money('upfront_amount').notNull().default(0),
+    upfrontMethod: paymentMethod('upfront_method'),
+    // Set on confirm: how the total was settled (paid_cash + paid_upi + credit_amount = total).
+    paidCash: money('paid_cash').notNull().default(0),
+    paidUpi: money('paid_upi').notNull().default(0),
+    creditAmount: money('credit_amount').notNull().default(0),
+    // Tax totals (zero unless a tax invoice).
+    taxableTotal: money('taxable_total').notNull().default(0),
+    cgstTotal: money('cgst_total').notNull().default(0),
+    sgstTotal: money('sgst_total').notNull().default(0),
+    igstTotal: money('igst_total').notNull().default(0),
+    documentType: documentType('document_type'),
+    invoiceNumber: varchar('invoice_number', { length: 16 }),
+    placeOfSupply: varchar('place_of_supply', { length: 60 }),
     source: billSource('source').notNull().default('manual'),
     transcript: text('transcript'),
     // Customer name as spoken, kept while it is not yet matched to a customer.
@@ -248,7 +283,7 @@ export const bills = pgTable(
   (t) => [
     index('bills_store_status_idx').on(t.storeId, t.status, t.confirmedAt),
     index('bills_customer_idx').on(t.customerId),
-    uniqueIndex('bills_store_number_unique').on(t.storeId, t.billNumber),
+    uniqueIndex('bills_store_invoice_unique').on(t.storeId, t.invoiceNumber),
     uniqueIndex('bills_store_client_unique').on(t.storeId, t.clientId),
     uniqueIndex('bills_receipt_token_unique').on(t.receiptToken),
   ],
@@ -268,13 +303,19 @@ export const billItems = pgTable(
     sizeLabel: varchar('size_label', { length: 20 }),
     quantity: qty('quantity').notNull(),
     unitPrice: money('unit_price').notNull(),
+    hsnCode: varchar('hsn_code', { length: 8 }),
+    gstRate: numeric('gst_rate', { precision: 5, scale: 2, mode: 'number' }),
+    // What the customer pays for this line, and its tax split (paise).
     amount: money('amount').notNull(),
+    taxableValue: money('taxable_value').notNull().default(0),
+    cgst: money('cgst').notNull().default(0),
+    sgst: money('sgst').notNull().default(0),
+    igst: money('igst').notNull().default(0),
   },
   (t) => [index('bill_items_bill_idx').on(t.billId)],
 );
 
-export const ledgerType = pgEnum('ledger_type', ['bill', 'payment', 'bill_cancelled']);
-export const paymentMethod = pgEnum('payment_method', ['cash', 'upi']);
+export const ledgerType = pgEnum('ledger_type', ['bill', 'payment', 'bill_cancelled', 'payment_reversed']);
 
 /** The khata: append-only history of what each customer owes. */
 export const ledgerEntries = pgTable(
@@ -296,9 +337,12 @@ export const ledgerEntries = pgTable(
     note: varchar('note', { length: 200 }),
     // Idempotency key from the app, so a retried payment isn't recorded twice.
     clientId: varchar('client_id', { length: 64 }),
+    // For 'payment_reversed': the payment entry it undoes (each payment can be reversed once).
+    reversesEntryId: uuid('reverses_entry_id'),
     createdAt: createdAt(),
   },
   (t) => [
+    uniqueIndex('ledger_reverses_unique').on(t.reversesEntryId),
     uniqueIndex('ledger_store_client_unique').on(t.storeId, t.clientId),
     index('ledger_customer_idx').on(t.customerId, t.createdAt),
     index('ledger_store_idx').on(t.storeId, t.createdAt),

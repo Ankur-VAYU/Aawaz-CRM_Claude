@@ -16,6 +16,9 @@ const itemFields = {
   unitSize: z.number().positive().max(100_000).default(1),
   /** Price per pack in rupees; null if not known yet. */
   price: rupeesToPaise.nullable().default(null),
+  hsnCode: z.string().trim().regex(/^\d{4,8}$/, 'HSN code must be 4–8 digits').nullable().default(null),
+  /** GST % (e.g. 0, 5, 18). Needed for tax invoices; confirm the rate for each product with a CA. */
+  gstRate: z.number().min(0).max(40).multipleOf(0.01).nullable().default(null),
   stock: z.number().min(0).max(1_000_000).default(0),
   stockLabel: z.string().trim().min(1).max(20).default('pc'),
   lowStockThreshold: z.number().min(0).max(1_000_000).default(5),
@@ -30,6 +33,8 @@ const updateItemBody = z
     unit: z.enum(['kg', 'g', 'l', 'ml', 'pc']),
     unitSize: z.number().positive().max(100_000),
     price: rupeesToPaise.nullable(),
+    hsnCode: z.string().trim().regex(/^\d{4,8}$/, 'HSN code must be 4–8 digits').nullable(),
+    gstRate: z.number().min(0).max(40).multipleOf(0.01).nullable(),
     stock: z.number().min(0).max(1_000_000),
     stockLabel: itemFields.stockLabel,
     lowStockThreshold: z.number().min(0).max(1_000_000),
@@ -99,6 +104,8 @@ export default async function itemRoutes(app: FastifyInstance, { db }: { db: Db 
             target: [items.storeId, items.nameKey, items.unit, items.unitSize],
             set: {
               price: sql`coalesce(excluded.price, ${items.price})`,
+              hsnCode: sql`coalesce(excluded.hsn_code, ${items.hsnCode})`,
+              gstRate: sql`coalesce(excluded.gst_rate, ${items.gstRate})`,
               stock: sql`excluded.stock`,
               stockLabel: sql`excluded.stock_label`,
               aliases: sql`excluded.aliases`,

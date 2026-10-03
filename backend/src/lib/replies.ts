@@ -90,20 +90,22 @@ export function reply<K extends keyof Templates>(
 export function receiptMessage(v: {
   storeName: string;
   customerName: string;
-  billNumber: number;
+  invoiceNumber: string;
   lines: { name: string; sizeLabel: string | null; quantity: number; amount: number }[];
   total: number;
-  udhaar: boolean;
+  paidNow: number;
+  credit: number;
   balance: number;
   link: string;
 }): string {
   const lines = v.lines.map((l) => `• ${l.name}${l.sizeLabel ? ` ${l.sizeLabel}` : ''} × ${l.quantity} — ${r(l.amount)}`);
   return [
     `Namaste ${v.customerName} ji`,
-    `${v.storeName} · Rasid · Bill #${String(v.billNumber).padStart(4, '0')}`,
+    `${v.storeName} · Rasid · Bill ${v.invoiceNumber}`,
     ...lines,
     `Total: ${r(v.total)}`,
-    ...(v.udhaar ? [`Udhaar mein likha · Aapka kul baaki: ${r(v.balance)}`] : []),
+    ...(v.paidNow > 0 ? [`Abhi diye: ${r(v.paidNow)}`] : []),
+    `Udhaar mein likha: ${r(v.credit)} · Aapka kul baaki: ${r(v.balance)}`,
     `Poora hisaab: ${v.link}`,
     'Dhanyavaad! Kisi galti ke liye dukaan par bataiye.',
   ].join('\n');

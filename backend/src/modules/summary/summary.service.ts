@@ -1,13 +1,11 @@
-import { and, asc, desc, eq, gt, gte, isNull, lt, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from 'drizzle-orm';
 import type { Db } from '../../db/index.js';
 import { bills, customers, items, ledgerEntries, type Store } from '../../db/schema.js';
 import { formatRupees } from '../../lib/money.js';
 import { itemDisplayName } from '../../lib/serialize.js';
+import { localDate } from '../../lib/time.js';
 
-/** Today's date (YYYY-MM-DD) in the given IANA time zone. */
-export function localDate(timeZone: string, at = new Date()): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
-}
+export { localDate };
 
 /** "Roz ka hisaab": the day's sales, udhaar movement, new customers, low stock and top dues. */
 export async function dailySummary(db: Db, store: Store, date = localDate(store.timezone)) {
@@ -21,20 +19,21 @@ export async function dailySummary(db: Db, store: Store, date = localDate(store.
         bills: sql<number>`count(*)::int`,
         voiceBills: sql<number>`(count(*) filter (where ${bills.source} = 'voice'))::int`,
         total: sql<string>`coalesce(sum(${bills.total}), 0)`,
-        paidNow: sql<string>`coalesce(sum(${bills.total}) filter (where ${bills.paymentMode} in ('cash', 'upi')), 0)`,
-        cash: sql<string>`coalesce(sum(${bills.total}) filter (where ${bills.paymentMode} = 'cash'), 0)`,
-        upi: sql<string>`coalesce(sum(${bills.total}) filter (where ${bills.paymentMode} = 'upi'), 0)`,
-        udhaarGiven: sql<string>`coalesce(sum(${bills.total}) filter (where ${bills.paymentMode} = 'udhaar'), 0)`,
+        paidNow: sql<string>`coalesce(sum(${bills.paidCash} + ${bills.paidUpi}), 0)`,
+        cash: sql<string>`coalesce(sum(${bills.paidCash}), 0)`,
+        upi: sql<string>`coalesce(sum(${bills.paidUpi}), 0)`,
+        udhaarGiven: sql<string>`coalesce(sum(${bills.creditAmount}), 0)`,
       })
       .from(bills)
       .where(and(eq(bills.storeId, store.id), eq(bills.status, 'confirmed'), gte(bills.confirmedAt, start), lt(bills.confirmedAt, end))),
     db
+      // Payments minus reversed payments.
       .select({ amount: sql<string>`coalesce(-sum(${ledgerEntries.amount}), 0)` })
       .from(ledgerEntries)
       .where(
         and(
           eq(ledgerEntries.storeId, store.id),
-          eq(ledgerEntries.type, 'payment'),
+          inArray(ledgerEntries.type, ['payment', 'payment_reversed']),
           gte(ledgerEntries.createdAt, start),
           lt(ledgerEntries.createdAt, end),
         ),

@@ -16,7 +16,12 @@ const lineInput = z.object({
   quantity,
   /** Rupees; defaults to the item's price. Required for items not in the catalogue. */
   unitPrice: paise.optional(),
+  /** GST % and HSN for items not in the catalogue (catalogue items use their own). */
+  gstRate: z.number().min(0).max(40).optional(),
+  hsnCode: z.string().trim().regex(/^\d{4,8}$/).optional(),
 });
+/** Paid now on an udhaar bill; the rest goes to the khata. Rupees. */
+const upfront = z.object({ amount: z.number().positive().max(10_000_000).transform((r) => Math.round(r * 100)), method: z.enum(['cash', 'upi']).default('cash') });
 const paymentMode = z.enum(['cash', 'upi', 'udhaar']);
 const clientId = z.string().trim().min(8).max(64);
 
@@ -24,13 +29,14 @@ const createBody = z.object({
   clientId: clientId.optional(),
   customerId: z.uuid().nullable().optional(),
   paymentMode: paymentMode.default('cash'),
+  upfront: upfront.optional(),
   lines: z.array(lineInput).min(1).max(200),
   transcript: z.string().max(2000).optional(),
   source: z.enum(['voice', 'text', 'manual']).optional(),
   confirm: z.boolean().default(false),
 });
 const updateBody = z
-  .object({ customerId: z.uuid().nullable(), paymentMode, lines: z.array(lineInput).min(1).max(200) })
+  .object({ customerId: z.uuid().nullable(), paymentMode, upfront: upfront.nullable(), lines: z.array(lineInput).min(1).max(200) })
   .partial()
   .refine((b) => Object.keys(b).length > 0, 'Provide at least one field to update');
 const resolveBody = z.object({
@@ -41,8 +47,11 @@ const resolveBody = z.object({
   unitPrice: paise.optional(),
   savePrice: z.boolean().optional(),
   name: z.string().trim().min(1).max(80).optional(),
+  gstRate: z.number().min(0).max(40).optional(),
   customerId: z.uuid().optional(),
-  newCustomer: z.object({ name: z.string().trim().min(1).max(120), phone: phone.optional() }).optional(),
+  newCustomer: z
+    .object({ name: z.string().trim().min(1).max(120), phone: phone.optional(), messagingConsent: z.boolean().optional() })
+    .optional(),
 });
 const idParams = z.object({ id: z.uuid() });
 const listQuery = z.object({

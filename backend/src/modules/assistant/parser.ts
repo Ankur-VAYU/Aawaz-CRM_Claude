@@ -26,7 +26,14 @@ export interface ParsedLine {
 export type PaymentMode = 'cash' | 'upi' | 'udhaar';
 
 export type Intent =
-  | { type: 'create_bill'; customerName: string | null; paymentMode: PaymentMode; lines: ParsedLine[] }
+  | {
+      type: 'create_bill';
+      customerName: string | null;
+      paymentMode: PaymentMode;
+      lines: ParsedLine[];
+      /** Paid now on an udhaar bill ("500 abhi diye, baaki udhaar"), in paise. */
+      upfront?: { amount: number; method: 'cash' | 'upi' };
+    }
   | { type: 'query_balance'; customerName: string }
   | { type: 'record_payment'; customerName: string; amount: number; method: 'cash' | 'upi' }
   | { type: 'send_reminder'; customerName: string }
@@ -157,6 +164,14 @@ const UPI_RE = /\b(upi|online|gpay|google pay|phonepe|phone pe|paytm|qr)\b/;
 const FILLER_RE =
   /\b(udhaar|udhar|udhari|khate|khaate|khata|credit)\s*(me|mein|main|par|pe)?\s*(likh|daal|dal|jod|chadha)?\s*(do|dijiye|dena|de)?\b|\b(upi|online|gpay|phonepe|paytm|cash|nakad)\s*(se|me|mein|main)?\s*(diye|diya|payment)?\b|\b(likh|likho|likh do|bill bana|bill banao|bana do|banao|de do|dena|do na|dijiye|chahiye|please|plz|ka bill|ke liye)\b/g;
 
+// "500 abhi diye", "do sau cash mein diye", "300 UPI se mile"
+const AMOUNT_WORDS = `(?:\\d[\\d,]*(?:\\.\\d+)?|\\b(?:${[...Object.keys(NUMBER_WORDS), ...Object.keys(MULTIPLIERS)].join('|')})\\b)`;
+const UPFRONT_RE = new RegExp(
+  `(?:₹\\s*)?((?:${AMOUNT_WORDS}\\s*)+)\\s*(?:rupaye|rupay|rupees|rs)?\\s*(abhi|nakad|cash|upi|online|gpay|phonepe|paytm)?\\s*(?:se|me|mein|main)?\\s*(?:de diye|diye|diya|di|mile|mila|jama kiye|jama)\\b`,
+);
+// Words that are left over after removing a part payment and must not become bill lines.
+const LEFTOVER_WORDS = new Set(['baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke']);
+
 const NAME_STOPWORDS = new Set(['aaj', 'abhi', 'jaldi', 'mujhe', 'hume', 'humko', 'mera', 'meri']);
 
 function cleanName(name: string): string | null {
@@ -222,18 +237,29 @@ export function parseCommand(input: string): Intent {
       body = nameMatch[3];
     }
   }
-  body = clean(body).replace(FILLER_RE, ' ');
+  body = clean(body);
+  let upfront: { amount: number; method: 'cash' | 'upi' } | undefined;
+  if (paymentMode === 'udhaar') {
+    const paid = body.match(UPFRONT_RE);
+    const rupees = paid ? parseAmount(paid[1]) : null;
+    if (paid && rupees && rupees > 0) {
+      upfront = { amount: Math.round(rupees * 100), method: paid[2] && UPI_RE.test(paid[2]) ? 'upi' : 'cash' };
+      body = body.replace(paid[0], ' ');
+    }
+  }
+  body = body.replace(FILLER_RE, ' ');
   const lines = body
     .split(/,|;|…(?=\s|$)|\baur\b|\band\b|\bphir\b|\bek aur\b|\.(?!\d)/)
     .map((s) => s.trim())
     .filter((s) => s && s.replace(/[\s…?]/g, '').length > 0)
     .map(parseLine)
-    .filter((l): l is ParsedLine => l !== null);
+    .filter((l): l is ParsedLine => l !== null)
+    .filter((l) => l.unclear || l.count !== null || l.measure !== null || !l.name.split(' ').every((w) => LEFTOVER_WORDS.has(w)));
 
   if (!lines.length) return { type: 'unknown' };
   // Without a quantity, a customer or a payment word, a lone word ("hmm", "haan") isn't a bill.
   const looksLikeBill =
     customerName !== null || CREDIT_RE.test(text) || UPI_RE.test(text) || lines.some((l) => l.count !== null || l.measure !== null || l.unclear);
   if (!looksLikeBill) return { type: 'unknown' };
-  return { type: 'create_bill', customerName, paymentMode, lines };
+  return { type: 'create_bill', customerName, paymentMode, lines, ...(upfront ? { upfront } : {}) };
 }

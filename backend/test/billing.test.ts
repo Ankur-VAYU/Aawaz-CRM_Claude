@@ -86,7 +86,8 @@ describe('screen 1 · voice billing', () => {
     const msg = receipts[1];
     expect(msg.to).toBe('+919812345321');
     expect(msg.body).toContain('Namaste Ramesh Yadav ji');
-    expect(msg.body).toContain('Bill #0002');
+    expect(c.bill.invoiceNumber).toMatch(/^\d{4}-\d{2}\/0002$/);
+    expect(msg.body).toContain(`Bill ${c.bill.invoiceNumber}`);
     expect(msg.body).toContain('Total: ₹745');
     expect(msg.body).toContain('Aapka kul baaki: ₹1,985');
     const token_ = c.bill.receiptLink.split('/r/')[1];
@@ -298,7 +299,7 @@ describe('screen 2 · khata', () => {
       ['payment', 148500],
       ['bill', 198500],
     ]);
-    expect(ledger.data[3]).toMatchObject({ billNumber: 1, itemCount: 1 });
+    expect(ledger.data[3]).toMatchObject({ billNumber: 1, itemCount: 1, invoiceNumber: expect.stringMatching(/\/0001$/) });
 
     const unknown = await t.say(token, 'Kishore ka kitna baaki hai');
     expect(unknown).toMatchObject({ reply: { text: '"Kishore" naam ka grahak nahi mila' }, needsInput: { kind: 'customer_unknown' } });

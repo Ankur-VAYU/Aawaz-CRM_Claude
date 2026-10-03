@@ -14,9 +14,11 @@ import {
   type Store,
 } from '../../db/schema.js';
 import { AppError, badRequest, conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { documentTypeFor, financialYear, invoiceNumber, isInterState, lineTax } from '../../lib/gst.js';
 import { lineAmount } from '../../lib/money.js';
 import { receiptMessage, reply } from '../../lib/replies.js';
 import { itemDisplayName, sizeLabel } from '../../lib/serialize.js';
+import { localDate } from '../../lib/time.js';
 import { generateShareToken } from '../../lib/tokens.js';
 import type { PaymentMode, ParsedLine } from '../assistant/parser.js';
 import { enqueueCustomerMessage, postLedgerEntry, resolveCustomer, shareLink } from '../customers/customers.service.js';
@@ -27,6 +29,13 @@ export interface LineInput {
   name?: string;
   quantity: number;
   unitPrice?: number; // paise; defaults to the item's price
+  gstRate?: number; // percent; for items not in the catalogue
+  hsnCode?: string;
+}
+
+export interface Upfront {
+  amount: number; // paise
+  method: 'cash' | 'upi';
 }
 
 export interface ResolveInput {
@@ -37,8 +46,19 @@ export interface ResolveInput {
   unitPrice?: number; // paise
   savePrice?: boolean;
   name?: string;
+  gstRate?: number;
   customerId?: string;
-  newCustomer?: { name: string; phone?: string };
+  newCustomer?: { name: string; phone?: string; messagingConsent?: boolean };
+}
+
+interface StoredLine {
+  itemId?: string | null;
+  name: string;
+  sizeLabel?: string | null;
+  quantity: number;
+  unitPrice: number;
+  gstRate?: number | null;
+  hsnCode?: string | null;
 }
 
 type Tx = Db;
@@ -54,6 +74,10 @@ export class BillsService {
     return tx.select().from(items).where(and(eq(items.storeId, storeId), eq(items.isActive, true)));
   }
 
+  private receiptLink(bill: Pick<Bill, 'receiptToken'>) {
+    return `${this.publicBaseUrl.replace(/\/$/, '')}/r/${bill.receiptToken}`;
+  }
+
   /** Bill with its lines and customer, as returned by the API. */
   async get(storeId: string, billId: string, tx: Tx = this.db) {
     const bill = await tx.query.bills.findFirst({
@@ -64,17 +88,19 @@ export class BillsService {
     const { customer, ...rest } = bill;
     return {
       ...rest,
-      customer: customer ? { id: customer.id, name: customer.name, phone: customer.phone, balance: customer.balance } : null,
+      customer: customer
+        ? { id: customer.id, name: customer.name, phone: customer.phone, gstin: customer.gstin, balance: customer.balance }
+        : null,
       itemCount: bill.items.length,
       canConfirm: bill.status === 'draft' && bill.issues.length === 0 && bill.items.length > 0,
-      receiptLink: `${this.publicBaseUrl.replace(/\/$/, '')}/r/${bill.receiptToken}`,
+      receiptLink: this.receiptLink(bill),
     };
   }
 
   /** Builds a draft from a parsed voice/text command. Nothing changes in stock or khata until confirm. */
   async createDraftFromSpeech(
     store: Store,
-    input: { customerName: string | null; paymentMode: PaymentMode; lines: ParsedLine[] },
+    input: { customerName: string | null; paymentMode: PaymentMode; lines: ParsedLine[]; upfront?: Upfront },
     meta: { transcript: string; source: 'voice' | 'text'; clientId?: string },
   ) {
     if (meta.clientId) {
@@ -84,9 +110,7 @@ export class BillsService {
     const catalog = await this.catalog(this.db, store.id);
     const resolved = input.lines.map((l) => resolveLine(catalog, l));
     const issues: BillIssue[] = resolved.flatMap((r) => (r.kind === 'issue' ? [r.issue] : []));
-    const lines = resolved.flatMap((r) =>
-      r.kind === 'ok' ? [{ itemId: r.item.id, quantity: r.quantity, unitPrice: r.item.price! }] : [],
-    );
+    const lines: StoredLine[] = resolved.flatMap((r) => (r.kind === 'ok' ? [this.lineFromItem(r.item, r.quantity, r.item.price!)] : []));
 
     let customerId: string | null = null;
     if (input.customerName) {
@@ -110,9 +134,9 @@ export class BillsService {
       customerId,
       spokenCustomerName: customerId ? null : input.customerName,
       paymentMode: input.paymentMode,
+      upfront: input.upfront,
       lines,
       issues,
-      catalog,
       source: meta.source,
       transcript: meta.transcript,
       clientId: meta.clientId,
@@ -126,6 +150,7 @@ export class BillsService {
       clientId?: string;
       customerId?: string | null;
       paymentMode: PaymentMode;
+      upfront?: Upfront;
       lines: LineInput[];
       transcript?: string;
       source?: 'voice' | 'text' | 'manual';
@@ -142,9 +167,9 @@ export class BillsService {
       customerId: input.customerId ?? null,
       spokenCustomerName: null,
       paymentMode: input.paymentMode,
+      upfront: input.upfront,
       lines: this.checkLines(input.lines, catalog),
       issues: [],
-      catalog,
       source: input.source ?? 'manual',
       transcript: input.transcript ?? null,
       clientId: input.clientId,
@@ -171,8 +196,20 @@ export class BillsService {
     return c;
   }
 
-  /** Validates explicit lines against the catalogue and fills in prices. */
-  private checkLines(lines: LineInput[], catalog: Item[]) {
+  private lineFromItem(item: Item, quantity: number, unitPrice: number): StoredLine {
+    return {
+      itemId: item.id,
+      name: item.name,
+      sizeLabel: sizeLabel(item),
+      quantity,
+      unitPrice,
+      gstRate: item.gstRate,
+      hsnCode: item.hsnCode,
+    };
+  }
+
+  /** Validates explicit lines against the catalogue and fills in prices and tax details. */
+  private checkLines(lines: LineInput[], catalog: Item[]): StoredLine[] {
     const byId = new Map(catalog.map((i) => [i.id, i]));
     return lines.map((l, idx) => {
       if (l.itemId) {
@@ -180,10 +217,10 @@ export class BillsService {
         if (!item) throw badRequest(`Line ${idx + 1}: item not found`);
         const unitPrice = l.unitPrice ?? item.price;
         if (unitPrice === null || unitPrice === undefined) throw badRequest(`Line ${idx + 1}: ${item.name} has no price`);
-        return { itemId: item.id, quantity: l.quantity, unitPrice };
+        return this.lineFromItem(item, l.quantity, unitPrice);
       }
       if (!l.name || l.unitPrice === undefined) throw badRequest(`Line ${idx + 1}: give itemId, or name and unitPrice`);
-      return { name: l.name, quantity: l.quantity, unitPrice: l.unitPrice };
+      return { name: l.name, quantity: l.quantity, unitPrice: l.unitPrice, gstRate: l.gstRate ?? null, hsnCode: l.hsnCode ?? null };
     });
   }
 
@@ -193,9 +230,9 @@ export class BillsService {
       customerId: string | null;
       spokenCustomerName: string | null;
       paymentMode: PaymentMode;
-      lines: { itemId?: string; name?: string; quantity: number; unitPrice: number }[];
+      upfront?: Upfront;
+      lines: StoredLine[];
       issues: BillIssue[];
-      catalog: Item[];
       source: 'voice' | 'text' | 'manual';
       transcript: string | null;
       clientId?: string;
@@ -211,6 +248,8 @@ export class BillsService {
             customerId: b.customerId,
             spokenCustomerName: b.spokenCustomerName,
             paymentMode: b.paymentMode,
+            upfrontAmount: b.paymentMode === 'udhaar' ? (b.upfront?.amount ?? 0) : 0,
+            upfrontMethod: b.paymentMode === 'udhaar' ? (b.upfront?.method ?? null) : null,
             issues: b.issues,
             source: b.source,
             transcript: b.transcript,
@@ -218,7 +257,7 @@ export class BillsService {
             receiptToken: generateShareToken(),
           })
           .returning();
-        await this.replaceLines(tx, bill.id, b.lines, b.catalog);
+        await this.writeLines(tx, store, bill.id, b.lines);
         return bill.id;
       });
       return this.get(store.id, id);
@@ -232,34 +271,53 @@ export class BillsService {
     }
   }
 
-  private async replaceLines(
-    tx: Tx,
-    billId: string,
-    lines: { itemId?: string; name?: string; quantity: number; unitPrice: number }[],
-    catalog: Item[],
-  ) {
-    const byId = new Map(catalog.map((i) => [i.id, i]));
+  private async writeLines(tx: Tx, store: Store, billId: string, lines: StoredLine[]) {
     await tx.delete(billItems).where(eq(billItems.billId, billId));
-    let total = 0;
     if (lines.length) {
-      const rows = lines.map((l, position) => {
-        const item = l.itemId ? byId.get(l.itemId) : undefined;
-        const amount = lineAmount(l.unitPrice, l.quantity);
-        total += amount;
-        return {
+      await tx.insert(billItems).values(
+        lines.map((l, position) => ({
           billId,
           position,
-          itemId: item?.id ?? null,
-          name: item?.name ?? l.name!,
-          sizeLabel: item ? sizeLabel(item) : null,
+          itemId: l.itemId ?? null,
+          name: l.name,
+          sizeLabel: l.sizeLabel ?? null,
           quantity: l.quantity,
           unitPrice: l.unitPrice,
-          amount,
-        };
-      });
-      await tx.insert(billItems).values(rows);
+          gstRate: l.gstRate ?? null,
+          hsnCode: l.hsnCode ?? null,
+          amount: lineAmount(l.unitPrice, l.quantity),
+        })),
+      );
     }
-    await tx.update(bills).set({ total }).where(eq(bills.id, billId));
+    await this.recalc(tx, store, billId);
+  }
+
+  /**
+   * Recomputes every line's amount and tax and the bill totals from the shop's current GST setup
+   * and the bill's customer. Runs after every draft change and again on confirm.
+   */
+  private async recalc(tx: Tx, store: Store, billId: string) {
+    const [bill] = await tx.select().from(bills).where(eq(bills.id, billId));
+    const customer = bill.customerId ? await this.loadCustomer(tx, store.id, bill.customerId) : null;
+    const docType = documentTypeFor(store);
+    const interState = isInterState(store.gstin, customer?.gstin ?? null);
+    const lines = await tx.select().from(billItems).where(eq(billItems.billId, billId));
+    const totals = { total: 0, taxableTotal: 0, cgstTotal: 0, sgstTotal: 0, igstTotal: 0 };
+    for (const l of lines) {
+      const gross = lineAmount(l.unitPrice, l.quantity);
+      const t =
+        docType === 'tax_invoice' && l.gstRate !== null
+          ? lineTax(gross, l.gstRate, { inclusive: store.pricesIncludeTax, interState })
+          : { amount: gross, taxableValue: gross, cgst: 0, sgst: 0, igst: 0 };
+      await tx.update(billItems).set(t).where(eq(billItems.id, l.id));
+      totals.total += t.amount;
+      totals.taxableTotal += t.taxableValue;
+      totals.cgstTotal += t.cgst;
+      totals.sgstTotal += t.sgst;
+      totals.igstTotal += t.igst;
+    }
+    await tx.update(bills).set(totals).where(eq(bills.id, billId));
+    return { ...totals, docType, lines };
   }
 
   private async lockDraft(tx: Tx, storeId: string, billId: string) {
@@ -273,16 +331,15 @@ export class BillsService {
     return bill;
   }
 
-  private async currentLines(tx: Tx, billId: string) {
-    const rows = await tx.select().from(billItems).where(eq(billItems.billId, billId)).orderBy(asc(billItems.position));
-    return rows.map((r) => ({ itemId: r.itemId ?? undefined, name: r.name, quantity: r.quantity, unitPrice: r.unitPrice }));
+  private async currentLines(tx: Tx, billId: string): Promise<StoredLine[]> {
+    return tx.select().from(billItems).where(eq(billItems.billId, billId)).orderBy(asc(billItems.position));
   }
 
-  /** Edits a draft ("Badlo"): customer, payment mode and/or the full list of lines. */
+  /** Edits a draft ("Badlo"): customer, payment mode, part payment and/or the full list of lines. */
   async updateDraft(
     store: Store,
     billId: string,
-    patch: { customerId?: string | null; paymentMode?: PaymentMode; lines?: LineInput[] },
+    patch: { customerId?: string | null; paymentMode?: PaymentMode; upfront?: Upfront | null; lines?: LineInput[] },
   ) {
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
@@ -296,18 +353,29 @@ export class BillsService {
         issues = issues.filter((i) => !i.kind.startsWith('customer_'));
       }
       if (patch.paymentMode) update.paymentMode = patch.paymentMode;
-      if (patch.lines) {
-        const catalog = await this.catalog(tx, store.id);
-        await this.replaceLines(tx, billId, this.checkLines(patch.lines, catalog), catalog);
-        issues = issues.filter((i) => i.kind.startsWith('customer_'));
-      }
       const mode = update.paymentMode ?? bill.paymentMode;
+      if (patch.upfront !== undefined) {
+        update.upfrontAmount = patch.upfront?.amount ?? 0;
+        update.upfrontMethod = patch.upfront?.method ?? null;
+      }
+      if (mode !== 'udhaar') {
+        update.upfrontAmount = 0;
+        update.upfrontMethod = null;
+      }
       const customerId = update.customerId !== undefined ? update.customerId : bill.customerId;
       if (mode === 'udhaar' && !customerId && !issues.some((i) => i.kind.startsWith('customer_'))) {
         issues = [{ id: crypto.randomUUID(), kind: 'customer_required', options: [] }, ...issues];
       }
       if (mode !== 'udhaar') issues = issues.filter((i) => i.kind !== 'customer_required');
+      if (patch.lines) issues = issues.filter((i) => i.kind.startsWith('customer_'));
       await tx.update(bills).set({ ...update, issues }).where(eq(bills.id, billId));
+
+      if (patch.lines) {
+        const catalog = await this.catalog(tx, store.id);
+        await this.writeLines(tx, store, billId, this.checkLines(patch.lines, catalog));
+      } else {
+        await this.recalc(tx, store, billId); // customer change can switch CGST/SGST <-> IGST
+      }
     });
     return this.get(store.id, billId);
   }
@@ -321,6 +389,7 @@ export class BillsService {
       if (!issue) throw notFound('Issue not found on this bill');
       let issues = bill.issues.filter((i) => i.id !== issue.id);
       const update: Partial<Bill> = {};
+      let lines: StoredLine[] | null = null;
 
       if (issue.kind.startsWith('customer_')) {
         if (input.remove) {
@@ -334,7 +403,15 @@ export class BillsService {
           try {
             const [c] = await tx
               .insert(customers)
-              .values({ storeId: store.id, name: input.newCustomer.name, phone: input.newCustomer.phone ?? null, shareToken: generateShareToken() })
+              .values({
+                storeId: store.id,
+                name: input.newCustomer.name,
+                phone: input.newCustomer.phone ?? null,
+                shareToken: generateShareToken(),
+                ...(input.newCustomer.messagingConsent
+                  ? { messagingConsentAt: new Date(), messagingConsentSource: 'shopkeeper' }
+                  : {}),
+              })
               .returning();
             update.customerId = c.id;
             update.spokenCustomerName = null;
@@ -348,7 +425,7 @@ export class BillsService {
       } else if (!input.remove) {
         const catalog = await this.catalog(tx, store.id);
         const itemId = input.itemId ?? issue.itemId;
-        const lines = await this.currentLines(tx, billId);
+        lines = await this.currentLines(tx, billId);
         if (itemId) {
           const item = catalog.find((i) => i.id === itemId);
           if (!item) throw badRequest('Item not found');
@@ -365,42 +442,75 @@ export class BillsService {
             if (input.savePrice && input.unitPrice !== undefined) {
               await tx.update(items).set({ price: input.unitPrice }).where(eq(items.id, item.id));
             }
-            lines.push({ itemId: item.id, name: item.name, quantity, unitPrice });
+            lines.push(this.lineFromItem(item, quantity, unitPrice));
           }
         } else if (input.name && input.unitPrice !== undefined) {
-          lines.push({ itemId: undefined, name: input.name, quantity: input.quantity ?? issue.quantity ?? 1, unitPrice: input.unitPrice });
+          lines.push({
+            name: input.name,
+            quantity: input.quantity ?? issue.quantity ?? 1,
+            unitPrice: input.unitPrice,
+            gstRate: input.gstRate ?? null,
+          });
         } else {
           throw badRequest('Give itemId, or name and unitPrice (or remove: true)');
         }
-        await this.replaceLines(tx, billId, lines, catalog);
       }
       await tx.update(bills).set({ ...update, issues }).where(eq(bills.id, billId));
+      if (lines) await this.writeLines(tx, store, billId, lines);
+      else await this.recalc(tx, store, billId);
     });
     return this.get(store.id, billId);
   }
 
-  /** "Haan, pakka karo": numbers the bill, reduces stock, updates the khata and queues the receipt. */
-  async confirm(store: Store, billId: string) {
+  /**
+   * "Haan, pakka karo": gives the bill its invoice number, reduces stock, records how it was paid,
+   * adds any udhaar to the khata and queues a receipt for udhaar bills.
+   */
+  async confirm(storeArg: Store, billId: string) {
     const result = await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
-      const bill = await this.lockDraft(tx, store.id, billId);
+      const bill = await this.lockDraft(tx, storeArg.id, billId);
       if (bill.issues.length) {
         throw new AppError(409, 'BILL_HAS_ISSUES', 'Some items still need your answer', { issues: bill.issues });
       }
-      const lines = await tx.select().from(billItems).where(eq(billItems.billId, billId)).orderBy(asc(billItems.position));
-      if (!lines.length) throw badRequest('The bill has no items');
-      if (bill.paymentMode === 'udhaar') {
-        if (!store.givesCredit) throw badRequest('Udhaar is turned off for this shop');
-        if (!bill.customerId) throw badRequest('An udhaar bill needs a customer');
+      // Lock the store row: serialises invoice numbering and uses the latest GST settings.
+      const [store] = await tx.select().from(stores).where(eq(stores.id, storeArg.id)).for('update');
+      const calc = await this.recalc(tx, store, billId);
+      if (!calc.lines.length) throw badRequest('The bill has no items');
+      if (calc.docType === 'tax_invoice') {
+        const missing = calc.lines.filter((l) => l.gstRate === null).map((l) => l.name);
+        if (missing.length) {
+          throw new AppError(409, 'GST_RATE_MISSING', 'Set the GST rate for these items first', { items: missing });
+        }
       }
 
-      const [{ billCounter }] = await tx
-        .update(stores)
-        .set({ billCounter: sql`${stores.billCounter} + 1` })
-        .where(eq(stores.id, store.id))
-        .returning({ billCounter: stores.billCounter });
+      const total = calc.total;
+      let paidCash = 0;
+      let paidUpi = 0;
+      let creditAmount = 0;
+      if (bill.paymentMode === 'cash') paidCash = total;
+      else if (bill.paymentMode === 'upi') paidUpi = total;
+      else {
+        if (!store.givesCredit) throw badRequest('Udhaar is turned off for this shop');
+        if (!bill.customerId) throw badRequest('An udhaar bill needs a customer');
+        if (bill.upfrontAmount >= total) throw badRequest('The amount paid covers the whole bill; use cash or UPI instead');
+        if (bill.upfrontMethod === 'upi') paidUpi = bill.upfrontAmount;
+        else paidCash = bill.upfrontAmount;
+        creditAmount = total - bill.upfrontAmount;
+      }
 
-      const stocked = lines.filter((l) => l.itemId);
+      const fy = financialYear(localDate(store.timezone));
+      const [{ seq }] = await tx
+        .update(stores)
+        .set({
+          billCounter: sql`case when ${stores.billCounterFy} = ${fy} then ${stores.billCounter} + 1 else 1 end`,
+          billCounterFy: fy,
+        })
+        .where(eq(stores.id, store.id))
+        .returning({ seq: stores.billCounter });
+      const number = invoiceNumber(fy, seq);
+
+      const stocked = calc.lines.filter((l) => l.itemId);
       for (const l of stocked) {
         await tx.update(items).set({ stock: sql`${items.stock} - ${l.quantity}` }).where(eq(items.id, l.itemId!));
       }
@@ -410,15 +520,19 @@ export class BillsService {
       if (bill.customerId) {
         [customer] = await tx
           .update(customers)
-          .set({ lastPurchaseAt: new Date(), totalPurchases: sql`${customers.totalPurchases} + ${bill.total}` })
+          .set({
+            lastPurchaseAt: new Date(),
+            totalPurchases: sql`${customers.totalPurchases} + ${total}`,
+            totalPaid: sql`${customers.totalPaid} + ${paidCash + paidUpi}`,
+          })
           .where(eq(customers.id, bill.customerId))
           .returning();
-        if (bill.paymentMode === 'udhaar') {
+        if (creditAmount > 0) {
           const posted = await postLedgerEntry(tx, {
             storeId: store.id,
             customerId: bill.customerId,
             type: 'bill',
-            amount: bill.total,
+            amount: creditAmount,
             billId,
           });
           khata = { before: posted.balanceBefore, after: posted.customer.balance };
@@ -426,14 +540,25 @@ export class BillsService {
         }
       }
 
-      const now = new Date();
       await tx
         .update(bills)
-        .set({ status: 'confirmed', billNumber: billCounter, confirmedAt: now })
+        .set({
+          status: 'confirmed',
+          billNumber: seq,
+          invoiceNumber: number,
+          documentType: calc.docType,
+          placeOfSupply: store.state,
+          paidCash,
+          paidUpi,
+          creditAmount,
+          confirmedAt: new Date(),
+        })
         .where(eq(bills.id, billId));
 
+      // Receipts go out for udhaar bills only (a cost decision), and only with the customer's consent.
       let receiptQueued = false;
-      if (customer) {
+      if (customer && creditAmount > 0) {
+        const lines = await tx.select().from(billItems).where(eq(billItems.billId, billId)).orderBy(asc(billItems.position));
         receiptQueued = await enqueueCustomerMessage(
           tx,
           store,
@@ -442,20 +567,21 @@ export class BillsService {
           receiptMessage({
             storeName: store.name,
             customerName: customer.name,
-            billNumber: billCounter,
+            invoiceNumber: number,
             lines: lines.map((l) => ({ name: l.name, sizeLabel: l.sizeLabel, quantity: l.quantity, amount: l.amount })),
-            total: bill.total,
-            udhaar: bill.paymentMode === 'udhaar',
+            total,
+            paidNow: paidCash + paidUpi,
+            credit: creditAmount,
             balance: customer.balance,
-            link: `${this.publicBaseUrl.replace(/\/$/, '')}/r/${bill.receiptToken}`,
+            link: this.receiptLink(bill),
           }),
           { billId },
         );
       }
-      return { stockReduced: stocked.length, khata, receiptQueued, customer };
+      return { store, stockReduced: stocked.length, khata, receiptQueued, customer };
     });
 
-    const lang = store.language;
+    const lang = result.store.language;
     const messages = [reply(lang, 'billConfirmed')];
     if (result.stockReduced) messages.push(reply(lang, 'stockReduced', { n: result.stockReduced }));
     if (result.khata && result.customer) {
@@ -465,7 +591,7 @@ export class BillsService {
       messages.push(reply(lang, 'receiptSent', { name: result.customer.name.split(' ')[0] }));
     }
     return {
-      bill: await this.get(store.id, billId),
+      bill: await this.get(storeArg.id, billId),
       effects: {
         stockReduced: result.stockReduced,
         khata: result.khata,
@@ -476,7 +602,10 @@ export class BillsService {
     };
   }
 
-  /** Discards a draft, or reverses a confirmed bill (restores stock and khata). */
+  /**
+   * Discards a draft, or cancels a confirmed bill: restores stock and reverses the khata entry.
+   * The invoice number is not reused; the cancelled invoice stays on record.
+   */
   async cancel(store: Store, billId: string) {
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
@@ -495,16 +624,19 @@ export class BillsService {
         if (bill.customerId) {
           await tx
             .update(customers)
-            .set({ totalPurchases: sql`${customers.totalPurchases} - ${bill.total}` })
+            .set({
+              totalPurchases: sql`${customers.totalPurchases} - ${bill.total}`,
+              totalPaid: sql`${customers.totalPaid} - ${bill.paidCash + bill.paidUpi}`,
+            })
             .where(eq(customers.id, bill.customerId));
-          if (bill.paymentMode === 'udhaar') {
+          if (bill.creditAmount > 0) {
             await postLedgerEntry(tx, {
               storeId: store.id,
               customerId: bill.customerId,
               type: 'bill_cancelled',
-              amount: -bill.total,
+              amount: -bill.creditAmount,
               billId,
-              note: `Bill #${String(bill.billNumber).padStart(4, '0')} cancelled`,
+              note: `Bill ${bill.invoiceNumber} cancelled`,
             });
           }
         }

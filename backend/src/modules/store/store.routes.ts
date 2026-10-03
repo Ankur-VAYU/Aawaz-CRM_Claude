@@ -62,7 +62,14 @@ export default async function storeRoutes(app: FastifyInstance, { db }: { db: Db
     }
     if (body.pan !== undefined && !body.gstin) update.pan = body.pan;
     if (body.legalName !== undefined) update.legalName = body.legalName;
-    if (!Object.keys(update).length) throw badRequest('Provide gstin, pan or legalName');
+    if (body.gstScheme !== undefined) update.gstScheme = body.gstScheme;
+    if (body.pricesIncludeTax !== undefined) update.pricesIncludeTax = body.pricesIncludeTax;
+    if (!Object.keys(update).length) throw badRequest('Provide gstin, pan, legalName, gstScheme or pricesIncludeTax');
+    const gstin = update.gstin !== undefined ? update.gstin : req.store.gstin;
+    if (!gstin) update.gstScheme = null;
+    else if (!(update.gstScheme !== undefined ? update.gstScheme : req.store.gstScheme)) {
+      throw badRequest('Choose the GST scheme: regular or composition', { field: 'gstScheme' });
+    }
     const [store] = await db.update(stores).set(update).where(eq(stores.id, req.store.id)).returning();
     return { store };
   });

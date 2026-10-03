@@ -92,8 +92,14 @@ export async function setupTestApp() {
       const item = (displayName: string) => items.find((i) => i.displayName === displayName)!;
       return { token, items, item };
     },
-    async customer(token: string, name: string, phone?: string) {
-      const r = await inject('POST', '/api/v1/customers', token, { name, phone });
+    /** Customers with a phone number agree to messages unless `consent: false`. */
+    async customer(token: string, name: string, phone?: string, extra: { consent?: boolean; gstin?: string } = {}) {
+      const r = await inject('POST', '/api/v1/customers', token, {
+        name,
+        phone,
+        gstin: extra.gstin,
+        messagingConsent: extra.consent ?? Boolean(phone),
+      });
       if (r.statusCode !== 201) throw new Error(`customer failed: ${r.body}`);
       return r.json().customer as { id: string; name: string };
     },

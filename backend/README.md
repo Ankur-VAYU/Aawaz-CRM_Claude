@@ -12,7 +12,7 @@ app turns it into a bill, updates stock and the customer's khata, and sends a re
 | --- | --- |
 | 4a · Welcome & number check | `POST /auth/otp/request`, `POST /auth/otp/verify` |
 | 4b · Shop details | `POST /store`, `PATCH /store` |
-| 4c · GST & PAN (optional) | `PUT /store/tax` (validates GSTIN check digit, fills PAN + state) |
+| 4c · GST & PAN (optional) | `PUT /store/tax` (GSTIN check digit, scheme regular/composition, MRP-inclusive pricing; fills PAN + state) |
 | 4d · Language & reply style | `PUT /store/preferences` |
 | 4e · Add items (saamaan) | `POST /items/bulk`, `POST /items` |
 | 4f · Ready | `POST /store/onboarding/complete` |
@@ -20,7 +20,7 @@ app turns it into a bill, updates stock and the customer's khata, and sends a re
 | 2 · Khata — "kitna baaki hai?" | `POST /assistant/message`, `GET /customers/:id/ledger`, `POST /customers/:id/payments` ("Paisa mila"), `POST /customers/:id/reminders` ("Yaad dilao") |
 | 3 · Daily summary | `GET /summary/daily` + sent to the owner automatically at 9 pm |
 | 5 · Low confidence + weak network | `unclear` issues with best-guess options; offline bills via `POST /bills` with `clientId` |
-| 6 · Customer's receipt | WhatsApp message + `/r/:token` page, `GET /public/receipts/:token` |
+| 6 · Customer's receipt | `/r/:token` page (tax invoice / bill of supply / bill), `GET /public/receipts/:token`; WhatsApp receipt for **udhaar bills only** |
 | 7 · Customer list | `GET /customers?filter=all|dues|inactive` |
 | 8 · Customer's own profile | `/c/:token` page, `GET /public/customers/:token`, opt-out and delete-request |
 
@@ -75,6 +75,8 @@ Tests use `TEST_DATABASE_URL` (default `postgres://postgres:postgres@localhost:5
 
   Any issue can also be dropped with `remove: true`.
 - **Khata** is an append-only ledger per customer (`bill`, `payment`, `bill_cancelled`), and each entry records `balanceAfter`. `customer.balance` is the running total (positive = customer owes the shop).
+- **Paying part now** ("200 abhi diye, baaki udhaar"): an udhaar bill can carry `upfront { amount, method }`. On confirm the bill records `paidCash`, `paidUpi` and `creditAmount` (they add up to `total`), and only `creditAmount` goes into the khata. A customer's `totalPurchases − totalPaid = balance`, as on the profile screen.
+- **Wrong payment entered**: `POST /customers/:id/ledger/:entryId/reverse` adds a `payment_reversed` entry. History is never edited or deleted, and each payment can be reversed once.
 - **Replies**: assistant responses include `reply: { text, speak }`, in the shop's language (`hinglish` or `hi`). `speak` follows the shop's reply style, so the app knows to read it aloud.
 
 ## Authentication
@@ -92,7 +94,7 @@ Every shop endpoint returns `409 STORE_NOT_SET_UP` until `POST /store` has been 
 ## API reference
 
 Errors always look like `{ "error": { "code": "...", "message": "...", "details": ... } }`.
-Codes: `VALIDATION_ERROR` (400), `BAD_REQUEST` (400), `UNAUTHORIZED` (401), `NOT_FOUND` (404), `CONFLICT` / `STORE_NOT_SET_UP` / `BILL_HAS_ISSUES` / `BILL_NOT_DRAFT` / `OPTED_OUT` / `REMINDER_TOO_SOON` (409), `RATE_LIMITED` (429).
+Codes: `VALIDATION_ERROR` (400), `BAD_REQUEST` (400), `UNAUTHORIZED` (401), `NOT_FOUND` (404), `CONFLICT` / `STORE_NOT_SET_UP` / `BILL_HAS_ISSUES` / `BILL_NOT_DRAFT` / `OPTED_OUT` / `REMINDER_TOO_SOON` / `NO_CONSENT` / `GST_RATE_MISSING` / `ALREADY_REVERSED` (409), `RATE_LIMITED` (429).
 
 ### Assistant — `POST /assistant/message`
 
@@ -121,9 +123,9 @@ The parser understands romanised Hindi/Hinglish: number words (ek … sau, hazaa
 | Method | Path | Body | Notes |
 | --- | --- | --- | --- |
 | GET | `/` | `?status=&customerId=&from=YYYY-MM-DD&to=&page=&limit=` | Newest first |
-| POST | `/` | `{ clientId?, customerId?, paymentMode, lines: [{ itemId, quantity, unitPrice? } \| { name, quantity, unitPrice }], confirm? }` | Manual / offline bills. Same `clientId` → same bill (200), never a duplicate |
+| POST | `/` | `{ clientId?, customerId?, paymentMode, upfront?: { amount, method }, lines: [{ itemId, quantity, unitPrice? } \| { name, quantity, unitPrice, gstRate?, hsnCode? }], confirm? }` | Manual / offline bills. Same `clientId` → same bill (200), never a duplicate |
 | GET | `/:id` | — | Lines, customer, `issues`, `canConfirm`, `receiptLink` |
-| PATCH | `/:id` | `{ customerId?, paymentMode?, lines? }` | Draft only. `lines` replaces all lines |
+| PATCH | `/:id` | `{ customerId?, paymentMode?, upfront?, lines? }` | Draft only. `lines` replaces all lines |
 | POST | `/:id/resolve` | `{ issueId, itemId? \| name+unitPrice? \| unitPrice? \| customerId? \| newCustomer? \| remove? , quantity?, savePrice? }` | Answers one issue |
 | POST | `/:id/confirm` | — | Returns `bill`, `effects { stockReduced, khata { before, after }, receiptQueued, customerLink }`, `reply { title, lines }` |
 | POST | `/:id/cancel` | — | Draft: discard. Confirmed: restores stock and reverses khata |
@@ -132,24 +134,25 @@ The parser understands romanised Hindi/Hinglish: number words (ek … sau, hazaa
 
 ### Store — `/store`
 
-`POST /` `{ name, ownerName, city, state?, pincode?, givesCredit }` · `GET /` (store + `onboarding.steps { number, shop, language, items }`) · `PATCH /` (same fields + `summaryTime "HH:MM"`) · `PUT /tax` `{ gstin?, pan?, legalName? }` (null removes) · `PUT /preferences` `{ language: hi|hinglish, replyStyle: voice_text|text }` · `POST /onboarding/complete`
+`POST /` `{ name, ownerName, city, state?, pincode?, address?, givesCredit }` · `GET /` (store + `onboarding.steps { number, shop, language, items }`) · `PATCH /` (same fields + `summaryTime "HH:MM"`) · `PUT /tax` `{ gstin?, gstScheme?, pan?, legalName?, pricesIncludeTax? }` (null removes; a GSTIN needs a scheme) · `PUT /preferences` `{ language: hi|hinglish, replyStyle: voice_text|text }` · `POST /onboarding/complete`
 
 ### Items — `/items`
 
 `GET /?search=` · `GET /low-stock` · `POST /` · `POST /bulk { items: [...] }` (same name+size updates instead of duplicating; returns `missingPrice`) · `GET /:id` · `PATCH /:id` · `POST /:id/stock { delta }` · `DELETE /:id` (deactivates)
 
-Item fields: `name, aliases[], unit (kg|g|l|ml|pc), unitSize, price (rupees or null), stock, stockLabel, lowStockThreshold`. Responses add `displayName` ("Sarson tel 500 ml").
+Item fields: `name, aliases[], unit (kg|g|l|ml|pc), unitSize, price (rupees or null), gstRate (% or null), hsnCode, stock, stockLabel, lowStockThreshold`. Responses add `displayName` ("Sarson tel 500 ml").
 
 ### Customers — `/customers`
 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/?filter=all\|dues\|inactive&search=&page=&limit=` | Biggest dues first; `counts { all, dues, inactive }`, `totalDues`. Inactive = no purchase for 14 days |
-| POST | `/` | `{ name, phone? }` |
+| POST | `/` | `{ name, phone?, gstin?, messagingConsent? }` |
 | GET | `/:id` | Customer, khata summary, `shareLink` (their private page) |
-| PATCH | `/:id` | `{ name?, phone? }` |
+| PATCH | `/:id` | `{ name?, phone?, gstin?, messagingConsent? }` |
 | GET | `/:id/ledger?page=&limit=` | Khata history, newest first |
-| POST | `/:id/payments` | `{ amount (rupees), method: cash\|upi, note? }` |
+| POST | `/:id/payments` | `{ amount (rupees), method: cash\|upi, note?, clientId? }`; the same `clientId` is recorded once |
+| POST | `/:id/ledger/:entryId/reverse` | `{ note? }`: undo a payment entered by mistake |
 | POST | `/:id/reminders` | WhatsApp reminder of the balance; once per 24 h; respects opt-out |
 
 ### Summary — `GET /summary/daily?date=YYYY-MM-DD`
@@ -163,7 +166,30 @@ Sales total, bill count (and how many by voice), cash / UPI / udhaar split, udha
 - `POST /public/customers/:token/opt-out` / `opt-in` ("Messages band karo")
 - `POST /public/customers/:token/delete-request` ("Meri jaankari hatao"): with nothing due, personal details are removed at once. Otherwise the request is flagged for the shopkeeper (`deletionRequestedAt`) and `{ deleted: false, reason: "BALANCE_DUE" }` is returned.
 
+## GST
+
+`documentType` is set when a bill is confirmed, from the shop's setup (`PUT /store/tax`):
+
+| Shop | Document | Tax |
+| --- | --- | --- |
+| GSTIN + `gstScheme: "regular"` | `tax_invoice` | Per line from the item's `gstRate`: CGST + SGST, or IGST when a B2B customer's GSTIN is in another state |
+| GSTIN + `gstScheme: "composition"` | `bill_of_supply` | None; it carries the composition-scheme statement |
+| No GSTIN | `bill` | None; no GSTIN is printed |
+
+- Prices are treated as **tax-inclusive (MRP)** by default. The tax is worked out from inside the price, so the customer pays the shelf price. Set `pricesIncludeTax: false` to add tax on top instead.
+- Items carry `gstRate` (percent) and `hsnCode`. A tax invoice can't be confirmed while any line lacks a rate (`409 GST_RATE_MISSING`).
+- Invoice numbers run per financial year (April–March): `2026-27/0001`. Cancelled invoices keep their number and stay on record.
+- Customers can have a `gstin` for B2B invoices.
+- `GET /reports/gst?from=YYYY-MM-DD&to=YYYY-MM-DD` gives your CA: totals by rate, by HSN, B2B invoices, documents issued and cancelled.
+
+**Have a CA confirm before going live:** the GST rate and HSN code for each product (rates change); whether your turnover requires HSN on B2C invoices; and the invoice fields required for your shop. **Not supported yet:** credit/debit notes (a cancelled invoice is excluded from the report, not offset by a credit note), e-invoicing, and reverse charge.
+
 ## Messages (OTP, receipts, reminders, summaries)
+
+**Who gets what:**
+- **Receipts** go only for **udhaar bills**, which keeps WhatsApp costs down. Cash and UPI bills send nothing.
+- **Receipts and reminders** go only to customers with a phone number, **recorded consent** and no opt-out. Consent comes from the shopkeeper (`messagingConsent: true` when creating or editing a customer, after asking the customer) or from the customer tapping opt-in on their own link. A reminder without consent returns `409 NO_CONSENT`. Confirm the exact consent requirements under the DPDP Act and WhatsApp's policies with a lawyer.
+
 
 Outgoing messages go through the `MessageSender` interface (`src/messaging/sender.ts`). Receipts, reminders and summaries are written to an `outbound_messages` queue in the same transaction as the change that caused them. A background worker then delivers them with retries and backoff (`src/messaging/workers.ts`, safe to run on several instances).
 
@@ -197,6 +223,7 @@ src/
     bills/                   Drafts, issue resolution, confirm/cancel, catalogue matching
     assistant/               Hinglish command parser + /assistant/message
     summary/                 Daily summary
+    reports/                 GST report for the CA
     public/                  Customer receipt/khata pages and endpoints
   messaging/                 MessageSender interface, outbox worker, summary scheduler
   lib/                       Phone, GST, money, text matching, replies, tokens

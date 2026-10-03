@@ -16,6 +16,7 @@ import { BillsService } from './modules/bills/bills.service.js';
 import customerRoutes from './modules/customers/customers.routes.js';
 import itemRoutes from './modules/items/items.routes.js';
 import { publicApiRoutes, publicPageRoutes } from './modules/public/public.routes.js';
+import reportRoutes from './modules/reports/reports.routes.js';
 import storeRoutes from './modules/store/store.routes.js';
 import summaryRoutes from './modules/summary/summary.routes.js';
 
@@ -89,6 +90,7 @@ export async function buildApp(
       await api.register(billRoutes, { prefix: '/bills', db, billsService });
       await api.register(assistantRoutes, { prefix: '/assistant', db, billsService, publicBaseUrl });
       await api.register(summaryRoutes, { prefix: '/summary', db });
+      await api.register(reportRoutes, { prefix: '/reports', db });
       await api.register(publicApiRoutes, { prefix: '/public', db });
     },
     { prefix: '/api/v1' },
