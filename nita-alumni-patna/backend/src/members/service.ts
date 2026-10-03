@@ -383,15 +383,16 @@ export async function getFile(db: Db, id: string, kind: 'photo' | 'proof') {
 export async function approveMember(db: Db, id: string, actor: string) {
   const m = await getMember(db, id);
   if (m.status === 'verified') return m;
-  await db.update(members).set({ status: 'verified', rejectReason: null, decidedBy: actor, decidedAt: new Date(), updatedAt: new Date() }).where(eq(members.id, id));
-  await audit(db, actor, 'member.approved', id, { name: m.name, batchMatch: m.batchMatch });
+  // The proof document is only needed for the decision; deleting it keeps personal data (and the database) small.
+  await db.update(members).set({ status: 'verified', rejectReason: null, proof: null, proofType: null, decidedBy: actor, decidedAt: new Date(), updatedAt: new Date() }).where(eq(members.id, id));
+  await audit(db, actor, 'member.approved', id, { name: m.name, batchMatch: m.batchMatch, proofDeleted: m.hasProof });
   return getMember(db, id);
 }
 
 export async function rejectMember(db: Db, id: string, reason: string, actor: string) {
   const m = await getMember(db, id);
-  await db.update(members).set({ status: 'rejected', rejectReason: reason, decidedBy: actor, decidedAt: new Date(), updatedAt: new Date() }).where(eq(members.id, id));
-  await audit(db, actor, 'member.rejected', id, { name: m.name, reason });
+  await db.update(members).set({ status: 'rejected', rejectReason: reason, proof: null, proofType: null, decidedBy: actor, decidedAt: new Date(), updatedAt: new Date() }).where(eq(members.id, id));
+  await audit(db, actor, 'member.rejected', id, { name: m.name, reason, proofDeleted: m.hasProof });
   return getMember(db, id);
 }
 

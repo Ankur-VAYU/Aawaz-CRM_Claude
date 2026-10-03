@@ -44,7 +44,7 @@ const { positionals, values } = parseArgs({
     position: { type: 'string' }, organisation: { type: 'string' }, 'work-district': { type: 'string' },
     'work-state': { type: 'string' }, linkedin: { type: 'string' }, skills: { type: 'string' }, mentor: { type: 'boolean' },
     status: { type: 'string' }, 'dry-run': { type: 'boolean' }, search: { type: 'string' }, reason: { type: 'string' },
-    title: { type: 'string' }, by: { type: 'string' }, help: { type: 'boolean', short: 'h' },
+    title: { type: 'string' }, by: { type: 'string' }, 'if-production': { type: 'boolean' }, help: { type: 'boolean', short: 'h' },
   },
 });
 
@@ -64,11 +64,20 @@ async function main() {
     console.log(HELP);
     return;
   }
+  if (command === 'migrate' && values['if-production'] && process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+    console.log(`Skipping migrations for a ${process.env.VERCEL_ENV} deployment.`);
+    return;
+  }
   const url = need(process.env.DATABASE_URL, 'Set DATABASE_URL (see .env.example)');
   const { db, pool } = createDb(url);
   try {
     switch (command) {
       case 'migrate':
+        // Vercel runs this during every build. Only production builds may change the database.
+        if (values['if-production'] && process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+          console.log(`Skipping migrations for a ${process.env.VERCEL_ENV} deployment.`);
+          break;
+        }
         await runMigrations(pool, (m) => console.log(m));
         console.log('Database is up to date.');
         break;

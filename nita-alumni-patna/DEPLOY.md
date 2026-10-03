@@ -2,133 +2,132 @@
 
 This covers the first live part of the app: the **join form** and the **admin tools** to create and
 verify member accounts. The member app screens (directory, events, board) come in the next phase
-and will use the same server and database.
+and will use the same deployment and database.
+
+Chosen setup: **Vercel (free Hobby plan) + a free Neon PostgreSQL database**, at
+`https://nitaalumini.vercel.app`.
 
 ## 1. Where is the data saved?
 
-All data is saved in **one PostgreSQL database**. That includes member profiles, photos, proof
-documents, the batch list and the activity log. The app finds the database through one setting,
-`DATABASE_URL`, so the database lives wherever that address points.
-
-Nothing is stored in the visitor's browser and nothing is sent to any other service.
+All data is saved in **one PostgreSQL database hosted by Neon**, created from your Vercel project.
+Vercel runs the app's code but stores no data itself. The app finds the database through one
+setting, `DATABASE_URL`.
 
 | Data | Table | Notes |
 | --- | --- | --- |
 | Member profiles (all form fields) | `members` | One row per person; mobile number and roll number are unique |
-| Profile photos and proof documents | `members` (`photo`, `proof` columns) | Kept in the database so there is only one thing to back up. Photos are resized to 512 px before upload; proofs are limited to 3 MB |
+| Profile photos | `members.photo` | Resized in the browser to 512 px (about 50–100 KB) before upload |
+| Proof documents | `members.proof` | Up to 2 MB; **deleted automatically when an admin approves or rejects**. The file name stays as a record |
 | Institute batch list | `batch_records` | Used only to check registrations |
 | Who did what, and when | `audit_log` | Every registration, creation, import, approval, rejection and role change |
 
-**Choose a server location in India** (for example a Mumbai or Bangalore region). Data stays close
-to members, the app is faster for them, and questions about data leaving the country do not arise.
-India's Digital Personal Data Protection Act, 2023 applies to this data. Have the privacy notice
-and any data-location question checked by someone qualified.
+**Region:** when creating the database, pick the region closest to India that Neon offers, and set
+Vercel's function region to match (step 6 below). Data then stays close to members and the app
+is faster. India's Digital Personal Data Protection Act, 2023 applies to this data; have the privacy
+notice and any data-location question checked by someone qualified.
 
-## 2. Two ways to host it
+## 2. Limits of the free plans (check before relying on them)
 
-| | Option A: one server (recommended to start) | Option B: managed services |
-| --- | --- | --- |
-| What you rent | One small Linux virtual server (VPS) in an India region | A managed PostgreSQL database plus a container hosting service |
-| Where the database is | On that server's disk, in a Docker volume | In the provider's managed database, in the region you choose |
-| Backups | `scripts/backup.sh` every night via cron, plus copying the files off the server | Usually automatic; check how long the provider keeps them |
-| Effort | Someone runs a few commands to update it, and checks that backups run | Less upkeep; usually costs more |
-| Files used | `docker-compose.yml`, `Caddyfile`, `scripts/` | `Dockerfile` only |
+These are from my knowledge of the plans and may have changed. Check the current terms on
+vercel.com and neon.tech.
 
-Examples of providers with India regions include AWS (Lightsail or EC2, Mumbai) and DigitalOcean
-(Bangalore). Compare current plans, prices and regions on the providers' own sites before choosing.
-This guide does not recommend a specific paid plan.
+- **Vercel Hobby is meant for personal, non-commercial use.** Check that a chapter website fits
+  Vercel's terms. Collecting event payments later may need the paid Pro plan.
+- **Vercel accepts at most 4.5 MB per request.** The form is built for this: photos are shrunk,
+  certificate photos are shrunk to 1600 px, and PDFs must be under 2 MB.
+- **Neon's free database is small** (around half a gigabyte when I last knew). That is enough
+  for a few thousand members because photos are small and proofs are deleted after review. Watch
+  the storage figure in the Neon dashboard.
+- **Neon's free database sleeps when idle.** The first visit after a quiet period takes a few
+  seconds longer; later visits are fast.
+- **Neon's own backup history on the free plan is short.** Take your own backups (section 6).
 
-For a chapter of a few hundred to a few thousand members, the smallest plans are usually enough.
-Each member is a few kilobytes plus a photo of roughly 50–100 KB.
+## 3. Deploy on Vercel, step by step
 
-## 3. Option A step by step (one server)
+You need a Vercel account (free) linked to the GitHub account that holds this code.
 
-You need a domain or sub-domain (for example `join.yourchapter.org`) and a VPS running Ubuntu with
-Docker installed.
+1. **Import the project.** On vercel.com choose *Add New → Project* and import the repository.
+   - Project name: `nitaalumini`. The address becomes `https://nitaalumini.vercel.app`, if that
+     name is free. Project names are lower-case, and `.vercel.app` is added automatically.
+   - Root Directory: `backend` (or `nita-alumni-patna/backend` while the code is still in the
+     Aawaz CRM repository).
+   - Framework preset: *Other*. Build settings come from `backend/vercel.json`; leave them alone.
+   - Don't deploy yet. First add the database and settings below.
+2. **Create the database.** In the project, open *Storage → Create Database → Neon (Postgres)*,
+   choose the free plan and a region close to India, and connect it to the project. This normally
+   adds a `DATABASE_URL` environment variable to the project automatically. If it uses another
+   name, add `DATABASE_URL` yourself with Neon's **pooled** connection string. That's the one whose
+   host contains `-pooler`, ending in `?sslmode=require`.
+3. **Add the settings** under *Settings → Environment Variables*, for the **Production** environment:
+   | Name | Value |
+   | --- | --- |
+   | `ADMIN_API_KEY` | A long random secret. Generate one with `openssl rand -hex 32` or `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Share it only with admins |
+   | `NODE_ENV` | `production` |
+4. **Deploy.** The build compiles the app and creates the database tables. The build log should
+   show `Applied 0001_init.sql` on the first deploy and `Database is up to date.` after that.
+   Preview deployments skip this step, so they never change the live database.
+5. **Check it works:** open `https://nitaalumini.vercel.app/health` (should show `{"ok":true}`),
+   then `https://nitaalumini.vercel.app/join`.
+6. **Match the regions:** *Settings → Functions → Function Region*: choose the Vercel region
+   nearest your Neon database.
 
-1. **Point the domain at the server.** Add a DNS "A" record for `join.yourchapter.org` with the server's IP address.
-2. **Copy the code to the server** (for example into `/opt/nita-alumni-patna`) and go to `backend/`.
-3. **Create the settings file:**
-   ```bash
-   cp .env.example .env
-   # Generate two secrets and put them in .env:
-   openssl rand -hex 32   # use as ADMIN_API_KEY
-   openssl rand -hex 24   # use as POSTGRES_PASSWORD
-   ```
-   Set `DOMAIN=join.yourchapter.org` and `NODE_ENV=production`. Leave `DATABASE_URL` as it is;
-   `docker-compose.yml` sets it to the database container.
-4. **Start everything:**
-   ```bash
-   docker compose up -d --build
-   docker compose logs -f api      # should show "Applied 0001_init.sql" and "Server listening"
-   ```
-   Caddy gets an HTTPS certificate automatically. Open `https://join.yourchapter.org/join`.
-5. **Create the President's account** (see section 4), then load the batch list.
-6. **Turn on backups:**
-   ```bash
-   crontab -e
-   # add:
-   30 2 * * * /opt/nita-alumni-patna/backend/scripts/backup.sh >> /var/log/nita-backup.log 2>&1
-   ```
-   Then copy `backend/backups/` to another place regularly (another computer or cloud storage). A
-   backup on the same disk is lost if the server is lost. Test a restore once with `scripts/restore.sh`.
-7. **Firewall:** allow only ports 22 (SSH), 80 and 443. The database has no public port in `docker-compose.yml`.
-
-To update after code changes: `git pull && docker compose up -d --build`. Database changes are
-applied automatically when the app starts.
+Every push to the main branch redeploys automatically.
 
 ## 4. Creating accounts from the backend
 
-There are three ways. All of them check the same rules as the join form: a valid Indian mobile
-number, a home district in Bihar, a known degree and branch, no duplicate mobile or roll number. All
-of them are recorded in the activity log.
+Vercel runs no long-lived server you can log into, so admin commands run **from an admin's own
+computer** and connect straight to the same Neon database.
 
-On the server, the command-line tool runs inside the app container:
+**One-time setup on the admin's computer** (needs Node.js 20 or newer):
 ```bash
-docker compose exec api node dist/cli.js <command> [options]
+git clone <this repository> && cd <repository>/backend
+npm install
+cp .env.example .env
+# In .env, set DATABASE_URL to the Neon connection string (Neon dashboard → Connect),
+# and ADMIN_API_KEY to the same value as on Vercel.
+npm run cli -- --help
 ```
-On a development machine use `npm run cli -- <command> [options]` instead.
+The `.env` file holds the key to all member data. Keep it only on admins' own computers and never
+commit it.
+
+All methods below apply the same rules as the join form: a valid Indian mobile number, a home
+district in Bihar, a known degree and branch, no duplicate mobile or roll number. Every action is
+recorded in the activity log.
 
 ### a) One person at a time
 
 ```bash
-docker compose exec api node dist/cli.js member:create \
-  --name "Amit Ranjan" --phone 9431120457 --roll 04UEE012 \
-  --degree B.Tech --branch "Electrical Engineering" --batch 2008 \
-  --home-district Bhagalpur --position "Deputy General Manager" --organisation "NTPC Barh" \
-  --work-district Patna --work-state Bihar --by "Amit Ranjan"
+npm run cli -- member:create \
+  --name "Full Name" --phone 9XXXXXXXXX --email name@example.com --roll 08UCE021 \
+  --degree B.Tech --branch "Civil Engineering" --batch 2012 --home-district Patna \
+  --position "Executive Engineer" --organisation "Example Org" \
+  --work-district Patna --work-state Bihar --by "Your Name"
 
-# Make the President an admin with the title shown to members:
-docker compose exec api node dist/cli.js admin:make 9431120457 --title President --by "Amit Ranjan"
+# Make someone an admin (they must exist first), with the title members will see:
+npm run cli -- admin:make 9XXXXXXXXX --title President --by "Your Name"
 ```
-Accounts created this way are **verified** straight away (add `--status pending` to send them
-through review instead).
+Accounts created this way are **verified** straight away. Add `--status pending` to send them
+through review instead.
 
 ### b) Many people from a spreadsheet
 
 Use this for data collected in Excel, Google Sheets or a Google Form.
 
-1. Start from `backend/templates/members-import-template.csv`, or export your Google Form responses
-   as CSV. Column names like "Mobile number" or "Batch (passing year)" are understood, and extra
+1. Start from `backend/templates/members-import-template.csv`, or export Google Form responses as
+   CSV. Column names like "Mobile number" or "Batch (passing year)" are understood, and extra
    columns such as "Timestamp" are ignored. Details: `backend/templates/README.md`.
-2. Copy the file to the server, then **try it without saving**:
-   ```bash
-   docker compose cp members.csv api:/tmp/members.csv
-   docker compose exec api node dist/cli.js members:import /tmp/members.csv --dry-run
-   ```
-   It lists each row that needs fixing and why, for example "Row 14: phone: Enter a valid 10-digit
-   mobile number".
+2. **Try it without saving:** `npm run cli -- members:import members.csv --dry-run`. It lists
+   every row that needs fixing and why, for example "Row 14: phone: Enter a valid 10-digit mobile
+   number".
 3. Fix those rows, then import for real:
-   ```bash
-   docker compose exec api node dist/cli.js members:import /tmp/members.csv --by "Amit Ranjan"
-   ```
+   `npm run cli -- members:import members.csv --by "Your Name"`.
    Rows already registered (same mobile or roll number) are skipped, so the same file can be
-   imported again safely after corrections.
+   imported again after corrections.
 
 ### c) Through the admin API
 
-For a future admin screen or for tools like Postman or curl. Every request needs the header
-`x-admin-key: <ADMIN_API_KEY>`. Optionally add `x-admin-name: Your Name` for the activity log.
+For a future admin screen, or tools like Postman or curl. Every request needs the header
+`x-admin-key: <ADMIN_API_KEY>`; optionally add `x-admin-name: Your Name` for the activity log.
 
 | Action | Request |
 | --- | --- |
@@ -145,36 +144,55 @@ For a future admin screen or for tools like Postman or curl. Every request needs
 
 Example:
 ```bash
-curl -X POST https://join.yourchapter.org/api/v1/admin/members/import?dryRun=true \
+curl -X POST "https://nitaalumini.vercel.app/api/v1/admin/members/import?dryRun=true" \
   -H "x-admin-key: $ADMIN_API_KEY" -H "content-type: text/csv" --data-binary @members.csv
 ```
+Upload limit through the API on Vercel: 4.5 MB per request. The command line has no such limit.
 
-## 5. Collecting data before launch
+## 5. Collecting data and reviewing registrations
 
-**Recommended:** share the link `https://join.yourchapter.org/join` on WhatsApp groups. It saves
-straight into the database, uploads photo and proof, matches the batch list, and needs no
-re-typing.
+Share `https://nitaalumini.vercel.app/join` on WhatsApp groups. Registrations arrive as
+**pending**. Until the admin screens are built, review them from the command line:
 
-**If you already have data in a Google Form or spreadsheet:** import it with 4b. Google Form file
-uploads (photos) cannot be imported from the CSV; those members add a photo later in the app.
-
-Reviewing registrations from the form, until the admin screens are built:
 ```bash
-docker compose exec api node dist/cli.js members:list --status pending
-docker compose exec api node dist/cli.js member:approve 6201284439 --by "Amit Ranjan"
-docker compose exec api node dist/cli.js member:reject 8102349076 --reason "Roll number not found in batch records" --by "Amit Ranjan"
+npm run cli -- batch:import batch-list.csv --by "Your Name"     # once, and whenever the list changes
+npm run cli -- members:list --status pending
+npm run cli -- member:approve 9XXXXXXXXX --by "Your Name"
+npm run cli -- member:reject 9XXXXXXXXX --reason "Roll number not found in batch records" --by "Your Name"
 ```
+To look at a proof document before deciding, open
+`/api/v1/admin/members/<id>/proof` with the admin key, for example with curl:
+`curl -H "x-admin-key: $ADMIN_API_KEY" -o proof.pdf https://nitaalumini.vercel.app/api/v1/admin/members/<id>/proof`
 
-## 6. Security checklist before going live
+## 6. Backups
 
-- `ADMIN_API_KEY` is long and random, shared only with admins, and changed if someone leaves the committee. Changing it means editing `.env` and running `docker compose up -d --force-recreate api`.
-- `.env` is never committed to Git.
-- Backups run every night and are copied off the server; a restore has been tested once.
-- The site is served only over HTTPS; Caddy handles this.
+Take a backup at least weekly from an admin's computer. It needs the PostgreSQL client tools
+(`pg_dump`), at the same or a newer major version than the Neon database:
+
+```bash
+scripts/backup-remote.sh            # reads DATABASE_URL from .env, writes backups/…sql.gz
+```
+Keep copies somewhere other than that computer, for example in a private cloud folder. Test a
+restore once, into a new empty Neon database, with
+`gunzip -c backups/<file>.sql.gz | psql "<new database URL>"`.
+
+## 7. Security checklist before going live
+
+- `ADMIN_API_KEY` is long and random, known only to admins, and changed (in Vercel and in admins' `.env`) when someone leaves the committee. Redeploy after changing it.
+- `.env` files are never committed to Git.
+- Backups are taken and stored off the admin's computer; a restore has been tested once.
 - The privacy notice on the form has been reviewed.
 
-## 7. Known limits of this first version
+## 8. Known limits of this first version
 
-- Admins use a shared key instead of their own sign-in. Personal admin sign-in with OTP comes with the member app.
-- No WhatsApp or email messages are sent yet. Applicants are not told automatically when they are approved.
-- Photos and proofs are stored in the database. That is fine at chapter scale; move them to object storage if the database grows past a few GB.
+- Admins share one key instead of having their own sign-in. Personal admin sign-in with OTP comes with the member app.
+- No WhatsApp or email messages are sent yet; applicants are not told automatically when they are approved.
+- Rate limiting of the form is per server instance; on Vercel that is weaker than on a single server. The hidden "honeypot" field and validation still stop simple bots.
+
+## Appendix: hosting on your own server instead
+
+`backend/docker-compose.yml`, `Caddyfile` and `scripts/backup.sh` run the same app with its own
+PostgreSQL and automatic HTTPS on one Linux server, for example if the chapter outgrows the free
+plans. In short: point a domain at the server, `cp .env.example .env` and set `ADMIN_API_KEY`,
+`POSTGRES_PASSWORD` and `DOMAIN`, then `docker compose up -d --build`. The command line then runs as
+`docker compose exec api node dist/cli.js <command>`, and `scripts/backup.sh` can run nightly from cron.

@@ -128,7 +128,7 @@ prototype v3 unless marked "Later".
 | Web app | React + TypeScript, built as a PWA | Works on any phone browser, installable |
 | Android/iOS | Wrap the same web app with Capacitor | One codebase; Play Store presence |
 | Messages | WhatsApp Business API provider for OTP and alerts, SMS fallback, email provider | Members already use WhatsApp |
-| Hosting | Managed Postgres + container host; daily database backups kept for 30 days | Small, predictable cost |
+| Hosting | **Vercel** (free Hobby plan) for the app, **Neon** free PostgreSQL for the data, at `nitaalumini.vercel.app`. Weekly backups taken by an admin. See `DEPLOY.md` | Chosen by the chapter: no cost to start |
 
 ### 7.1 Data model (main tables)
 
@@ -155,7 +155,7 @@ Store money as integer paise, as the Aawaz CRM backend already does.
 - Posts past `expires_at` are hidden automatically.
 - Only admins change roles, titles or suspensions; only staff verify or handle reports; every such action writes to `audit_log`.
 - Rate limits on OTP requests, posting, reporting and payment creation.
-- Proof documents are deleted a fixed period after a decision. **Assumption:** 90 days.
+- Proof documents are deleted as soon as an admin approves or rejects the registration (only the file name is kept).
 
 ## 8. Operations
 

@@ -105,7 +105,7 @@ export const joinInput = memberFields.extend({
   proof: optional(
     z.object({
       name: z.string().trim().max(200),
-      data: dataUrlFile(['image/jpeg', 'image/png', 'application/pdf'], 3 * 1024 * 1024, 'Proof document'),
+      data: dataUrlFile(['image/jpeg', 'image/png', 'application/pdf'], 2 * 1024 * 1024, 'Proof document'),
     }),
   ),
   // Honeypot: real people leave this hidden field empty.

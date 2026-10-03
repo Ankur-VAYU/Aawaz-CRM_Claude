@@ -3,7 +3,7 @@
   const form = document.getElementById("joinForm");
   const btn = document.getElementById("submitBtn");
   const formError = document.getElementById("formError");
-  const MAX_PROOF = 3 * 1024 * 1024;
+  const MAX_PROOF = 2 * 1024 * 1024;
   let photoData = null;
 
   const readAsDataUrl = (file) => new Promise((resolve, reject) => {
@@ -13,14 +13,28 @@
     r.readAsDataURL(file);
   });
 
+  const loadImage = async (file) => {
+    const url = await readAsDataUrl(file);
+    return new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error("This image could not be opened")); i.src = url; });
+  };
+
   // Crop to a square and shrink to 512px JPEG so uploads stay small on mobile data.
   async function resizePhoto(file) {
-    const url = await readAsDataUrl(file);
-    const img = await new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => reject(new Error("This image could not be opened")); i.src = url; });
+    const img = await loadImage(file);
     const size = 512, s = Math.min(img.width, img.height);
     const c = document.createElement("canvas"); c.width = c.height = size;
     c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
     return c.toDataURL("image/jpeg", 0.85);
+  }
+
+  // Photos of certificates from phone cameras are often 4-8 MB. Shrink them to at most 1600px,
+  // which keeps the text readable and the upload well under the limit.
+  async function shrinkProofImage(file) {
+    const img = await loadImage(file);
+    const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.82);
   }
 
   function setError(name, msg) {
@@ -65,8 +79,12 @@
     if (photoData) data.photo = photoData;
     const proofFile = document.getElementById("proof").files[0];
     if (proofFile) {
-      if (proofFile.size > MAX_PROOF) { setError("proof", "Choose a file under 3 MB"); return showFormError("The proof document is too large."); }
-      try { data.proof = { name: proofFile.name, data: await readAsDataUrl(proofFile) }; } catch (err) { setError("proof", err.message); return; }
+      try {
+        const isImage = proofFile.type === "image/jpeg" || proofFile.type === "image/png";
+        const proofData = isImage ? await shrinkProofImage(proofFile) : await readAsDataUrl(proofFile);
+        if (proofData.length * 0.75 > MAX_PROOF) { setError("proof", "Choose a PDF under 2 MB, or upload a photo of the certificate instead"); return showFormError("The proof document is too large."); }
+        data.proof = { name: proofFile.name, data: proofData };
+      } catch (err) { setError("proof", err.message); return; }
     }
 
     btn.disabled = true; btn.textContent = "Submitting…";

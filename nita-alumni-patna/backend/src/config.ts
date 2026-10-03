@@ -17,9 +17,8 @@ export type Config = z.infer<typeof envSchema>;
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
-    console.error('Invalid environment configuration:');
-    for (const issue of parsed.error.issues) console.error(`  ${issue.path.join('.')}: ${issue.message}`);
-    process.exit(1);
+    const lines = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`);
+    throw new Error(`Invalid environment configuration:\n${lines.join('\n')}`);
   }
   return parsed.data;
 }

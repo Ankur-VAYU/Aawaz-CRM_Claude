@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { ADMIN_KEY, admin, setup, validJoin } from './helpers.js';
+import { ADMIN_KEY, PDF, admin, setup, validJoin } from './helpers.js';
 
 let t: Awaited<ReturnType<typeof setup>>;
 beforeAll(async () => { t = await setup(); });
@@ -77,7 +77,7 @@ describe('creating accounts from the backend', () => {
 
 describe('reviewing registrations', () => {
   it('approves, rejects with a reason, and manages roles', async () => {
-    const a = (await t.app.inject({ method: 'POST', url: '/api/v1/join', payload: validJoin() })).json();
+    const a = (await t.app.inject({ method: 'POST', url: '/api/v1/join', payload: validJoin({ proof: { name: 'degree.pdf', data: PDF } }) })).json();
     const b = (await t.app.inject({ method: 'POST', url: '/api/v1/join', payload: validJoin({ phone: '8102349076', rollNo: '19UEI027', name: 'Ritika Raj' }) })).json();
 
     expect((await t.app.inject({ url: '/api/v1/admin/members?status=pending', headers: admin })).json()).toHaveLength(2);
@@ -87,6 +87,9 @@ describe('reviewing registrations', () => {
 
     const approved = (await t.app.inject({ method: 'POST', url: `/api/v1/admin/members/${a.id}/approve`, headers: admin })).json();
     expect(approved).toMatchObject({ status: 'verified', decidedBy: 'admin:Amit Ranjan' });
+    // The proof is deleted once decided; its file name stays as a record.
+    expect(approved).toMatchObject({ hasProof: false, proofName: 'degree.pdf' });
+    expect((await t.app.inject({ url: `/api/v1/admin/members/${a.id}/proof`, headers: admin })).statusCode).toBe(404);
 
     const noReason = await t.app.inject({ method: 'POST', url: `/api/v1/admin/members/${b.id}/reject`, headers: admin, payload: {} });
     expect(noReason.statusCode).toBe(400);

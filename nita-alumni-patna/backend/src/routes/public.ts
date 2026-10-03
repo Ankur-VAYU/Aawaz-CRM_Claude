@@ -66,7 +66,8 @@ export default async function publicRoutes(app: FastifyInstance, { db }: { db: D
   app.post(
     '/api/v1/join',
     {
-      bodyLimit: 6 * 1024 * 1024,
+      // Vercel accepts at most 4.5 MB per request; photo (~100 KB) + 2 MB proof as base64 fits in 4 MB.
+      bodyLimit: 4 * 1024 * 1024,
       config: { rateLimit: { max: 10, timeWindow: '1 hour' } },
     },
     async (req, reply) => {

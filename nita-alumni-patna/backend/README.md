@@ -40,4 +40,5 @@ npm run typecheck
 | `src/routes/` | Public form and API (`public.ts`), admin API (`admin.ts`) |
 | `public/` | The join form page, its styles and script, and the chapter seal |
 | `templates/` | CSV templates for member import and the batch list |
-| `scripts/` | Database backup and restore for the docker-compose setup |
+| `api/index.js`, `src/vercel.ts`, `vercel.json` | Vercel deployment (serverless function, build step that creates tables) |
+| `scripts/` | `backup-remote.sh` for the hosted database; `backup.sh` / `restore.sh` for the docker-compose setup |

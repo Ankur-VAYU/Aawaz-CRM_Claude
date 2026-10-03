@@ -1,9 +1,15 @@
-import { loadConfig } from './config.js';
+import { loadConfig, type Config } from './config.js';
 import { createDb } from './db/index.js';
 import { runMigrations } from './db/migrate.js';
 import { buildApp } from './app.js';
 
-const config = loadConfig();
+let config: Config;
+try {
+  config = loadConfig();
+} catch (err) {
+  console.error((err as Error).message);
+  process.exit(1);
+}
 const { db, pool } = createDb(config.DATABASE_URL);
 await runMigrations(pool, (m) => console.log(m));
 

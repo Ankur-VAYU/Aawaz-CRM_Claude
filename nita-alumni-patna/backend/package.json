@@ -13,7 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx src/cli.ts migrate",
-    "cli": "tsx src/cli.ts"
+    "cli": "tsx src/cli.ts",
+    "vercel-build": "tsc -p tsconfig.json && node dist/cli.js migrate --if-production"
   },
   "engines": {
     "node": ">=20"
