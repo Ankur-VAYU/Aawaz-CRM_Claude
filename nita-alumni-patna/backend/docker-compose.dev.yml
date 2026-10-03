@@ -1,0 +1,14 @@
+# Local development: only PostgreSQL. Run the app with `npm run dev`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nita_alumni
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+volumes:
+  pgdata-dev:

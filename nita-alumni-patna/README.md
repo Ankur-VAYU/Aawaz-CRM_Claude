@@ -6,6 +6,8 @@ Web and mobile app for NIT Agartala alumni from Bihar, wherever they work.
 | --- | --- |
 | [`PRODUCT.md`](PRODUCT.md) | Product and technical spec: decisions, roles, eligibility, features, phased plan, recommended stack, data model, server rules, operating procedures, open questions |
 | [`ui-prototype/index.html`](ui-prototype/index.html) | Clickable prototype (v4). Open in a browser; no build step |
+| [`backend/`](backend/README.md) | Live backend: join form, member database, admin API and command-line tools |
+| [`DEPLOY.md`](DEPLOY.md) | Where the data is stored, how to deploy, how to create accounts from the backend |
 
 ## UI prototype
 
@@ -26,7 +28,7 @@ code shown on screen, or a new number to go through registration.
 | My profile | All profile fields, photo, completeness, privacy, notification preferences, sign out, request deletion, resubmit after rejection |
 | Admin | Overview, Verify (batch-list match and checklist), Reports, Events & payments, Batch list (CSV upload and lookup), Members (roles, committee titles, suspend), Content, Activity log |
 
-## Not built yet
+## Status
 
-See section 6 of [`PRODUCT.md`](PRODUCT.md): the backend and real data, payment gateway,
-WhatsApp/email delivery, file storage, automatic institute updates, and Play Store packaging.
+- **Built:** the join form and member database, batch-list matching, and admin tools to create, import, approve and export accounts (`backend/`).
+- **Next:** member sign-in with OTP and the app screens from the prototype (directory, events and payments, board, admin screens), then WhatsApp/email delivery and the Play Store app. See section 6 of [`PRODUCT.md`](PRODUCT.md).

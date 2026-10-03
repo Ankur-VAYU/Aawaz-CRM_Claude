@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Join · NITA Alumni Patna</title>
+<meta name="description" content="Register with the NIT Agartala Alumni Patna Chapter. For alumni from Bihar, wherever they work.">
+<link rel="icon" href="/emblem.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/join.css">
+<script src="/join.js" defer></script>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <img class="seal" src="/emblem.svg" alt="" width="96" height="96">
+    <div>
+      <p class="eyebrow">NIT Agartala alumni · Patna Chapter</p>
+      <h1>Join the chapter</h1>
+      <p class="lead">For NIT Agartala alumni whose home is in Bihar, wherever they work now. The committee checks every registration against the institute's batch list before adding you to the directory.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <form id="joinForm" class="card" novalidate>
+    <p class="form-error" id="formError" role="alert" hidden></p>
+
+    <fieldset>
+      <legend>About you</legend>
+      <div class="field full"><label for="name">Full name (as on degree)</label><input id="name" name="name" autocomplete="name" required maxlength="120"><small class="err" data-for="name"></small></div>
+      <div class="field"><label for="phone">Mobile number (WhatsApp)</label><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel" required placeholder="10-digit number"><small class="hint">You will sign in to the app with this number.</small><small class="err" data-for="phone"></small></div>
+      <div class="field"><label for="email">Email <span class="opt">(optional)</span></label><input id="email" name="email" type="email" autocomplete="email"><small class="err" data-for="email"></small></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>At NIT Agartala</legend>
+      <div class="field"><label for="rollNo">Roll / enrolment number</label><input id="rollNo" name="rollNo" required maxlength="32" autocapitalize="characters"><small class="hint">Used to match you with the institute batch list.</small><small class="err" data-for="rollNo"></small></div>
+      <div class="field"><label for="degree">Degree</label><select id="degree" name="degree" required><option value="">Select</option>{{DEGREES}}</select><small class="err" data-for="degree"></small></div>
+      <div class="field"><label for="batch">Batch (passing year)</label><select id="batch" name="batch" required><option value="">Select</option>{{YEARS}}</select><small class="err" data-for="batch"></small></div>
+      <div class="field"><label for="branch">Branch / department</label><select id="branch" name="branch" required><option value="">Select</option>{{BRANCHES}}</select><small class="err" data-for="branch"></small></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Work</legend>
+      <div class="field"><label for="position">Current position</label><input id="position" name="position" required maxlength="120" autocomplete="organization-title"><small class="err" data-for="position"></small></div>
+      <div class="field"><label for="organisation">Current organisation</label><input id="organisation" name="organisation" required maxlength="160" autocomplete="organization"><small class="err" data-for="organisation"></small></div>
+      <div class="field"><label for="workDistrict">Work city / district</label><input id="workDistrict" name="workDistrict" required maxlength="80"><small class="err" data-for="workDistrict"></small></div>
+      <div class="field"><label for="workState">Working state (or outside India)</label><select id="workState" name="workState" required><option value="">Select</option>{{STATES}}</select><small class="err" data-for="workState"></small></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Home in Bihar</legend>
+      <div class="field"><label for="homeDistrict">Home district</label><select id="homeDistrict" name="homeDistrict" required><option value="">Select</option>{{DISTRICTS}}</select><small class="err" data-for="homeDistrict"></small></div>
+      <div class="field"><label for="homeState">Home state</label><input id="homeState" value="Bihar" readonly></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Help fellow alumni find you</legend>
+      <div class="field"><label for="linkedin">LinkedIn profile link <span class="opt">(optional)</span></label><input id="linkedin" name="linkedin" type="url" placeholder="https://www.linkedin.com/in/..."><small class="err" data-for="linkedin"></small></div>
+      <div class="field"><label for="skills">Skills or expertise <span class="opt">(optional)</span></label><input id="skills" name="skills" maxlength="300"><small class="err" data-for="skills"></small></div>
+      <label class="check full"><input type="checkbox" id="openToMentor" name="openToMentor"> I am open to mentoring students and junior alumni</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Photo and proof</legend>
+      <div class="field full photo-row">
+        <div class="avatar" id="photoPreview" aria-hidden="true"></div>
+        <div class="field"><label for="photo">Profile photo <span class="opt">(recommended)</span></label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><small class="hint">A clear face photo. It is resized before upload.</small><small class="err" data-for="photo"></small></div>
+      </div>
+      <div class="field full"><label for="proof">Degree, provisional certificate or institute ID <span class="opt">(recommended)</span></label><input id="proof" type="file" accept="image/jpeg,image/png,application/pdf"><small class="hint">JPG, PNG or PDF under 3 MB. Seen only by chapter admins, and needed if your roll number does not match the batch list.</small><small class="err" data-for="proof"></small></div>
+      <div class="field full"><label for="vouchedBy">A verified alumnus who knows you <span class="opt">(optional)</span></label><input id="vouchedBy" name="vouchedBy" maxlength="160" placeholder="Name and batch, e.g. Priya Sinha, 2015"><small class="err" data-for="vouchedBy"></small></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Privacy</legend>
+      <div class="field"><label for="phoneVisibility">Who can see my phone number</label><select id="phoneVisibility" name="phoneVisibility"><option value="members">All verified alumni</option><option value="batch">Only my batchmates</option><option value="admins">Only chapter admins</option></select></div>
+      <div class="field"><label for="emailVisibility">Who can see my email</label><select id="emailVisibility" name="emailVisibility"><option value="members">All verified alumni</option><option value="batch">Only my batchmates</option><option value="admins">Only chapter admins</option></select></div>
+      <p class="hint full">Your name, photo, batch, branch, position, organisation and districts are visible to verified alumni only. People who are not members see nothing.</p>
+    </fieldset>
+
+    <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+
+    <label class="check consent"><input type="checkbox" id="consent" name="consent" required> I confirm these details are true and agree that they are shown to verified members according to my privacy settings.</label>
+    <small class="err" data-for="consent"></small>
+
+    <div class="actions"><button class="btn" id="submitBtn" type="submit">Submit registration</button></div>
+  </form>
+
+  <section id="done" class="card done" hidden tabindex="-1">
+    <img src="/emblem.svg" alt="" width="72" height="72">
+    <h2>Thank you, <span id="doneName"></span></h2>
+    <p>Your registration has reached the chapter committee. We check it against the institute batch list, usually within 2 working days. After that you can sign in to the app with your mobile number.</p>
+  </section>
+</main>
+
+<footer><p>NIT Agartala Alumni · Patna Chapter</p></footer>
+</body>
+</html>

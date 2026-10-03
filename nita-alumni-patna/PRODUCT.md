@@ -106,7 +106,8 @@ prototype v3 unless marked "Later".
 | Phase | Scope | Outcome |
 | --- | --- | --- |
 | 0. Prototype (done) | Clickable UI with sample data | Committee agrees on screens and rules |
-| 1. Web app | OTP login, registration with batch-list matching, profiles with privacy, directory, events with RSVP, online payments and venue payment recording, board with expiry and reports, announcements, manual institute updates, admin area, activity log | Chapter can onboard members and run the November meet |
+| 1a. Registration backend (done) | Join form saving to PostgreSQL, batch-list matching, admin API and command line to create, import, approve and export accounts, Docker deployment with backups. See `DEPLOY.md` | Chapter can start collecting and verifying members |
+| 1b. Web app | OTP login, profiles with privacy, directory, events with RSVP, online payments and venue payment recording, board with expiry and reports, announcements, manual institute updates, admin area, activity log | Chapter can onboard members and run the November meet |
 | 2. Phone app | Installable web app (PWA), then Play Store; WhatsApp/email notifications and payment receipts | Members get reminders without opening the site |
 | 3. Growth | Automatic refunds, photo gallery, mentoring matching, data export, automatic institute updates if feasible | Less manual work for the committee |
 

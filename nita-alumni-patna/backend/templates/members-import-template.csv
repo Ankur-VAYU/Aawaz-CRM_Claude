@@ -1,0 +1,2 @@
+name,phone,email,roll_no,degree,branch,batch,position,organisation,home_district,work_district,work_state,linkedin,skills,open_to_mentor,phone_visibility,email_visibility,status,role,title
+Example Person,9876543210,example@example.com,08UCE999,B.Tech,Civil Engineering,2012,Executive Engineer,Example Organisation,Patna,Bengaluru,Karnataka,https://www.linkedin.com/in/example,Project management,yes,members,members,verified,member,

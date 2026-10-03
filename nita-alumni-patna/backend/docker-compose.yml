@@ -1,0 +1,47 @@
+# Production stack for one server: PostgreSQL + the app + Caddy (HTTPS).
+# The database files live in the "pgdata" volume on this server's disk.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nita
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: nita_alumni
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nita -d nita_alumni']
+      interval: 5s
+      retries: 10
+    # No "ports:" on purpose: the database is reachable only from the app, never from the internet.
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://nita:${POSTGRES_PASSWORD}@db:5432/nita_alumni
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env, e.g. join.example.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
