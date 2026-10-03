@@ -5,7 +5,7 @@ Web and mobile app for NIT Agartala alumni from Bihar, wherever they work.
 | File | Contents |
 | --- | --- |
 | [`PRODUCT.md`](PRODUCT.md) | Product and technical spec: decisions, roles, eligibility, features, phased plan, recommended stack, data model, server rules, operating procedures, open questions |
-| [`ui-prototype/index.html`](ui-prototype/index.html) | Clickable prototype (v3). Open in a browser; no build step |
+| [`ui-prototype/index.html`](ui-prototype/index.html) | Clickable prototype (v4). Open in a browser; no build step |
 
 ## UI prototype
 

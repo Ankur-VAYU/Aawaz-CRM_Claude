@@ -2,77 +2,106 @@
 <title>NITA Alumni Patna</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
 /* Layout: app shell. Sidebar nav on wide screens, bottom tab bar on phones; one content column of cards and lists. */
+/* Layout: app shell. Navy sidebar on wide screens, bottom tab bar on phones; one content column of cards and lists.
+   Identity: a university-seal feel. Deep navy and antique gold, a serif for headings, a clean sans for reading. */
 :root {
-  --bg: #eef3f3;
+  --bg: #f4f6fb;
   --surface: #ffffff;
-  --sunk: #e3eaea;
-  --ink: #102a30;
-  --muted: #557178;
-  --line: #cfdcdc;
-  --accent: #0b6e6c;
+  --sunk: #edf0f7;
+  --ink: #0f1a3a;
+  --muted: #5a6483;
+  --line: #dde2ee;
+  --accent: #1b2e6b;
   --accent-ink: #ffffff;
-  --accent-soft: #d5ecea;
-  --event: #9a6412;
-  --event-soft: #f6ead2;
-  --ok: #2f7d32;
-  --ok-soft: #dcefdc;
+  --accent-soft: #e6eaf6;
+  --gold: #c9a04a;
+  --gold-text: #8f6516;
+  --gold-soft: #f7f0e1;
+  --gold-line: #e6d3a8;
+  --event: #8a5f12;
+  --event-soft: #f7f0e1;
+  --ok: #2e7a3c;
+  --ok-soft: #e0f0e2;
   --warn: #8a5800;
-  --warn-soft: #fbedc8;
+  --warn-soft: #fbefcf;
   --bad: #b3261e;
-  --bad-soft: #f8dcd9;
-  --info: #3a5bb0;
-  --info-soft: #e0e7f8;
-  --scrim: rgb(8 20 24 / 0.5);
-  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
-  --radius: 10px;
+  --bad-soft: #f9dfdc;
+  --info: #3550a8;
+  --info-soft: #e3e8f8;
+  --scrim: rgb(9 15 35 / 0.55);
+  --shadow: 0 1px 2px rgb(15 26 58 / 0.04), 0 10px 28px -16px rgb(15 26 58 / 0.18);
+  --side-bg: #0f1a3a;
+  --side-ink: #eef0f8;
+  --side-muted: #a3adcb;
+  --side-hover: rgb(255 255 255 / 0.06);
+  --side-active: rgb(201 160 74 / 0.14);
+  --hero-bg: #13245a;
+  --hero-ink: #f3f1ea;
+  --emb-navy: #13245a;
+  --emb-gold: #c9a04a;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0c1a1d; --surface: #13262a; --sunk: #0f2023; --ink: #e2eeee; --muted: #93adb1; --line: #24403f;
-    --accent: #4fc2bd; --accent-ink: #062322; --accent-soft: #163d3c; --event: #e0a94f; --event-soft: #3a2c12;
-    --ok: #7cc77f; --ok-soft: #1c3a1e; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #42201d;
-    --info: #9fb6f0; --info-soft: #1f2a45; --scrim: rgb(0 0 0 / 0.6);
+    --bg: #0b1126; --surface: #121b36; --sunk: #0e1630; --ink: #e9ecf6; --muted: #9ba5c5; --line: #25304f;
+    --accent: #d4af5a; --accent-ink: #111a33; --accent-soft: #2a2616; --gold-text: #dcbb6c; --gold-soft: #2a2414; --gold-line: #5a4a24;
+    --event: #e2be6e; --event-soft: #2a2414;
+    --ok: #7cc786; --ok-soft: #1a3522; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #43201d;
+    --info: #a9bcf5; --info-soft: #1c2748; --scrim: rgb(0 0 0 / 0.65); --shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+    --side-bg: #070c1c; --hero-bg: #0f1d4a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0c1a1d; --surface: #13262a; --sunk: #0f2023; --ink: #e2eeee; --muted: #93adb1; --line: #24403f;
-  --accent: #4fc2bd; --accent-ink: #062322; --accent-soft: #163d3c; --event: #e0a94f; --event-soft: #3a2c12;
-  --ok: #7cc77f; --ok-soft: #1c3a1e; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #42201d;
-  --info: #9fb6f0; --info-soft: #1f2a45; --scrim: rgb(0 0 0 / 0.6);
+  --bg: #0b1126; --surface: #121b36; --sunk: #0e1630; --ink: #e9ecf6; --muted: #9ba5c5; --line: #25304f;
+  --accent: #d4af5a; --accent-ink: #111a33; --accent-soft: #2a2616; --gold-text: #dcbb6c; --gold-soft: #2a2414; --gold-line: #5a4a24;
+  --event: #e2be6e; --event-soft: #2a2414;
+  --ok: #7cc786; --ok-soft: #1a3522; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #43201d;
+  --info: #a9bcf5; --info-soft: #1c2748; --scrim: rgb(0 0 0 / 0.65); --shadow: 0 1px 0 rgb(0 0 0 / 0.25);
+  --side-bg: #070c1c; --hero-bg: #0f1d4a;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
-h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
-h1 { font-size: 1.75rem; font-weight: 700; }
-h2 { font-size: 1.2rem; font-weight: 700; }
-h3 { font-size: 1.02rem; font-weight: 500; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 2rem; font-weight: 600; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+h3 { font-family: var(--body); font-size: 1rem; font-weight: 600; letter-spacing: 0; }
 p { margin: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 a { color: var(--accent); }
 
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
-.side { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; padding: 24px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 24px; background: var(--surface); }
+.side { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; padding: 28px 16px 24px; display: flex; flex-direction: column; gap: 28px; background: var(--side-bg); color: var(--side-ink); }
+.side .brand { padding: 0 6px 22px; border-bottom: 1px solid rgb(201 160 74 / 0.25); }
+.side .brand b { color: var(--side-ink); }
 .brand { display: flex; gap: 10px; align-items: center; min-width: 0; }
-.crest { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font: 700 0.8rem var(--display); flex: none; }
-.brand b { font: 700 1rem/1.1 var(--display); display: block; }
-.brand small { color: var(--muted); font-size: 0.78rem; }
+.emblem { width: 44px; height: 44px; flex: none; display: block; }
+.emblem svg { width: 100%; height: 100%; display: block; }
+.brand b { font: 600 1.15rem/1.1 var(--display); display: block; letter-spacing: -0.01em; }
+.brand small { color: var(--gold); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+.emb-navy { fill: var(--emb-navy); }
+.emb-gold { fill: var(--emb-gold); }
+.emb-ring { fill: none; stroke: var(--emb-gold); }
+.emb-line { fill: none; stroke: var(--emb-navy); }
 .nav { display: flex; flex-direction: column; gap: 2px; }
-.nav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; }
-.nav button:hover { background: var(--sunk); color: var(--ink); }
-.nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
-.nav button:focus-visible { outline: 2px solid var(--accent); }
+.nav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--side-muted); font-weight: 500; }
+.nav button:hover { background: var(--side-hover); color: var(--side-ink); }
+.nav button[aria-current="page"] { background: var(--side-active); color: var(--side-ink); box-shadow: inset 2px 0 0 var(--gold); font-weight: 600; }
+.nav button[aria-current="page"] svg { color: var(--gold); }
+.nav button:focus-visible { outline: 2px solid var(--gold); }
 .nav svg, .tabbar svg, .iconbtn svg { width: 20px; height: 20px; flex: none; }
 .count { margin-left: auto; background: var(--bad); color: var(--surface); font-size: 0.72rem; font-weight: 700; border-radius: 99px; padding: 0 7px; line-height: 1.5; }
-.side-foot { margin-top: auto; display: grid; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.side-foot { margin-top: auto; display: grid; gap: 6px; font-size: 0.82rem; color: var(--side-muted); padding: 0 6px; }
+.side-foot .linkbtn { color: var(--gold); }
 
 main { padding: 20px 32px 48px; min-width: 0; max-width: 1000px; display: flex; flex-direction: column; gap: 24px; }
 .utilbar { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
@@ -83,20 +112,22 @@ main { padding: 20px 32px 48px; min-width: 0; max-width: 1000px; display: flex; 
 .iconbtn:focus-visible { outline: 2px solid var(--accent); }
 .iconbtn .count { position: absolute; top: -4px; right: -6px; }
 .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.top h1::after { content: ""; display: block; width: 44px; height: 2px; background: var(--gold); margin: 12px 0 10px; }
 .top > div { min-width: 0; }
 .top p { color: var(--muted); max-width: 62ch; }
 
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .section { display: flex; flex-direction: column; gap: 12px; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-text); }
 .linkbtn { all: unset; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.9rem; }
 .linkbtn:focus-visible { outline: 2px solid var(--accent); }
 .muted { color: var(--muted); font-size: 0.88rem; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-.btn { border: 1px solid transparent; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn { border: 1px solid transparent; background: var(--accent); color: var(--accent-ink); font-weight: 600; letter-spacing: 0.01em; padding: 10px 18px; border-radius: 8px; transition: filter 0.15s, background 0.15s; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.ghost { background: var(--surface); border-color: var(--line); color: var(--ink); }
 .btn.danger { background: transparent; border-color: var(--bad); color: var(--bad); }
 .btn.small { padding: 5px 10px; font-size: 0.85rem; }
 .btn.on { background: var(--accent-soft); color: var(--accent); }
@@ -112,16 +143,22 @@ main { padding: 20px 32px 48px; min-width: 0; max-width: 1000px; display: flex; 
 .tag.bad { background: var(--bad-soft); color: var(--bad); }
 
 /* Home */
-.hero-guest { display: grid; gap: 14px; background: var(--accent); color: var(--accent-ink); border-color: transparent; padding: 28px; }
-.hero-guest p { max-width: 56ch; opacity: 0.92; }
-.hero-guest .btn { background: var(--accent-ink); color: var(--accent); }
-.hero-guest .btn.ghost { background: transparent; color: var(--accent-ink); border-color: var(--accent-ink); }
+.hero-guest { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; color: var(--hero-ink); border: 1px solid rgb(201 160 74 / 0.35); padding: 36px; position: relative; overflow: hidden;
+  background: radial-gradient(120% 140% at 100% 0%, rgb(201 160 74 / 0.18), transparent 55%), repeating-linear-gradient(135deg, rgb(255 255 255 / 0.025) 0 2px, transparent 2px 14px), var(--hero-bg); }
+.hero-guest .hero-copy { display: grid; gap: 16px; min-width: 0; }
+.hero-guest h1 { font-size: 2.4rem; font-weight: 600; }
+.hero-guest h1 em { font-style: italic; color: var(--emb-gold); font-weight: 500; }
+.hero-guest p { max-width: 54ch; opacity: 0.9; font-size: 1.05rem; }
+.hero-guest .eyebrow { color: var(--emb-gold); }
+.hero-guest .btn { background: var(--emb-gold); color: #13245a; }
+.hero-guest .btn.ghost { background: transparent; color: var(--hero-ink); border-color: rgb(243 241 234 / 0.5); }
+.hero-seal { width: 168px; height: 168px; }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: s; }
 .step { display: grid; gap: 4px; }
-.step::before { counter-increment: s; content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 700 0.9rem var(--display); }
-.hero-event { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; background: var(--event-soft); border-color: transparent; }
+.step::before { counter-increment: s; content: counter(s); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--gold); color: var(--gold-text); display: grid; place-items: center; font: 600 1rem var(--display); }
+.hero-event { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: center; background: linear-gradient(135deg, var(--gold-soft), var(--surface)); border-color: var(--gold-line); }
 .datebox { width: 74px; text-align: center; background: var(--surface); border-radius: 8px; padding: 8px 0; border: 1px solid var(--line); }
-.datebox b { display: block; font: 700 1.7rem/1 var(--display); color: var(--event); }
+.datebox b { display: block; font: 600 1.9rem/1 var(--display); color: var(--gold-text); }
 .datebox span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .grid2.dir-top { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
@@ -132,7 +169,7 @@ main { padding: 20px 32px 48px; min-width: 0; max-width: 1000px; display: flex; 
 .item:last-child { padding-bottom: 0; }
 .item small { color: var(--muted); font-size: 0.85rem; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.stat b { display: block; font: 700 1.6rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.stat b { display: block; font: 600 1.8rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: 0.85rem; }
 .banner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: var(--radius); flex-wrap: wrap; }
 .banner.ok { background: var(--ok-soft); color: var(--ok); }
@@ -141,8 +178,8 @@ main { padding: 20px 32px 48px; min-width: 0; max-width: 1000px; display: flex; 
 .banner.info { background: var(--info-soft); color: var(--info); }
 .banner span { flex: 1 1 240px; }
 .meter { height: 8px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
-.meter i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
-.pin { font-size: 0.72rem; font-weight: 700; color: var(--event); }
+.meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 99px; }
+.pin { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; color: var(--gold-text); }
 
 /* Events */
 .event { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; }
@@ -162,7 +199,7 @@ textarea { min-height: 96px; resize: vertical; }
 .person { display: flex; flex-direction: column; gap: 10px; }
 .person-head { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .person-head > div { min-width: 0; }
-.avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 700 1rem var(--display); flex: none; overflow: hidden; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 600 1.05rem var(--display); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--gold-line); flex: none; overflow: hidden; }
 .avatar.sm { width: 36px; height: 36px; font-size: 0.8rem; }
 .avatar.lg { width: 96px; height: 96px; font-size: 1.6rem; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -178,18 +215,18 @@ textarea { min-height: 96px; resize: vertical; }
 .bar:focus-visible { outline: 2px solid var(--accent); }
 .bar[aria-pressed="true"] { background: var(--accent-soft); }
 .bar span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar i { display: block; height: 10px; border-radius: 99px; background: var(--accent); }
+.bar i { display: block; height: 10px; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--gold)); }
 .bar b { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Chips and tabs */
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); font-size: 0.88rem; font-weight: 600; color: var(--muted); background: var(--surface); }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .chip:focus-visible { outline: 2px solid var(--accent); }
 .chip .count { margin-left: 6px; }
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
 .tabs button { all: unset; cursor: pointer; padding: 8px 12px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; display: flex; align-items: center; }
-.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--gold); }
 .tabs button:focus-visible { outline: 2px solid var(--accent); }
 
 /* Board */
@@ -257,10 +294,12 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
   main { padding: 12px 16px calc(96px + env(safe-area-inset-bottom, 0px)); gap: 20px; }
   .utilbar .brand { display: flex; }
   .utilbar .brand small { display: none; }
+  .utilbar .emblem { width: 38px; height: 38px; }
   h1 { font-size: 1.45rem; }
   .tabbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 10; }
   .tabbar button { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.7rem; font-weight: 600; color: var(--muted); padding: 4px 0; position: relative; }
   .tabbar button[aria-current="page"] { color: var(--accent); }
+  .tabbar button[aria-current="page"]::before { content: ""; position: absolute; top: -6px; left: 30%; right: 30%; height: 2px; background: var(--gold); border-radius: 2px; }
   .tabbar button:focus-visible { outline: 2px solid var(--accent); }
   .tabbar .dot { position: absolute; top: 2px; right: calc(50% - 16px); width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
   .form { grid-template-columns: minmax(0, 1fr); }
@@ -270,7 +309,9 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
   .review { grid-template-columns: minmax(0, 1fr); }
   .review-side { min-width: 0; }
   .bar { grid-template-columns: 100px minmax(0, 1fr) 24px; }
-  .hero-guest { padding: 20px; }
+  .hero-guest { padding: 24px; grid-template-columns: minmax(0, 1fr); }
+  .hero-guest h1 { font-size: 1.8rem; }
+  .hero-seal { width: 96px; height: 96px; order: -1; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .view { animation: rise 0.18s ease-out; }
@@ -282,7 +323,7 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
 <div class="shell">
   <aside class="side">
     <div class="brand">
-      <div class="crest" aria-hidden="true">NITA</div>
+      <span class="emblem" id="sideEmblem" aria-hidden="true"></span>
       <div><b>NITA Alumni</b><small>Patna Chapter</small></div>
     </div>
     <nav class="nav" id="nav" aria-label="Main"></nav>
@@ -310,6 +351,19 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
     signin: '<path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l4-4-4-4M14 12H4"/>',
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'
   };
+  // Original chapter seal: a gold-ringed navy roundel with Patna's Golghar dome. Not the institute's official logo.
+  function emblem(full) {
+    const ring = full
+      ? '<defs><path id="sealArc" d="M60 60 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0"/></defs><text font-family="Figtree, sans-serif" font-size="8.6" font-weight="700" letter-spacing="2.1" class="emb-gold"><textPath href="#sealArc" startOffset="0">NIT AGARTALA ALUMNI · PATNA CHAPTER ·</textPath></text><circle cx="60" cy="60" r="35" class="emb-ring" stroke-width="0.8"/>'
+      : "";
+    const k = full ? 0.62 : 1, dx = 60 - 60 * k, dy = (full ? 58 : 62) - 62 * k;
+    const dome = '<g transform="translate(' + dx + " " + dy + ") scale(" + k + ')">' +
+      '<path class="emb-gold" d="M22 84 C22 64 36 48 56 46 L64 46 C84 48 98 64 98 84 Z"/>' +
+      '<rect class="emb-gold" x="54" y="41" width="12" height="5" rx="1"/>' +
+      '<path class="emb-line" stroke-width="2.4" stroke-linecap="round" d="M27 82 C38 79 50 66 57 48 M93 82 C82 79 70 66 63 48"/>' +
+      '<rect class="emb-gold" x="16" y="86" width="88" height="4" rx="1.5"/><rect class="emb-gold" x="22" y="92" width="76" height="2.5" rx="1"/>' + "</g>";
+    return '<svg viewBox="0 0 120 120" role="img" aria-label="Patna Chapter seal"><circle cx="60" cy="60" r="58" class="emb-navy"/><circle cx="60" cy="60" r="55" class="emb-ring" stroke-width="1.6"/>' + ring + dome + "</svg>";
+  }
   const svg = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + "</svg>";
 
   const BRANCHES = ["Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Electronics & Communication", "Computer Science & Engineering", "Chemical Engineering", "Production Engineering", "Electronics & Instrumentation", "Bio Engineering", "Physics", "Chemistry", "Mathematics", "Management (MBA)"];
@@ -520,7 +574,7 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
   function utilbar() {
     const as = Object.keys(DEMO_AS).find((k) => DEMO_AS[k] === S.session) || "custom";
     const unread = cur() ? myNotifs().filter((n) => !n.read).length : 0;
-    return '<div class="utilbar"><div class="brand"><div class="crest" aria-hidden="true">NITA</div><div><b>NITA Alumni</b><small>Patna Chapter</small></div></div>' +
+    return '<div class="utilbar"><div class="brand"><span class="emblem" aria-hidden="true">' + emblem(false) + '</span><div><b>NITA Alumni</b><small>Patna Chapter</small></div></div>' +
       '<label class="demo-as" for="demoAs">Demo: view as<select id="demoAs">' +
       options([["guest", "Visitor"], ["applicant", "Applicant (pending)"], ["member", "Member"], ["admin", "Admin"]].concat(as === "custom" ? [["custom", (cur() ? cur().name : "Signed in")]] : []), as) + "</select></label>" +
       (cur() ? '<button type="button" class="iconbtn" data-open="notifs" aria-label="Notifications, ' + unread + ' unread">' + svg("bell") + (unread ? '<span class="count">' + unread + "</span>" : "") + "</button>" : "") +
@@ -575,7 +629,7 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
 
     if (!c) {
       return utilbar() +
-        '<div class="card hero-guest"><div class="eyebrow" style="color:inherit;opacity:.8">NIT Agartala alumni · Patna Chapter</div><h1>NIT Agartala alumni from Bihar, wherever they work.</h1><p>Find batchmates from your district, attend chapter meets in Patna, and help each other with jobs, referrals and mentoring across India. Every member is verified by the chapter committee.</p><div class="row"><button type="button" class="btn" data-open="register">Join the chapter</button><button type="button" class="btn ghost" data-go="signin">I already have an account</button></div></div>' +
+        '<div class="card hero-guest"><div class="hero-copy"><div class="eyebrow">NIT Agartala alumni · Patna Chapter</div><h1>NIT Agartala alumni from Bihar, <em>wherever they work.</em></h1><p>Find batchmates from your district, attend chapter meets in Patna, and help each other with jobs, referrals and mentoring across India. Every member is verified by the chapter committee.</p><div class="row"><button type="button" class="btn" data-open="register">Join the chapter</button><button type="button" class="btn ghost" data-go="signin">I already have an account</button></div></div><div class="hero-seal" aria-hidden="true">' + emblem(true) + "</div></div>" +
         '<section class="section"><h2>How joining works</h2><div class="steps"><div class="card step"><h3>Register with your mobile number</h3><p class="muted">Add your batch, branch, roll number, your home district in Bihar and where you work now.</p></div><div class="card step"><h3>We check the batch list</h3><p class="muted">We check your roll number against the institute batch list. A degree or ID upload helps if it does not match.</p></div><div class="card step"><h3>Get verified</h3><p class="muted">The committee checks your details, usually within 2 working days.</p></div></div></section>' +
         nextCard + '<div class="grid2">' + updates +
         '<section class="section"><h2>Chapter committee</h2><div class="card list">' + S.users.filter((u) => u.role !== "member" && u.status === "verified").map((u) => '<div class="item" style="align-items:center">' + avatar(u, "sm") + "<div><b>" + esc(u.name) + '</b><div class="muted">' + roleLabel(u) + " · " + esc(u.branch) + " " + u.batch + "</div></div></div>").join("") + '</div><p class="hint">Questions about joining? Contact any committee member at the next meet or through the institute alumni office.</p></section></div>';
@@ -1121,6 +1175,7 @@ input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent); fl
     }
   });
 
+  document.getElementById("sideEmblem").innerHTML = emblem(false);
   render();
 })();
 </script>
