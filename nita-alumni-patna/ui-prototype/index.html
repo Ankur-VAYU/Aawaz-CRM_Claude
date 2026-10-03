@@ -1,0 +1,550 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NITA Alumni Patna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: app shell. Sidebar nav on wide screens, bottom tab bar on phones; one content column of cards and lists. */
+:root {
+  --bg: #eef3f3;
+  --surface: #ffffff;
+  --sunk: #e3eaea;
+  --ink: #102a30;
+  --muted: #557178;
+  --line: #cfdcdc;
+  --accent: #0b6e6c;
+  --accent-ink: #ffffff;
+  --accent-soft: #d5ecea;
+  --event: #b7791f;
+  --event-soft: #f6ead2;
+  --ok: #2f7d32;
+  --ok-soft: #dcefdc;
+  --warn: #9a6200;
+  --warn-soft: #fbedc8;
+  --bad: #b3261e;
+  --bad-soft: #f8dcd9;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1a1d; --surface: #13262a; --sunk: #0f2023; --ink: #e2eeee; --muted: #93adb1; --line: #24403f;
+    --accent: #4fc2bd; --accent-ink: #062322; --accent-soft: #163d3c; --event: #e0a94f; --event-soft: #3a2c12;
+    --ok: #7cc77f; --ok-soft: #1c3a1e; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #42201d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1a1d; --surface: #13262a; --sunk: #0f2023; --ink: #e2eeee; --muted: #93adb1; --line: #24403f;
+  --accent: #4fc2bd; --accent-ink: #062322; --accent-soft: #163d3c; --event: #e0a94f; --event-soft: #3a2c12;
+  --ok: #7cc77f; --ok-soft: #1c3a1e; --warn: #e6b450; --warn-soft: #3a2d0e; --bad: #f08a82; --bad-soft: #42201d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.75rem; font-weight: 700; }
+h2 { font-size: 1.2rem; font-weight: 700; }
+h3 { font-size: 1.02rem; font-weight: 500; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a { color: var(--accent); }
+
+.shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+.side { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; padding: 24px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 24px; background: var(--surface); }
+.brand { display: flex; gap: 10px; align-items: center; }
+.crest { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font: 700 0.85rem var(--display); flex: none; }
+.brand b { font: 700 1rem/1.1 var(--display); display: block; }
+.brand small { color: var(--muted); font-size: 0.78rem; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; }
+.nav button:hover { background: var(--sunk); color: var(--ink); }
+.nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.nav button:focus-visible { outline: 2px solid var(--accent); }
+.nav svg { width: 20px; height: 20px; flex: none; }
+.nav .count { margin-left: auto; background: var(--bad); color: var(--surface); font-size: 0.72rem; border-radius: 99px; padding: 0 7px; }
+.role { margin-top: auto; display: grid; gap: 6px; font-size: 0.8rem; color: var(--muted); }
+.seg { display: flex; background: var(--sunk); border-radius: 8px; padding: 3px; }
+.seg button { all: unset; cursor: pointer; flex: 1; text-align: center; padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.seg button:focus-visible { outline: 2px solid var(--accent); }
+
+main { padding: 28px 32px 48px; min-width: 0; max-width: 980px; display: flex; flex-direction: column; gap: 24px; }
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.top p { color: var(--muted); }
+.demo-note { font-size: 0.8rem; color: var(--warn); background: var(--warn-soft); padding: 6px 10px; border-radius: 6px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.section { display: flex; flex-direction: column; gap: 12px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.linkbtn { all: unset; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.9rem; }
+.linkbtn:focus-visible { outline: 2px solid var(--accent); }
+
+.btn { border: 1px solid transparent; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn.danger { background: transparent; border-color: var(--bad); color: var(--bad); }
+.btn.small { padding: 5px 10px; font-size: 0.85rem; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Home */
+.hero-event { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; background: var(--event-soft); border-color: transparent; }
+.datebox { width: 74px; text-align: center; background: var(--surface); border-radius: 8px; padding: 8px 0; border: 1px solid var(--line); }
+.datebox b { display: block; font: 700 1.7rem/1 var(--display); color: var(--event); }
+.datebox span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.hero-event .meta { color: var(--muted); font-size: 0.9rem; }
+.hero-event .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.list { display: flex; flex-direction: column; }
+.list > * + * { border-top: 1px solid var(--line); }
+.notice { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 12px 0; }
+.notice:first-child { padding-top: 0; }
+.notice:last-child { padding-bottom: 0; }
+.tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: var(--sunk); color: var(--muted); align-self: start; white-space: nowrap; }
+.tag.job { background: var(--accent-soft); color: var(--accent); }
+.tag.help { background: var(--event-soft); color: var(--event); }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.notice small, .muted { color: var(--muted); font-size: 0.85rem; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat b { display: block; font: 700 1.6rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 0.85rem; }
+
+/* Events */
+.event { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.event.past { opacity: 0.7; }
+
+/* Directory */
+.filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr)); gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+input, select, textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
+textarea { min-height: 96px; resize: vertical; }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.person { display: flex; flex-direction: column; gap: 10px; }
+.person-head { display: flex; gap: 12px; align-items: center; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 700 1rem var(--display); flex: none; overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar.lg { width: 96px; height: 96px; font-size: 1.6rem; }
+.batch { font: 500 0.78rem var(--mono); color: var(--muted); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; font-size: 0.88rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.phone { display: flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; user-select: all; }
+.empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+
+/* Board */
+.board-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { all: unset; cursor: pointer; padding: 5px 12px; border-radius: 99px; border: 1px solid var(--line); font-size: 0.88rem; font-weight: 600; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip:focus-visible { outline: 2px solid var(--accent); }
+.post { display: flex; flex-direction: column; gap: 8px; }
+.post-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.post .where { color: var(--muted); font-size: 0.85rem; }
+.post p { max-width: 68ch; }
+
+/* Forms */
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.form .full { grid-column: 1 / -1; }
+.form-actions { grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+fieldset { border: 0; padding: 0; margin: 0; display: contents; }
+legend { grid-column: 1 / -1; font: 700 0.75rem var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 6px; }
+.photo-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.status-banner { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: var(--radius); }
+.status-banner.ok { background: var(--ok-soft); color: var(--ok); }
+.status-banner.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* Admin */
+.review { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 0; }
+.review:first-child { padding-top: 0; }
+.review:last-child { padding-bottom: 0; }
+.review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.modal-back { position: fixed; inset: 0; background: rgb(0 0 0 / 0.45); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.modal { width: min(560px, 100%); max-height: 90vh; overflow: auto; }
+
+.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 30; max-width: calc(100% - 32px); }
+
+.tabbar { display: none; }
+
+@media (max-width: 860px) {
+  .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters .field:first-child { grid-column: 1 / -1; }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  main { padding: 16px 16px calc(96px + env(safe-area-inset-bottom, 0px)); }
+  h1 { font-size: 1.45rem; }
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 10; }
+  .tabbar button { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.7rem; font-weight: 600; color: var(--muted); padding: 4px 0; position: relative; }
+  .tabbar button[aria-current="page"] { color: var(--accent); }
+  .tabbar svg { width: 22px; height: 22px; }
+  .tabbar .dot { position: absolute; top: 2px; right: calc(50% - 18px); width: 8px; height: 8px; border-radius: 50%; background: var(--bad); }
+  .mobile-top { display: flex !important; }
+  .form { grid-template-columns: minmax(0, 1fr); }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stat b { font-size: 1.3rem; }
+  .event { grid-template-columns: auto minmax(0, 1fr); }
+  .event > :last-child { grid-column: 1 / -1; }
+  .review { grid-template-columns: minmax(0, 1fr); }
+}
+.mobile-top { display: none; justify-content: space-between; align-items: center; gap: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .view { animation: rise 0.18s ease-out; }
+  @keyframes rise { from { transform: translateY(4px); } to { transform: none; } }
+}
+</style>
+</head><body>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <div class="crest" aria-hidden="true">NITA</div>
+      <div><b>NITA Alumni</b><small>Patna Chapter</small></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Main"></nav>
+    <div class="role">
+      <span>Viewing as</span>
+      <div class="seg" id="roleSeg">
+        <button type="button" data-role="member" aria-pressed="true">Alumnus</button>
+        <button type="button" data-role="admin" aria-pressed="false">Admin</button>
+      </div>
+      <button type="button" class="linkbtn" id="resetBtn">Reset sample data</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+<div id="modalRoot"></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  const ICONS = {
+    home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    events: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    alumni: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.1 4.3 1.8 5 4.4"/>',
+    board: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+    profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.2 4.1-6.5 8-6.5s7 2.3 8 6.5"/>',
+    admin: '<path d="M12 3l8 3v6c0 4.5-3.3 8.3-8 9-4.7-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[k] + '</svg>';
+
+  const BRANCHES = ["Civil Engineering", "Mechanical Engineering", "Electrical Engineering", "Electronics & Communication", "Computer Science & Engineering", "Chemical Engineering", "Production Engineering", "Electronics & Instrumentation", "Bio Engineering", "Physics", "Chemistry", "Mathematics", "Management (MBA)"];
+  const DEGREES = ["B.Tech", "M.Tech", "MBA", "M.Sc", "Ph.D"];
+  const STATES = ["Bihar", "Tripura", "Jharkhand", "West Bengal", "Uttar Pradesh", "Assam", "Delhi", "Karnataka", "Maharashtra", "Telangana", "Odisha", "Haryana"];
+
+  // Sample records only. Real data comes from the backend once it exists.
+  const SEED = {
+    me: "a1",
+    alumni: [
+      { id: "a1", name: "Rohit Kumar", phone: "98350 41276", batch: 2012, branch: "Civil Engineering", degree: "B.Tech", position: "Executive Engineer", org: "Bihar Rajya Pul Nirman Nigam", homeDistrict: "Nalanda", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "08UCE021", status: "verified" },
+      { id: "a2", name: "Priya Sinha", phone: "70046 11893", batch: 2015, branch: "Computer Science & Engineering", degree: "B.Tech", position: "Senior Software Engineer", org: "Infosys", homeDistrict: "Patna", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "11UCS034", status: "verified" },
+      { id: "a3", name: "Amit Ranjan", phone: "94311 20457", batch: 2008, branch: "Electrical Engineering", degree: "B.Tech", position: "Deputy General Manager", org: "NTPC Barh", homeDistrict: "Bhagalpur", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "04UEE012", status: "verified" },
+      { id: "a4", name: "Sneha Kumari", phone: "88772 30915", batch: 2019, branch: "Electronics & Communication", degree: "B.Tech", position: "Assistant Professor", org: "Aryabhatta Knowledge University", homeDistrict: "Muzaffarpur", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "15UEC048", status: "verified" },
+      { id: "a5", name: "Vikash Anand", phone: "99341 77620", batch: 2010, branch: "Mechanical Engineering", degree: "B.Tech", position: "Plant Head", org: "Tata Steel", homeDistrict: "Gaya", homeState: "Bihar", workDistrict: "East Singhbhum", workState: "Jharkhand", roll: "06UME057", status: "verified" },
+      { id: "a6", name: "Neha Bharti", phone: "62012 84439", batch: 2017, branch: "Management (MBA)", degree: "MBA", position: "Branch Manager", org: "State Bank of India", homeDistrict: "Darbhanga", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "15MBA009", status: "verified" },
+      { id: "a7", name: "Saurabh Mishra", phone: "79037 55102", batch: 2014, branch: "Chemical Engineering", degree: "B.Tech", position: "Process Engineer", org: "Indian Oil Corporation", homeDistrict: "Begusarai", homeState: "Bihar", workDistrict: "Begusarai", workState: "Bihar", roll: "10UCH018", status: "verified" },
+      { id: "a8", name: "Kumar Gaurav", phone: "90310 66284", batch: 2021, branch: "Computer Science & Engineering", degree: "M.Tech", position: "Data Analyst", org: "Bihar State Electronics Dev. Corp.", homeDistrict: "Saran", homeState: "Bihar", workDistrict: "Patna", workState: "Bihar", roll: "19PCS011", status: "pending", proof: "degree_certificate.pdf", applied: "2026-09-29" },
+      { id: "a9", name: "Ritika Raj", phone: "81023 49076", batch: 2023, branch: "Electronics & Instrumentation", degree: "B.Tech", position: "Graduate Engineer Trainee", org: "BHEL", homeDistrict: "Patna", homeState: "Bihar", workDistrict: "Haridwar", workState: "Uttarakhand", roll: "19UEI027", status: "pending", proof: "provisional_certificate.jpg", applied: "2026-10-01" }
+    ],
+    events: [
+      { id: "e1", title: "Patna Chapter Alumni Meet 2026", date: "2026-11-15", time: "5:00 PM", venue: "Hotel Maurya, Fraser Road, Patna", desc: "Annual get-together of NIT Agartala alumni in Bihar. Dinner, batch introductions and a session on mentoring final-year students from Bihar.", going: 46, rsvp: false },
+      { id: "e2", title: "Career guidance session for NITA students from Bihar", date: "2026-12-06", time: "11:00 AM", venue: "Online (link shared after RSVP)", desc: "Alumni from core and IT sectors answer questions on placements, GATE and higher studies.", going: 18, rsvp: false },
+      { id: "e3", title: "Chhath Puja meet-up", date: "2026-08-24", time: "6:30 PM", venue: "Gandhi Maidan, Patna", desc: "Informal evening for families.", going: 31, rsvp: true }
+    ],
+    updates: [
+      { tag: "Admission", title: "JoSAA 2026 reporting schedule for new B.Tech entrants", date: "2026-09-22" },
+      { tag: "Notice", title: "Convocation registration open for the graduating batch", date: "2026-09-18" },
+      { tag: "Tender", title: "Supply of laboratory equipment, Department of ECE", date: "2026-09-12" },
+      { tag: "News", title: "Institute hosts national conference on sustainable infrastructure", date: "2026-09-05" }
+    ],
+    posts: [
+      { id: "p1", type: "job", title: "Civil site engineers (2–4 yrs) for bridge projects", org: "Bihar Rajya Pul Nirman Nigam", district: "Patna", state: "Bihar", body: "Contract roles for two bridge sites near Patna. Send your CV to me and mention NITA in the subject line. I can refer up to three people.", by: "a1", date: "2026-09-30" },
+      { id: "p2", type: "job", title: "Referral: Java backend developers", org: "Infosys", district: "Patna", state: "Bihar", body: "Openings at the Patna development centre for 1–5 years of experience. Message me on the number in my profile.", by: "a2", date: "2026-09-26" },
+      { id: "p3", type: "help", title: "Help for a student's hostel fee", org: "", district: "Bhagalpur", state: "Bihar", body: "A second-year NITA student from Bhagalpur needs support for the hostel fee this semester. I am coordinating; call me if you can contribute.", by: "a3", date: "2026-09-20" },
+      { id: "p4", type: "help", title: "Guidance on GATE preparation", org: "", district: "Patna", state: "Bihar", body: "Happy to take weekend doubt-clearing sessions for juniors preparing for GATE ECE. Reach out on WhatsApp.", by: "a4", date: "2026-09-15" },
+      { id: "p5", type: "job", title: "Graduate trainees, mechanical maintenance", org: "Tata Steel", district: "East Singhbhum", state: "Jharkhand", body: "Hiring for the Jamshedpur works. Freshers from 2025–26 batches can apply; I will forward profiles.", by: "a5", date: "2026-09-10" }
+    ]
+  };
+
+  const KEY = "nita-patna-demo-v1";
+  let S;
+  function load() {
+    try { const raw = localStorage.getItem(KEY); if (raw) { S = JSON.parse(raw); return; } } catch (e) {}
+    S = JSON.parse(JSON.stringify(SEED));
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  load();
+
+  let view = "home";
+  let role = "member";
+  const filters = { q: "", branch: "", batch: "", workState: "", workDistrict: "" };
+  let boardType = "all";
+  let boardState = "";
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fmtDate = (d) => { const [y, m, dd] = d.split("-").map(Number); return dd + " " + MONTHS[m - 1] + " " + y; };
+  const today = "2026-10-03";
+  const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+  const byId = (id) => S.alumni.find((a) => a.id === id);
+  const me = () => byId(S.me);
+  const avatar = (a, cls) => '<div class="avatar ' + (cls || "") + '">' + (a.photo ? '<img src="' + a.photo + '" alt="">' : esc(initials(a.name))) + '</div>';
+  const options = (list, sel, blank) => (blank ? '<option value="">' + blank + '</option>' : "") + list.map((v) => '<option' + (String(v) === String(sel) ? " selected" : "") + ">" + esc(v) + "</option>").join("");
+  const pending = () => S.alumni.filter((a) => a.status === "pending");
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2400);
+  }
+
+  function navItems() {
+    const items = [["home", "Home"], ["events", "Events"], ["alumni", "Alumni"], ["board", "Jobs & Help"], ["profile", "My profile"]];
+    if (role === "admin") items.push(["admin", "Verify"]);
+    return items;
+  }
+  function renderNav() {
+    const p = pending().length;
+    $("#nav").innerHTML = navItems().map(([k, label]) =>
+      '<button type="button" data-go="' + k + '"' + (view === k ? ' aria-current="page"' : "") + ">" + svg(k) + label +
+      (k === "admin" && p ? '<span class="count">' + p + "</span>" : "") + "</button>").join("");
+    const tabs = navItems().filter(([k]) => role === "admin" ? k !== "home" : true).slice(0, 5);
+    $("#tabbar").innerHTML = tabs.map(([k, label]) =>
+      '<button type="button" data-go="' + k + '"' + (view === k ? ' aria-current="page"' : "") + ">" + svg(k) +
+      (label === "My profile" ? "Profile" : label === "Jobs & Help" ? "Jobs" : label) +
+      (k === "admin" && p ? '<span class="dot"></span>' : "") + "</button>").join("");
+    document.querySelectorAll("#roleSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.role === role)));
+  }
+
+  function header(title, sub, extra) {
+    return '<div class="mobile-top"><div class="brand"><div class="crest" aria-hidden="true">NITA</div><div><b>NITA Alumni</b><small>Patna Chapter</small></div></div>' +
+      '<div class="seg" style="width:170px">' + ["member", "admin"].map((r) => '<button type="button" data-role="' + r + '" aria-pressed="' + (role === r) + '">' + (r === "member" ? "Alumnus" : "Admin") + "</button>").join("") + "</div></div>" +
+      '<div class="top"><div><h1>' + title + "</h1>" + (sub ? "<p>" + sub + "</p>" : "") + "</div>" + (extra || "") + "</div>";
+  }
+
+  function eventBox(e) {
+    const [, m, d] = e.date.split("-").map(Number);
+    return '<div class="datebox"><b>' + d + "</b><span>" + MONTHS[m - 1] + "</span></div>";
+  }
+
+  function viewHome() {
+    const up = S.events.filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+    const next = up[0];
+    const verified = S.alumni.filter((a) => a.status === "verified");
+    const inBihar = verified.filter((a) => a.workState === "Bihar").length;
+    const jobs = S.posts.filter((p) => p.type === "job").length;
+    return header("Namaste, " + esc(me().name.split(" ")[0]), "NIT Agartala alumni in Bihar, in one place.", '<span class="demo-note">Prototype with sample data</span>') +
+      (next ? '<div class="card hero-event">' + eventBox(next) + '<div><div class="eyebrow">Next event</div><h2>' + esc(next.title) + '</h2><p class="meta">' + esc(next.time) + " · " + esc(next.venue) + '</p><div class="actions">' +
+        '<button type="button" class="btn" data-rsvp="' + next.id + '">' + (next.rsvp ? "You're going ✓" : "I'll attend") + '</button><span class="muted">' + next.going + " alumni going</span></div></div></div>" : "") +
+      '<div class="stats"><div class="card stat"><b>' + verified.length + '</b><span>verified alumni</span></div><div class="card stat"><b>' + inBihar + '</b><span>working in Bihar</span></div><div class="card stat"><b>' + jobs + '</b><span>open vacancies</span></div></div>' +
+      '<div class="grid2">' +
+      '<section class="section"><div class="section-head"><h2>From NIT Agartala</h2><a class="linkbtn" href="https://www.nita.ac.in" target="_blank" rel="noopener">nita.ac.in ↗</a></div><div class="card list">' +
+      S.updates.map((u) => '<div class="notice"><span class="tag">' + esc(u.tag) + "</span><div><h3>" + esc(u.title) + "</h3><small>" + fmtDate(u.date) + "</small></div></div>").join("") +
+      '</div><p class="muted">Sample headlines. In the real app these are pulled from the institute website.</p></section>' +
+      '<section class="section"><div class="section-head"><h2>Latest on the board</h2><button type="button" class="linkbtn" data-go="board">See all</button></div><div class="card list">' +
+      S.posts.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4).map((p) => '<div class="notice"><span class="tag ' + p.type + '">' + (p.type === "job" ? "Job" : "Help") + "</span><div><h3>" + esc(p.title) + "</h3><small>" + esc(p.district) + ", " + esc(p.state) + " · " + esc(byId(p.by)?.name || "") + "</small></div></div>").join("") +
+      "</div></section></div>";
+  }
+
+  function viewEvents() {
+    const sorted = S.events.slice().sort((a, b) => a.date.localeCompare(b.date));
+    const up = sorted.filter((e) => e.date >= today), past = sorted.filter((e) => e.date < today).reverse();
+    const row = (e, isPast) => '<div class="card event' + (isPast ? " past" : "") + '">' + eventBox(e) + '<div class="section" style="gap:4px"><h2>' + esc(e.title) + '</h2><p class="muted">' + fmtDate(e.date) + " · " + esc(e.time) + " · " + esc(e.venue) + "</p><p>" + esc(e.desc) + '</p><p class="muted">' + e.going + (isPast ? " attended" : " going") + "</p></div>" +
+      (isPast ? '<span class="tag">Past</span>' : '<button type="button" class="btn' + (e.rsvp ? " ghost" : "") + '" data-rsvp="' + e.id + '">' + (e.rsvp ? "Going ✓" : "I'll attend") + "</button>") + "</div>";
+    return header("Events", "Alumni meets and chapter activities.", role === "admin" ? '<button type="button" class="btn" data-open="event">Add event</button>' : "") +
+      '<section class="section"><div class="eyebrow">Upcoming</div>' + (up.length ? up.map((e) => row(e, false)).join("") : '<div class="card empty">No upcoming events yet.</div>') + "</section>" +
+      (past.length ? '<section class="section"><div class="eyebrow">Past</div>' + past.map((e) => row(e, true)).join("") + "</section>" : "");
+  }
+
+  function viewAlumni() {
+    const all = S.alumni.filter((a) => a.status === "verified");
+    const q = filters.q.trim().toLowerCase();
+    const list = all.filter((a) =>
+      (!q || [a.name, a.org, a.position, a.homeDistrict, a.workDistrict].join(" ").toLowerCase().includes(q)) &&
+      (!filters.branch || a.branch === filters.branch) &&
+      (!filters.batch || String(a.batch) === filters.batch) &&
+      (!filters.workState || a.workState === filters.workState) &&
+      (!filters.workDistrict || a.workDistrict === filters.workDistrict)
+    ).sort((a, b) => a.batch - b.batch || a.name.localeCompare(b.name));
+    const uniq = (k) => [...new Set(all.map((a) => a[k]))].sort();
+    const isVerified = me().status === "verified";
+    return header("Alumni directory", all.length + " verified alumni. Only verified members can see phone numbers.") +
+      '<div class="filters">' +
+      '<div class="field"><label for="f-q">Search</label><input id="f-q" data-filter="q" type="search" placeholder="Name, company, district" value="' + esc(filters.q) + '"></div>' +
+      '<div class="field"><label for="f-branch">Branch</label><select id="f-branch" data-filter="branch">' + options(uniq("branch"), filters.branch, "All") + "</select></div>" +
+      '<div class="field"><label for="f-batch">Batch</label><select id="f-batch" data-filter="batch">' + options(uniq("batch").map(String), filters.batch, "All") + "</select></div>" +
+      '<div class="field"><label for="f-ws">Working state</label><select id="f-ws" data-filter="workState">' + options(uniq("workState"), filters.workState, "All") + "</select></div>" +
+      '<div class="field"><label for="f-wd">Working district</label><select id="f-wd" data-filter="workDistrict">' + options(uniq("workDistrict"), filters.workDistrict, "All") + "</select></div>" +
+      "</div>" +
+      '<p class="muted" id="resultCount">' + list.length + " of " + all.length + " shown</p>" +
+      (list.length ? '<div class="people">' + list.map((a) =>
+        '<article class="card person"><div class="person-head">' + avatar(a) + '<div style="min-width:0"><h3>' + esc(a.name) + '</h3><div class="batch">' + esc(a.degree) + " · " + a.batch + "</div></div></div>" +
+        '<dl class="kv"><dt>Branch</dt><dd>' + esc(a.branch) + "</dd><dt>Role</dt><dd>" + esc(a.position) + ", " + esc(a.org) + "</dd><dt>Works in</dt><dd>" + esc(a.workDistrict) + ", " + esc(a.workState) + "</dd><dt>Home</dt><dd>" + esc(a.homeDistrict) + ", " + esc(a.homeState) + "</dd>" +
+        "<dt>Phone</dt><dd>" + (isVerified ? '<span class="phone">' + esc(a.phone) + ' <button type="button" class="btn ghost small" data-copy="' + esc(a.phone) + '">Copy</button></span>' : '<span class="muted">Visible after verification</span>') + "</dd></dl></article>").join("") + "</div>"
+        : '<div class="card empty">No alumni match these filters. <button type="button" class="linkbtn" data-clear>Clear filters</button></div>');
+  }
+
+  function viewBoard() {
+    const states = [...new Set(S.posts.map((p) => p.state))].sort();
+    const list = S.posts.filter((p) => (boardType === "all" || p.type === boardType) && (!boardState || p.state === boardState)).sort((a, b) => b.date.localeCompare(a.date));
+    return header("Jobs & Help", "Vacancies in your organisation, referrals, and requests for help from fellow alumni.", '<button type="button" class="btn" data-open="post">New post</button>') +
+      '<div class="board-bar"><div class="chips">' +
+      [["all", "All"], ["job", "Vacancies"], ["help", "Help"]].map(([k, l]) => '<button type="button" class="chip" data-type="' + k + '" aria-pressed="' + (boardType === k) + '">' + l + "</button>").join("") +
+      '</div><div class="field" style="flex-direction:row;align-items:center;gap:8px"><label for="b-state">Area</label><select id="b-state" style="width:auto">' + options(states, boardState, "All states") + "</select></div></div>" +
+      (list.length ? '<div class="section">' + list.map((p) => {
+        const a = byId(p.by) || { name: "Unknown" };
+        return '<article class="card post"><div class="post-head"><span class="tag ' + p.type + '">' + (p.type === "job" ? "Vacancy" : "Help") + '</span><span class="where">' + esc(p.district) + ", " + esc(p.state) + (p.org ? " · " + esc(p.org) : "") + "</span></div>" +
+          "<h2>" + esc(p.title) + "</h2><p>" + esc(p.body) + '</p><div class="person-head">' + avatar(a) + '<div><b>' + esc(a.name) + '</b><div class="muted">' + (a.batch ? esc(a.branch) + " · " + a.batch + " · " : "") + "Posted " + fmtDate(p.date) + "</div></div></div>" +
+          (p.by === S.me || role === "admin" ? '<div><button type="button" class="btn danger small" data-del="' + p.id + '">Remove post</button></div>' : "") + "</article>";
+      }).join("") + "</div>" : '<div class="card empty">Nothing posted here yet. Be the first to share a vacancy or ask for help.</div>');
+  }
+
+  function profileForm(a, mode) {
+    const f = (id, label, val, type, full) => '<div class="field' + (full ? " full" : "") + '"><label for="' + id + '">' + label + '</label><input id="' + id + '" name="' + id + '" type="' + (type || "text") + '" value="' + esc(val) + '" required></div>';
+    const sel = (id, label, list, val) => '<div class="field"><label for="' + id + '">' + label + '</label><select id="' + id + '" name="' + id + '" required>' + options(list, val, "Select") + "</select></div>";
+    const years = []; for (let y = 2026; y >= 1990; y--) years.push(y);
+    return '<form class="form card" id="profileForm" data-mode="' + mode + '">' +
+      '<div class="full photo-row">' + avatar(a, "lg") + '<div class="field"><label for="photo">Photo</label><input id="photo" type="file" accept="image/*"></div></div>' +
+      "<fieldset><legend>About you</legend>" + f("name", "Full name", a.name, "text", true) + f("phone", "Mobile number", a.phone, "tel") +
+      (mode === "register" ? f("roll", "Roll / enrolment number", a.roll || "") : '<div class="field"><label for="roll">Roll number</label><input id="roll" value="' + esc(a.roll || "") + '" disabled></div>') + "</fieldset>" +
+      "<fieldset><legend>At NIT Agartala</legend>" + sel("degree", "Degree", DEGREES, a.degree) + sel("batch", "Batch (passing year)", years, a.batch) + '<div class="field full"><label for="branch">Branch</label><select id="branch" name="branch" required>' + options(BRANCHES, a.branch, "Select") + "</select></div></fieldset>" +
+      "<fieldset><legend>Work</legend>" + f("position", "Current position", a.position) + f("org", "Current organisation", a.org) + f("workDistrict", "Work district", a.workDistrict) + sel("workState", "Working state", STATES.concat(["Uttarakhand", "Other"]), a.workState) + "</fieldset>" +
+      "<fieldset><legend>Home</legend>" + f("homeDistrict", "Home district", a.homeDistrict) + sel("homeState", "Home state", STATES.concat(["Other"]), a.homeState) + "</fieldset>" +
+      (mode === "register" ? '<fieldset><legend>Proof of alumni status</legend><div class="field full"><label for="proof">Degree, provisional certificate or institute ID card</label><input id="proof" type="file" accept="image/*,.pdf" required></div><p class="muted full">An admin checks this against institute records before your profile appears in the directory.</p></fieldset>' : "") +
+      '<div class="form-actions">' + (mode === "register" ? '<button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Submit for verification</button>' : '<button class="btn">Save profile</button>') + "</div></form>";
+  }
+
+  function viewProfile() {
+    const a = me();
+    const banner = a.status === "verified"
+      ? '<div class="status-banner ok"><span class="tag ok">Verified</span><span>Your profile is visible in the alumni directory.</span></div>'
+      : '<div class="status-banner warn"><span class="tag warn">Pending</span><span>An admin is checking your details. You can still edit your profile.</span></div>';
+    return header("My profile", "Keep this up to date so fellow alumni can find you.", '<button type="button" class="btn ghost" data-open="register">Preview registration</button>') + banner + profileForm(a, "edit");
+  }
+
+  function viewAdmin() {
+    const p = pending();
+    const rejected = S.alumni.filter((a) => a.status === "rejected");
+    return header("Verify alumni", "Check each applicant against institute records before approving.") +
+      '<section class="section"><div class="eyebrow">Waiting for review · ' + p.length + '</div><div class="card list">' +
+      (p.length ? p.map((a) => '<div class="review"><div class="person-head">' + avatar(a) + '<div style="min-width:0"><h3>' + esc(a.name) + '</h3><div class="batch">' + esc(a.roll) + " · " + esc(a.degree) + " " + esc(a.branch) + " · " + a.batch + '</div><div class="muted">' + esc(a.position) + ", " + esc(a.org) + " · Proof: " + esc(a.proof || "not attached") + " · Applied " + fmtDate(a.applied || today) + "</div></div></div>" +
+        '<div class="review-actions"><button type="button" class="btn danger small" data-reject="' + a.id + '">Reject</button><button type="button" class="btn small" data-approve="' + a.id + '">Approve</button></div></div>').join("")
+        : '<div class="empty">All caught up. New registrations appear here.</div>') + "</div></section>" +
+      (rejected.length ? '<section class="section"><div class="eyebrow">Rejected</div><div class="card list">' + rejected.map((a) => '<div class="review"><div><h3>' + esc(a.name) + '</h3><div class="batch">' + esc(a.roll) + " · " + a.batch + '</div></div><button type="button" class="btn ghost small" data-approve="' + a.id + '">Approve instead</button></div>').join("") + "</div></section>" : "");
+  }
+
+  function render() {
+    if (view === "admin" && role !== "admin") view = "home";
+    renderNav();
+    const v = { home: viewHome, events: viewEvents, alumni: viewAlumni, board: viewBoard, profile: viewProfile, admin: viewAdmin }[view]();
+    $("#main").innerHTML = '<div class="view section" style="gap:24px">' + v + "</div>";
+  }
+
+  function modal(html) {
+    $("#modalRoot").innerHTML = '<div class="modal-back" data-backdrop><div class="card modal" role="dialog" aria-modal="true">' + html + "</div></div>";
+    const first = $("#modalRoot input, #modalRoot select, #modalRoot textarea"); if (first) first.focus();
+  }
+  function closeModal() { $("#modalRoot").innerHTML = ""; }
+
+  function openPost() {
+    const a = me();
+    modal('<h2>New post</h2><p class="muted" style="margin:4px 0 14px">Share a vacancy in your organisation or ask fellow alumni for help.</p>' +
+      '<form class="form" id="postForm"><div class="field full"><label for="pt">Type</label><select id="pt" name="type"><option value="job">Vacancy / referral</option><option value="help">Help request or offer</option></select></div>' +
+      '<div class="field full"><label for="ptitle">Title</label><input id="ptitle" name="title" required placeholder="e.g. Hiring two site engineers"></div>' +
+      '<div class="field full"><label for="porg">Organisation (optional)</label><input id="porg" name="org" value="' + esc(a.org) + '"></div>' +
+      '<div class="field"><label for="pdist">District</label><input id="pdist" name="district" required value="' + esc(a.workDistrict) + '"></div>' +
+      '<div class="field"><label for="pstate">State</label><select id="pstate" name="state">' + options(STATES.concat(["Uttarakhand", "Other"]), a.workState) + "</select></div>" +
+      '<div class="field full"><label for="pbody">Details</label><textarea id="pbody" name="body" required placeholder="Role, experience, how to apply or how people can help"></textarea></div>' +
+      '<div class="form-actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Post</button></div></form>');
+  }
+  function openEvent() {
+    modal('<h2>Add event</h2><form class="form" id="eventForm" style="margin-top:14px"><div class="field full"><label for="et">Title</label><input id="et" name="title" required></div>' +
+      '<div class="field"><label for="ed">Date</label><input id="ed" name="date" type="date" required min="' + today + '"></div><div class="field"><label for="etime">Time</label><input id="etime" name="time" placeholder="6:00 PM" required></div>' +
+      '<div class="field full"><label for="ev">Venue</label><input id="ev" name="venue" required></div><div class="field full"><label for="edesc">Description</label><textarea id="edesc" name="desc"></textarea></div>' +
+      '<div class="form-actions"><button type="button" class="btn ghost" data-close>Cancel</button><button class="btn">Publish event</button></div></form>');
+  }
+  function openRegister() {
+    modal('<h2>Join the Patna chapter</h2><p class="muted" style="margin:4px 0 14px">This is what a new alumnus fills in. The request goes to the admin for verification.</p>' +
+      profileForm({ name: "", phone: "", batch: "", branch: "", degree: "", position: "", org: "", homeDistrict: "", homeState: "Bihar", workDistrict: "", workState: "Bihar" }, "register"));
+  }
+
+  let pendingPhoto = null;
+  document.addEventListener("click", (ev) => {
+    const t = ev.target.closest("button, [data-backdrop]");
+    if (!t) return;
+    if (t.hasAttribute("data-backdrop")) { if (ev.target === t) closeModal(); return; }
+    const d = t.dataset;
+    if (d.go) { view = d.go; render(); window.scrollTo(0, 0); }
+    else if (d.role) { role = d.role; if (role === "admin" && view === "home") view = "admin"; render(); toast(role === "admin" ? "Viewing as admin" : "Viewing as alumnus"); }
+    else if (d.rsvp) { const e = S.events.find((x) => x.id === d.rsvp); e.rsvp = !e.rsvp; e.going += e.rsvp ? 1 : -1; save(); render(); toast(e.rsvp ? "Marked as attending" : "RSVP withdrawn"); }
+    else if (d.copy) { const v = d.copy; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast("Number copied"), () => { const r = document.createRange(); r.selectNodeContents(t.parentNode); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Number selected. Press Ctrl+C to copy"); }); }
+    else if ("clear" in d) { Object.keys(filters).forEach((k) => (filters[k] = "")); render(); }
+    else if (d.type) { boardType = d.type; render(); }
+    else if (d.del) { S.posts = S.posts.filter((p) => p.id !== d.del); save(); render(); toast("Post removed"); }
+    else if (d.approve) { byId(d.approve).status = "verified"; save(); render(); toast("Approved. Now listed in the directory"); }
+    else if (d.reject) { byId(d.reject).status = "rejected"; save(); render(); toast("Registration rejected"); }
+    else if (d.open === "post") openPost();
+    else if (d.open === "event") openEvent();
+    else if (d.open === "register") openRegister();
+    else if ("close" in d) closeModal();
+    else if (t.id === "resetBtn") { S = JSON.parse(JSON.stringify(SEED)); save(); render(); toast("Sample data restored"); }
+  });
+
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && $("#modalRoot").firstChild) closeModal(); });
+
+  document.addEventListener("input", (ev) => {
+    const k = ev.target.dataset.filter;
+    if (k === "q") {
+      filters.q = ev.target.value;
+      const pos = ev.target.selectionStart; render();
+      const i = $("#f-q"); i.focus(); i.setSelectionRange(pos, pos);
+    }
+  });
+  document.addEventListener("change", (ev) => {
+    const t = ev.target;
+    if (t.dataset.filter && t.dataset.filter !== "q") { filters[t.dataset.filter] = t.value; render(); }
+    else if (t.id === "b-state") { boardState = t.value; render(); }
+    else if (t.id === "photo" && t.files[0]) {
+      const r = new FileReader();
+      r.onload = () => { pendingPhoto = r.result; const av = t.closest("form").querySelector(".avatar"); av.innerHTML = '<img src="' + pendingPhoto + '" alt="">'; };
+      r.readAsDataURL(t.files[0]);
+    }
+  });
+
+  document.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const form = ev.target, data = Object.fromEntries(new FormData(form));
+    if (form.id === "profileForm") {
+      const fields = { name: data.name, phone: data.phone, batch: Number(data.batch), branch: data.branch, degree: data.degree, position: data.position, org: data.org, homeDistrict: data.homeDistrict, homeState: data.homeState, workDistrict: data.workDistrict, workState: data.workState };
+      if (form.dataset.mode === "register") {
+        const proof = $("#proof").files[0];
+        S.alumni.push(Object.assign({ id: "a" + Date.now(), roll: data.roll, status: "pending", proof: proof ? proof.name : "", applied: today, photo: pendingPhoto }, fields));
+        closeModal(); toast("Submitted. Switch to Admin to review it");
+      } else {
+        Object.assign(me(), fields); if (pendingPhoto) me().photo = pendingPhoto;
+        toast("Profile saved");
+      }
+      pendingPhoto = null; save(); render();
+    } else if (form.id === "postForm") {
+      S.posts.push({ id: "p" + Date.now(), type: data.type, title: data.title, org: data.org, district: data.district, state: data.state, body: data.body, by: S.me, date: today });
+      boardType = "all"; boardState = ""; save(); closeModal(); render(); toast("Posted to the board");
+    } else if (form.id === "eventForm") {
+      S.events.push({ id: "e" + Date.now(), title: data.title, date: data.date, time: data.time, venue: data.venue, desc: data.desc, going: 0, rsvp: false });
+      save(); closeModal(); render(); toast("Event published");
+    }
+  });
+
+  render();
+})();
+</script>
+</body></html>
