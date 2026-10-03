@@ -2,29 +2,33 @@
 
 Web and mobile app for NIT Agartala alumni in Bihar.
 
+| File | Contents |
+| --- | --- |
+| [`PRODUCT.md`](PRODUCT.md) | Product and technical spec: roles, features, phased plan, recommended stack, data model, server rules, operating procedures, open questions |
+| [`ui-prototype/index.html`](ui-prototype/index.html) | Clickable prototype (v2). Open in a browser; no build step |
+
 ## UI prototype
 
-[`ui-prototype/index.html`](ui-prototype/index.html) is a clickable, single-file prototype. Open it in a
-browser; no build step. It uses **sample data** saved in the browser's local storage
-("Reset sample data" in the sidebar restores it). Nothing is sent to a server.
+The prototype uses **sample data** saved in the browser's local storage. Nothing is sent to a
+server. "Reset sample data" in the sidebar restores the original data.
 
-The layout is responsive: a sidebar on desktop and a bottom tab bar on phones, so the same
-screens can be wrapped as an Android/iOS app later.
+Use the **Demo: view as** menu to switch between a visitor, an applicant waiting for verification,
+a member and an admin. To try sign-in, use mobile `98350 41276` and the code shown on screen, or a
+new number to go through registration.
 
 | Screen | What it covers |
 | --- | --- |
-| Home | Next alumni meet with RSVP, headline numbers, updates from NIT Agartala, latest board posts |
-| Events | Upcoming and past events; admins can add events |
-| Alumni | Directory of verified alumni, filtered by name/company, branch, batch, working state and district. Phone numbers are shown only to verified members |
-| Jobs & Help | Vacancies, referrals and help requests, filtered by type and state |
-| My profile | Edit name, photo, number, batch, branch, degree, current position and organisation, home district/state, work district/state |
-| Registration | New alumnus fills the profile plus roll number and a proof document; the request goes to the admin |
-| Verify (admin) | Approve or reject pending registrations; approved alumni appear in the directory |
-
-Use the **Alumnus / Admin** switch to see both roles.
+| Home | Visitors: what the chapter is, how joining works, next event, institute updates, committee. Members: profile completeness, next event with RSVP, pinned announcements, numbers, institute updates, latest board posts |
+| Sign in / Join | Mobile number + one-time code. New numbers go to registration: profile, roll number, proof upload, optional vouch from a verified alumnus, consent |
+| Events | RSVP with guests, places left, contribution, add to Google Calendar, who's going. Admins add events |
+| Alumni | Verified members only. Search, filters, quick filters (my batch, my district, mentors), "where alumni work" by district, full profile with WhatsApp and LinkedIn. Phone and email follow each person's privacy setting |
+| Jobs & Help | Vacancy, referral, help needed, offering help, mentorship. Posts expire; authors mark them filled or closed and see who is interested; anyone can report a post |
+| My profile | All profile fields, photo, completeness, privacy for phone and email, notification preferences, sign out, request deletion. Rejected applicants correct and resubmit here |
+| Notifications | Bell with unread count: verification result, new events, responses to your posts, vacancies in your state |
+| Admin | Overview, Verify (checklist, approve, ask for info, reject with reason), Reports, Members (roles, suspend), Content (announcements, events, institute updates), Activity log. Moderators see Verify and Reports only |
 
 ## Not built yet
 
-- Backend (accounts, login, storage, file uploads, admin roles)
-- Pulling updates from www.nita.ac.in (the headlines in the prototype are placeholders)
-- Native app packaging
+See section 4 of [`PRODUCT.md`](PRODUCT.md). In short: the backend and real data, WhatsApp/email
+delivery, file storage for photos and proofs, automatic import of institute updates (not yet
+confirmed to be possible), payments, and Play Store packaging.
