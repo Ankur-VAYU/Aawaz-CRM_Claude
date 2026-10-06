@@ -2,6 +2,7 @@ import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, sql } from 'driz
 import type { Db } from '../../db/index.js';
 import { bills, customers, items, ledgerEntries, type Store } from '../../db/schema.js';
 import { formatRupees } from '../../lib/money.js';
+import type { Lang } from '../../lib/replies.js';
 import { itemDisplayName } from '../../lib/serialize.js';
 import { localDate } from '../../lib/time.js';
 
@@ -80,14 +81,19 @@ export async function dailySummary(db: Db, store: Store, date = localDate(store.
   };
 }
 
-export function summaryMessage(storeName: string, s: Awaited<ReturnType<typeof dailySummary>>) {
+export function summaryMessage(storeName: string, s: Awaited<ReturnType<typeof dailySummary>>, lang: Lang = 'hinglish') {
+  const L = {
+    hinglish: { title: 'Aaj ki bikri', bills: 'bill', paid: 'Cash + UPI', given: 'Udhaar diya', back: 'Udhaar wapas', newC: 'Naye grahak', low: 'Stock kam', top: 'Sabse zyada udhaar' },
+    hi: { title: 'आज की बिक्री', bills: 'बिल', paid: 'कैश + UPI', given: 'उधार दिया', back: 'उधार वापस', newC: 'नए ग्राहक', low: 'स्टॉक कम', top: 'सबसे ज़्यादा उधार' },
+    en: { title: "Today's sales", bills: 'bills', paid: 'Cash + UPI', given: 'Credit given', back: 'Credit repaid', newC: 'New customers', low: 'Low stock', top: 'Highest dues' },
+  }[lang];
   const lines = [
-    `${storeName} · Aaj ki bikri (${s.date})`,
-    `${formatRupees(s.sales.total)} · ${s.sales.bills} bill`,
-    `Cash + UPI ${formatRupees(s.sales.cashAndUpi)} · Udhaar diya ${formatRupees(s.sales.udhaarGiven)} · Udhaar wapas ${formatRupees(s.udhaarRecovered)}`,
-    `Naye grahak: ${s.newCustomers}`,
+    `${storeName} · ${L.title} (${s.date})`,
+    `${formatRupees(s.sales.total)} · ${s.sales.bills} ${L.bills}`,
+    `${L.paid} ${formatRupees(s.sales.cashAndUpi)} · ${L.given} ${formatRupees(s.sales.udhaarGiven)} · ${L.back} ${formatRupees(s.udhaarRecovered)}`,
+    `${L.newC}: ${s.newCustomers}`,
   ];
-  if (s.lowStock.length) lines.push(`Stock kam: ${s.lowStock.map((i) => `${i.name} (${i.stock} ${i.stockLabel})`).join(', ')}`);
-  if (s.topDues.length) lines.push(`Sabse zyada udhaar: ${s.topDues.slice(0, 3).map((c) => `${c.name} ${formatRupees(c.balance)}`).join(', ')}`);
+  if (s.lowStock.length) lines.push(`${L.low}: ${s.lowStock.map((i) => `${i.name} (${i.stock} ${i.stockLabel})`).join(', ')}`);
+  if (s.topDues.length) lines.push(`${L.top}: ${s.topDues.slice(0, 3).map((c) => `${c.name} ${formatRupees(c.balance)}`).join(', ')}`);
   return lines.join('\n');
 }

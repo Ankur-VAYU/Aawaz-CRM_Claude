@@ -74,7 +74,7 @@ export async function queueDailySummaries(db: Db, now = new Date()) {
       storeId: store.id,
       toPhone: ownerPhone,
       type: 'daily_summary',
-      body: summaryMessage(store.name, summary),
+      body: summaryMessage(store.name, summary, store.language),
       payload: summary,
     });
     queued++;

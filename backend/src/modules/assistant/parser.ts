@@ -55,16 +55,21 @@ const NUMBER_WORDS: Record<string, number> = {
   chalis: 40, chalees: 40, pachas: 50, pachaas: 50, saath: 60, sattar: 70, assi: 80, nabbe: 90,
   aadha: 0.5, adha: 0.5, aadhi: 0.5, half: 0.5, paav: 0.25, pav: 0.25, paune: 0.75,
   dedh: 1.5, dhedh: 1.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, dhaee: 2.5,
+  // English
+  a: 1, an: 1, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16,
+  seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50,
+  sixty: 60, seventy: 70, eighty: 80, ninety: 90, quarter: 0.25, dozen: 12,
 };
 const MULTIPLIERS: Record<string, number> = { sau: 100, so: 100, hundred: 100, hazaar: 1000, hazar: 1000, hajar: 1000, thousand: 1000 };
 
 const UNIT_WORDS: Record<string, MeasureUnit | 'pc'> = {
-  kilo: 'kg', kg: 'kg', kgs: 'kg', kilogram: 'kg', kilograms: 'kg', kgram: 'kg',
+  kilo: 'kg', kilos: 'kg', kg: 'kg', kgs: 'kg', kilogram: 'kg', kilograms: 'kg', kgram: 'kg',
   gram: 'g', grams: 'g', gm: 'g', gms: 'g', g: 'g', gr: 'g',
   litre: 'l', liter: 'l', litres: 'l', liters: 'l', ltr: 'l', l: 'l', lit: 'l',
   ml: 'ml', mililitre: 'ml', millilitre: 'ml', milliliter: 'ml',
   packet: 'pc', packets: 'pc', pack: 'pc', pkt: 'pc', pc: 'pc', pcs: 'pc', piece: 'pc', pieces: 'pc',
-  nag: 'pc', dabba: 'pc', dabbe: 'pc', bottle: 'pc', bottles: 'pc', bag: 'pc', bori: 'pc', x: 'pc',
+  nag: 'pc', dabba: 'pc', dabbe: 'pc', bottle: 'pc', bottles: 'pc', bag: 'pc', bags: 'pc', bori: 'pc', x: 'pc',
+  packs: 'pc', box: 'pc', boxes: 'pc', tin: 'pc', tins: 'pc', jar: 'pc', jars: 'pc', unit: 'pc', units: 'pc',
 };
 
 const DEVANAGARI_DIGITS = '०१२३४५६७८९';
@@ -150,7 +155,7 @@ export function parseLine(raw: string): ParsedLine | null {
       groups.push({ value: 1, unit });
       continue;
     }
-    if (tokens[i] === 'x' || tokens[i] === 'wala' || tokens[i] === 'wali' || tokens[i] === 'vala') continue;
+    if (['x', 'wala', 'wali', 'vala', 'of'].includes(tokens[i])) continue;
     nameTokens.push(tokens[i]);
   }
   const name = nameTokens.join(' ').trim();
@@ -165,7 +170,10 @@ export function parseLine(raw: string): ParsedLine | null {
   return { raw: raw.trim(), name, count, measure, unclear };
 }
 
-const CREDIT_RE = /\b(udhaar|udhar|udhari|khate|khata|khaate|baad me|baad mein|credit)\b/;
+const CREDIT_RE = /\b(udhaar|udhar|udhari|khate|khata|khaate|baad me|baad mein|credit|on account|his account|her account|their account|pay later)\b/;
+// English filler around a bill ("on credit", "put it on his account", "please").
+const EN_FILLER_RE =
+  /\b(put (it )?|add (it )?|write (it )?)?(on|in|to) (credit|account|his account|her account|their account|khata)\b|\b(on credit|pay later|please|bill|make a bill|make bill)\b|\b(by|via|through|in|with) (upi|cash|online|gpay|phonepe|paytm)\b/g;
 const UPI_RE = /\b(upi|online|gpay|google pay|phonepe|phone pe|paytm|qr)\b/;
 const FILLER_RE =
   /\b(udhaar|udhar|udhari|khate|khaate|khata|credit)\s*(me|mein|main|par|pe)?\s*(likh|daal|dal|jod|chadha)?\s*(do|dijiye|dena|de)?\b|\b(upi|online|gpay|phonepe|paytm|cash|nakad)\s*(se|me|mein|main)?\s*(diye|diya|payment)?\b|\b(likh|likho|likh do|bill bana|bill banao|bana do|banao|de do|dena|do na|dijiye|chahiye|please|plz|ka bill|ke liye)\b/g;
@@ -175,12 +183,46 @@ const AMOUNT_WORDS = `(?:\\d[\\d,]*(?:\\.\\d+)?|\\b(?:${[...Object.keys(NUMBER_W
 const UPFRONT_RE = new RegExp(
   `(?:₹\\s*)?((?:${AMOUNT_WORDS}\\s*)+)\\s*(?:rupaye|rupay|rupees|rs)?\\s*(abhi|nakad|cash|upi|online|gpay|phonepe|paytm)?\\s*(?:se|me|mein|main)?\\s*(?:de diye|diye|diya|di|mile|mila|jama kiye|jama)\\b`,
 );
+// "paid 50 now", "gave 200 by upi"
+const UPFRONT_EN_RE = new RegExp(
+  `\\b(?:paid|gave|given|has paid)\\s+((?:${AMOUNT_WORDS}\\s*)+)\\s*(?:rupees|rs)?\\s*(?:now)?\\s*(?:(?:by|via|in|through)\\s+)?(upi|cash|online|gpay|phonepe|paytm)?\\s*(?:now)?\\b`,
+);
 // Words that are left over after removing a part payment and must not become bill lines.
-const LEFTOVER_WORDS = new Set(['baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke']);
+const LEFTOVER_WORDS = new Set([
+  'baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke',
+  'rest', 'remaining', 'balance', 'now', 'the', 'and', 'it', 'is', 'give', 'gave', 'sell', 'sold',
+]);
 
 // "maal aaya", "Gupta Traders se maal aaya", "stock jodo", "naya stock aaya"
 const STOCK_IN_RE =
   /^(?:(.+?)\s+se\s+)?(?:naya\s+)?(?:maal|stock|saamaan|saman)\s+(?:aaya hai|aa gaya|aagaya|aa gaye|aaya|aya|aaye|aye|mila|jodo|joda|daalo|dalo|add karo|add|in)\b[\s:,-]*/;
+
+// "stock received: ...", "received stock from Gupta Traders: ...", "new stock arrived ..."
+const STOCK_IN_EN_RE =
+  /^(?:(?:received|got)\s+(?:new\s+)?(?:stock|goods|items|maal)|(?:new\s+)?(?:stock|goods|maal)\s+(?:received|arrived|came|has come|in))(?:\s+from\s+([^:,]+?))?\s*(?=[:,]|\s+\d|$)[\s:,-]*/;
+
+/**
+ * English bill phrasing: "give Ramesh 2 kg sugar", "for Ramesh: 2 kg sugar", "2 kg sugar for Ramesh
+ * on credit". Returns the customer name and the rest of the sentence.
+ */
+function englishBillCustomer(text: string): { name: string; body: string } | null {
+  const isQty = (w: string) => parseNumberToken(w) !== null;
+  const prefix = text.match(/^(?:give|sell to|bill for|bill to|for|to)\s+(.+)$/);
+  if (prefix) {
+    const words = prefix[1].replace(/[:,]/g, ' , ').split(/\s+/).filter(Boolean);
+    const stop = words.findIndex((w) => w === ',' || isQty(w));
+    if (stop > 0) {
+      const name = cleanName(words.slice(0, stop).join(' '));
+      if (name) return { name, body: words.slice(stop).join(' ') };
+    }
+  }
+  const suffix = text.match(/^(.*?)\s+(?:for|to)\s+([\p{L} .]+?)(?=\s+(?:on credit|on account|in credit|credit|udhaar|by upi|in cash|cash|upi|please|paid|gave)\b|[.,!?]?\s*$)(.*)$/u);
+  if (suffix) {
+    const name = cleanName(suffix[2]);
+    if (name) return { name, body: `${suffix[1]} ${suffix[3]}` };
+  }
+  return null;
+}
 
 function splitLines(body: string): ParsedLine[] {
   return body
@@ -214,6 +256,46 @@ export function parseCommand(input: string): Intent {
     if (lines.length) {
       const supplier = stockIn[1] ? cleanName(stockIn[1]) : null;
       return { type: 'stock_in', supplier, lines };
+    }
+  }
+
+  const stockInEn = text.match(STOCK_IN_EN_RE);
+  if (stockInEn) {
+    const lines = splitLines(text.slice(stockInEn[0].length));
+    if (lines.length) return { type: 'stock_in', supplier: stockInEn[1] ? cleanName(stockInEn[1]) : null, lines };
+  }
+
+  if (/\b(show|list|all)\b.*\bcustomers?\b|\bcustomers? list\b|\bmy customers\b/.test(text)) {
+    return { type: 'list_customers' };
+  }
+  if (/\btoday'?s? (sales|summary|report|business|total)\b|\b(sales|summary|report) (for |of )?today\b|\bdaily (summary|report)\b|\bhow much (did i|did we|have i) (sell|sold|earn)/.test(text)) {
+    return { type: 'daily_summary' };
+  }
+  if (/\blow stock\b|\bstock (is )?(low|running out|finishing)\b|\brunning (out|low)\b|\bwhat (to|should i|do i need to) (buy|order|reorder)\b|\b(purchase|shopping|reorder) list\b/.test(text)) {
+    return { type: 'low_stock' };
+  }
+  {
+    const en =
+      text.match(/^(?:please\s+)?(?:remind|send (?:a )?reminder to)\s+(.+?)(?:\s+(?:about|to pay|for)\b.*)?$/) ??
+      null;
+    const name = en ? cleanName(en[1]) : null;
+    if (name) return { type: 'send_reminder', customerName: name };
+  }
+  {
+    const en =
+      text.match(/^how much (?:does|do|is|money (?:does|is))?\s*(.+?)\s+(?:owe|owes|have to pay|has to pay|due|pending)\b/) ??
+      text.match(/^(?:what is |what's |show |check |tell me )?(.+?)(?:'s|s')\s+(?:balance|due|dues|account|khata|ledger|total)\b/) ??
+      text.match(/^(?:show |check )?(?:balance|dues?|account|khata|ledger) (?:of|for) (.+?)\??$/);
+    const name = en ? cleanName(en[1]) : null;
+    if (name) return { type: 'query_balance', customerName: name };
+  }
+  {
+    const paidBy = text.match(/^(.+?)\s+(?:paid|has paid|gave|deposited|returned)\s+(?:me\s+|us\s+)?(.+?)(?:\s+(?:rupees|rs)\b.*|\s+(?:by|via|through|in|on)\s+.*|\s+(?:cash|upi|online)\b.*)?$/);
+    const gotFrom = text.match(/^(?:received|got|collected)\s+(.+?)\s+(?:rupees\s+|rs\s+)?from\s+(.+?)(?:\s+(?:by|via|through|in|on)\s+.*|\s+(?:cash|upi|online)\b.*)?$/);
+    const name = paidBy ? cleanName(paidBy[1]) : gotFrom ? cleanName(gotFrom[2]) : null;
+    const amountRupees = paidBy ? parseAmount(paidBy[2]) : gotFrom ? parseAmount(gotFrom[1]) : null;
+    if (name && amountRupees && amountRupees > 0) {
+      return { type: 'record_payment', customerName: name, amount: Math.round(amountRupees * 100), method: UPI_RE.test(text) ? 'upi' : 'cash' };
     }
   }
 
@@ -266,17 +348,24 @@ export function parseCommand(input: string): Intent {
       body = nameMatch[3];
     }
   }
+  if (!customerName) {
+    const en = englishBillCustomer(clean(input));
+    if (en) {
+      customerName = en.name;
+      body = en.body;
+    }
+  }
   body = clean(body);
   let upfront: { amount: number; method: 'cash' | 'upi' } | undefined;
   if (paymentMode === 'udhaar') {
-    const paid = body.match(UPFRONT_RE);
+    const paid = body.match(UPFRONT_RE) ?? body.match(UPFRONT_EN_RE);
     const rupees = paid ? parseAmount(paid[1]) : null;
     if (paid && rupees && rupees > 0) {
       upfront = { amount: Math.round(rupees * 100), method: paid[2] && UPI_RE.test(paid[2]) ? 'upi' : 'cash' };
       body = body.replace(paid[0], ' ');
     }
   }
-  const lines = splitLines(body.replace(FILLER_RE, ' '));
+  const lines = splitLines(body.replace(EN_FILLER_RE, ' ').replace(FILLER_RE, ' '));
 
   if (!lines.length) return { type: 'unknown' };
   // Without a quantity, a customer or a payment word, a lone word ("hmm", "haan") isn't a bill.

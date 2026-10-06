@@ -11,15 +11,15 @@ export const bearer = (token: string) => ({ authorization: `Bearer ${token}` });
 
 /** The catalogue used across tests, matching the shop in the design. Prices in rupees. */
 export const DESIGN_ITEMS = [
-  { name: 'Atta', unit: 'kg', unitSize: 5, price: 245, stock: 24, stockLabel: 'bag' },
-  { name: 'Toor dal', unit: 'kg', unitSize: 1, price: 160, stock: 12 },
+  { name: 'Atta', unit: 'kg', unitSize: 5, price: 245, stock: 24, stockLabel: 'bag', aliases: ['wheat flour', 'flour'] },
+  { name: 'Toor dal', unit: 'kg', unitSize: 1, price: 160, stock: 12, aliases: ['arhar dal'] },
   { name: 'Sarson tel', unit: 'l', unitSize: 1, price: 170, stock: 10, aliases: ['mustard oil'] },
-  { name: 'Sarson tel', unit: 'ml', unitSize: 500, price: 90, stock: 10 },
+  { name: 'Sarson tel', unit: 'ml', unitSize: 500, price: 90, stock: 10, aliases: ['mustard oil'] },
   { name: 'Moong dal', unit: 'kg', unitSize: 1, price: 130, stock: 20 },
-  { name: 'Maida', unit: 'kg', unitSize: 1, price: 45, stock: 20 },
-  { name: 'Chawal', unit: 'kg', unitSize: 1, price: 60, stock: 50 },
-  { name: 'Namak', unit: 'pc', unitSize: 1, price: 25, stock: 30, stockLabel: 'pc' },
-  { name: 'Cheeni', unit: 'kg', unitSize: 1, price: 45, stock: 3, lowStockThreshold: 5 },
+  { name: 'Maida', unit: 'kg', unitSize: 1, price: 45, stock: 20, aliases: ['refined flour'] },
+  { name: 'Chawal', unit: 'kg', unitSize: 1, price: 60, stock: 50, aliases: ['rice'] },
+  { name: 'Namak', unit: 'pc', unitSize: 1, price: 25, stock: 30, stockLabel: 'pc', aliases: ['salt'] },
+  { name: 'Cheeni', unit: 'kg', unitSize: 1, price: 45, stock: 3, lowStockThreshold: 5, aliases: ['sugar'] },
 ];
 
 export async function setupTestApp() {

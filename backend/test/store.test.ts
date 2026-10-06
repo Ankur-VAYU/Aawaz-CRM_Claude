@@ -111,7 +111,7 @@ describe('items', () => {
     const search = (await t.inject('GET', '/api/v1/items?search=chee', token)).json().data;
     expect(search).toHaveLength(0);
     const alias = (await t.inject('GET', '/api/v1/items?search=mustard', token)).json().data;
-    expect(alias.map((i: { displayName: string }) => i.displayName)).toEqual(['Sarson tel 1 L']);
+    expect(alias.map((i: { displayName: string }) => i.displayName)).toEqual(['Sarson tel 1 L', 'Sarson tel 500 ml']);
   });
 
   it('shops cannot see each other’s data', async () => {

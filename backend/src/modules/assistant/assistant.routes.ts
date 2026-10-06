@@ -131,9 +131,7 @@ export default async function assistantRoutes(app: FastifyInstance, { db, billsS
       case 'stock_in': {
         const catalog = await db.select().from(items).where(and(eq(items.storeId, store.id), eq(items.isActive, true)));
         const preview = previewStockIn(catalog, intent.lines);
-        const text = preview.unmatched.length
-          ? `${preview.matched.length} item mile, ${preview.unmatched.length} saaf nahi hue. Check karke pakka karein.`
-          : `${preview.matched.length} item ka maal. Check karke pakka karein.`;
+        const text = reply(lang, 'stockInPreview', { matched: preview.matched.length, unmatched: preview.unmatched.length });
         // Nothing changes until the app sends POST /items/receive.
         return answer(text, { stockIn: { supplier: intent.supplier, ...preview } });
       }

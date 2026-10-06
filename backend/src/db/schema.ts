@@ -84,7 +84,8 @@ export const refreshTokens = pgTable(
 /* ---------- Store (dukaan) ---------- */
 
 export const gstScheme = pgEnum('gst_scheme', ['regular', 'composition']);
-export const storeLanguage = pgEnum('store_language', ['hi', 'hinglish']);
+// hi = Hindi (Devanagari), hinglish = romanised Hindi, en = English
+export const storeLanguage = pgEnum('store_language', ['hi', 'hinglish', 'en']);
 export const replyStyle = pgEnum('reply_style', ['voice_text', 'text']);
 
 export const stores = pgTable(

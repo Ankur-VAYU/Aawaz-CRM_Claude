@@ -43,6 +43,6 @@ export const taxBody = z
   });
 
 export const preferencesBody = z.object({
-  language: z.enum(['hi', 'hinglish']),
+  language: z.enum(['hi', 'hinglish', 'en']),
   replyStyle: z.enum(['voice_text', 'text']),
 });

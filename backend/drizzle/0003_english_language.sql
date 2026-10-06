@@ -1,0 +1,1 @@
+ALTER TYPE "public"."store_language" ADD VALUE 'en';

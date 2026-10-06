@@ -39,15 +39,15 @@ if (existing) {
     const p = (rupees: number) => rupees * 100;
     await tx.insert(items).values(
       [
-        { name: 'Atta', unit: 'kg', unitSize: 5, price: p(245), stock: 24, stockLabel: 'bag' },
-        { name: 'Toor dal', unit: 'kg', unitSize: 1, price: p(160), stock: 12 },
-        { name: 'Sarson tel', unit: 'l', unitSize: 1, price: p(170), stock: 10 },
-        { name: 'Sarson tel', unit: 'ml', unitSize: 500, price: p(90), stock: 10 },
+        { name: 'Atta', unit: 'kg', unitSize: 5, price: p(245), stock: 24, stockLabel: 'bag', aliases: ['wheat flour', 'flour'] },
+        { name: 'Toor dal', unit: 'kg', unitSize: 1, price: p(160), stock: 12, aliases: ['arhar dal'] },
+        { name: 'Sarson tel', unit: 'l', unitSize: 1, price: p(170), stock: 10, aliases: ['mustard oil'] },
+        { name: 'Sarson tel', unit: 'ml', unitSize: 500, price: p(90), stock: 10, aliases: ['mustard oil'] },
         { name: 'Moong dal', unit: 'kg', unitSize: 1, price: p(130), stock: 20 },
-        { name: 'Maida', unit: 'kg', unitSize: 1, price: p(45), stock: 20 },
-        { name: 'Chawal', unit: 'kg', unitSize: 1, price: p(60), stock: 50 },
-        { name: 'Namak', unit: 'pc', unitSize: 1, price: p(25), stock: 30 },
-        { name: 'Cheeni', unit: 'kg', unitSize: 1, price: p(45), stock: 2 },
+        { name: 'Maida', unit: 'kg', unitSize: 1, price: p(45), stock: 20, aliases: ['refined flour'] },
+        { name: 'Chawal', unit: 'kg', unitSize: 1, price: p(60), stock: 50, aliases: ['rice'] },
+        { name: 'Namak', unit: 'pc', unitSize: 1, price: p(25), stock: 30, aliases: ['salt'] },
+        { name: 'Cheeni', unit: 'kg', unitSize: 1, price: p(45), stock: 2, aliases: ['sugar'] },
       ].map((i) => ({ ...i, unit: i.unit as 'kg' | 'l' | 'ml' | 'pc', storeId: store.id })),
     );
     await tx.insert(customers).values(

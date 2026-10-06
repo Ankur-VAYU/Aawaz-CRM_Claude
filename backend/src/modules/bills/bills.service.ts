@@ -565,6 +565,7 @@ export class BillsService {
           customer,
           'receipt',
           receiptMessage({
+            lang: store.language,
             storeName: store.name,
             customerName: customer.name,
             invoiceNumber: number,

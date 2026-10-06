@@ -203,3 +203,33 @@ describe('Hindi script (what phone speech recognition returns)', () => {
     ]);
   });
 });
+
+describe('English commands', () => {
+  it.each([
+    ['Give Ramesh 5 kg atta, 1 kg toor dal and 2 mustard oil on credit', { type: 'create_bill', customerName: 'Ramesh', paymentMode: 'udhaar' }],
+    ['2 kg sugar and half kg salt for Ramesh on credit', { type: 'create_bill', customerName: 'Ramesh', paymentMode: 'udhaar' }],
+    ['For Sunita: 2 kg sugar, paid 50 now, rest on credit', { type: 'create_bill', customerName: 'Sunita', upfront: { amount: 5000, method: 'cash' } }],
+    ['5 kg rice and a packet of maggi', { type: 'create_bill', customerName: null, paymentMode: 'cash' }],
+    ['How much does Ramesh owe?', { type: 'query_balance', customerName: 'Ramesh' }],
+    ["What's Sunita's balance", { type: 'query_balance', customerName: 'Sunita' }],
+    ['Ramesh paid 500 by UPI', { type: 'record_payment', customerName: 'Ramesh', amount: 50000, method: 'upi' }],
+    ['Received 300 rupees from Sunita in cash', { type: 'record_payment', customerName: 'Sunita', amount: 30000, method: 'cash' }],
+    ['Show customers', { type: 'list_customers' }],
+    ["Today's sales", { type: 'daily_summary' }],
+    ['What should I buy', { type: 'low_stock' }],
+    ['Remind Ramesh', { type: 'send_reminder', customerName: 'Ramesh' }],
+    ['Received stock from Gupta Traders: 20 bags atta, 10 mustard oil 1 litre', { type: 'stock_in', supplier: 'Gupta Traders' }],
+    ['hello', { type: 'unknown' }],
+  ])('%s', (text, expected) => {
+    expect(parseCommand(text)).toMatchObject(expected);
+  });
+
+  it('reads English quantities', () => {
+    const intent = parseCommand('2 kg sugar and half kg salt for Ramesh on credit');
+    if (intent.type !== 'create_bill') throw new Error();
+    expect(intent.lines.map((l) => [l.name, l.measure])).toEqual([
+      ['sugar', { value: 2, unit: 'kg' }],
+      ['salt', { value: 0.5, unit: 'kg' }],
+    ]);
+  });
+});

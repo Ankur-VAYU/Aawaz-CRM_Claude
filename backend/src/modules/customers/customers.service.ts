@@ -124,7 +124,7 @@ export async function sendReminder(db: Db, store: Store, c: Customer, publicBase
     store,
     c,
     'reminder',
-    reminderMessage({ storeName: store.name, customerName: c.name, balance: c.balance, link: shareLink(publicBaseUrl, c) }),
+    reminderMessage({ lang: store.language, storeName: store.name, customerName: c.name, balance: c.balance, link: shareLink(publicBaseUrl, c) }),
   );
 }
 
