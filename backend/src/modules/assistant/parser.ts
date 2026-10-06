@@ -1,3 +1,5 @@
+import { transliterate } from '../../lib/translit.js';
+
 /**
  * Rule-based parser for the shopkeeper's spoken/typed Hinglish commands (romanised Hindi),
  * e.g. "Ramesh ko paanch kilo atta, do sarson tel… udhaar mein likh do".
@@ -47,7 +49,7 @@ const NUMBER_WORDS: Record<string, number> = {
   paanch: 5, panch: 5, paach: 5, five: 5, chhe: 6, chhah: 6, chah: 6, che: 6, six: 6,
   saat: 7, sat: 7, seven: 7, aath: 8, ath: 8, eight: 8, nau: 9, nine: 9, das: 10, dus: 10, ten: 10,
   gyarah: 11, gyaarah: 11, barah: 12, baarah: 12, terah: 13, chaudah: 14, pandrah: 15, solah: 16,
-  satrah: 17, atharah: 18, unnis: 19, bees: 20, bis: 20, pachchis: 25, pachees: 25, tees: 30,
+  satrah: 17, atharah: 18, athaarah: 18, unnis: 19, unnees: 19, bees: 20, bis: 20, pachchis: 25, pachees: 25, pachchees: 25, tees: 30,
   chalis: 40, chalees: 40, pachas: 50, pachaas: 50, saath: 60, sattar: 70, assi: 80, nabbe: 90,
   aadha: 0.5, adha: 0.5, aadhi: 0.5, half: 0.5, paav: 0.25, pav: 0.25, paune: 0.75,
   dedh: 1.5, dhedh: 1.5, dhai: 2.5, dhaai: 2.5, adhai: 2.5, dhaee: 2.5,
@@ -66,7 +68,7 @@ const UNIT_WORDS: Record<string, MeasureUnit | 'pc'> = {
 const DEVANAGARI_DIGITS = '०१२३४५६७८९';
 
 function clean(text: string): string {
-  return text
+  return transliterate(text)
     .toLowerCase()
     .normalize('NFKC')
     .replace(/\.{2,}/g, '…') // NFKC turns "…" into "..."; keep it as one "unclear" marker
@@ -131,8 +133,10 @@ export function parseLine(raw: string): ParsedLine | null {
   const groups: { value: number; unit: MeasureUnit | 'pc' | null }[] = [];
   const nameTokens: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
-    const n = parseNumberToken(tokens[i]);
+    let n = parseNumberToken(tokens[i]);
     if (n !== null) {
+      // "paanch sau gram" -> 500 g
+      while (MULTIPLIERS[tokens[i + 1]]) n *= MULTIPLIERS[tokens[++i]];
       const unit = UNIT_WORDS[tokens[i + 1]] ?? null;
       groups.push({ value: n, unit });
       if (unit) i++;
@@ -198,7 +202,7 @@ export function parseCommand(input: string): Intent {
     return { type: 'low_stock' };
   }
 
-  let m = text.match(/^(.+?)\s+(ko|ka|ke)\s+(yaad dilao|yaad dila do|reminder)\b/);
+  let m = text.match(/^(.+?)\s+(ko|ka|ke)\s+(yaad dilao|yaad dilaao|yaad dila do|reminder)\b/);
   if (m) {
     const name = cleanName(m[1]);
     if (name) return { type: 'send_reminder', customerName: name };

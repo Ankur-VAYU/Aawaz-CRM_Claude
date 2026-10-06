@@ -1,0 +1,793 @@
+<title>AwaazCRM Demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@500;700;800&display=swap">
+<style>
+/* Layout: the shop's WhatsApp-style phone on the left, the shop's live data beside it (stacks on phones).
+   Colours and type follow the "Aawaz CRM" design canvas; one light look by choice, as in the design. */
+:root {
+  --green-dark: #0B6E5F;   /* header, avatars */
+  --green: #128C4A;        /* primary actions, mic */
+  --chat: #EFE7DD;         /* chat wallpaper */
+  --mine: #D9FDD3;         /* shopkeeper's bubbles */
+  --card: #FFFFFF;
+  --ink: #233D44;
+  --ink-soft: #3B4A54;
+  --muted: #5F6B72;
+  --line: #EFE7DD;
+  --border: #D1D7DB;
+  --udhaar-bg: #FCEFC7;
+  --udhaar-ink: #8A5A00;
+  --ask-bg: #FFF6D6;
+  --page: #DCE3DF;
+  --chip: #E3ECEF;
+  --header-sub: #D7F0EA;
+  --danger: #B3261E;
+  --font: 'Noto Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--page); color: var(--ink); font-family: var(--font); font-size: 15px; padding-inline: 16px; padding-block: 24px; }
+button { font-family: inherit; cursor: pointer; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #2E9BD6; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.wrap { max-width: 980px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+
+/* ---------- phone ---------- */
+.phone { width: 390px; max-width: 100%; height: min(820px, calc(100vh - 48px)); min-height: 560px; border-radius: 32px; overflow: hidden; background: var(--chat); display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(11, 40, 34, .22), 0 0 0 8px #1d2b28; position: relative; }
+.bar { flex-shrink: 0; height: 64px; background: var(--green-dark); color: #F7F5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; }
+.logo { width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; flex-shrink: 0; }
+.bar-title { font-weight: 700; font-size: 18px; line-height: 1.1; }
+.bar-sub { font-size: 13px; color: var(--header-sub); }
+.demo-tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.16); padding: 4px 8px; border-radius: 999px; }
+
+.chat { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.chat > * { flex-shrink: 0; }
+.day { align-self: center; background: var(--chip); color: var(--ink-soft); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+.me { align-self: flex-end; max-width: 300px; background: var(--mine); border-radius: 14px 4px 14px 14px; padding: 8px 12px; font-size: 15px; line-height: 1.35; }
+.me .said { font-style: italic; color: var(--ink-soft); }
+.time { font-size: 11px; color: var(--muted); text-align: right; margin-top: 2px; }
+.bot { align-self: flex-start; width: 100%; max-width: 330px; background: var(--card); border-radius: 4px 14px 14px 14px; box-shadow: 0 1px 2px rgba(11,20,26,.13); overflow: hidden; }
+.bot.plain { padding: 10px 14px; font-size: 15px; line-height: 1.4; width: auto; }
+.wa { align-self: flex-start; max-width: 330px; background: #F0FAF4; border: 1px dashed #9CC9AE; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; color: var(--ink-soft); }
+.wa b { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; white-space: normal; }
+
+.c-head { padding: 12px 14px 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.c-title { font-weight: 700; font-size: 20px; line-height: 1.2; }
+.pill { font-weight: 700; font-size: 12px; letter-spacing: .04em; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.udhaar { background: var(--udhaar-bg); color: var(--udhaar-ink); }
+.pill.cash { background: #DDF3E4; color: #0E6B38; }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 15px; }
+.row .grow { flex: 1; min-width: 0; }
+.qty { min-width: 52px; text-align: center; padding: 3px 6px; border-radius: 8px; background: var(--line); font-weight: 700; font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.ask { padding: 10px 14px 12px; border-top: 1px solid var(--line); background: var(--ask-bg); display: flex; flex-direction: column; gap: 8px; }
+.ask-q { font-size: 13px; color: var(--udhaar-ink); font-weight: 600; }
+.ask-raw { font-size: 13px; color: var(--ink-soft); font-style: italic; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt { min-height: 44px; padding: 6px 12px; border-radius: 12px; border: 2px solid var(--border); background: var(--card); font-size: 14px; font-weight: 600; text-align: left; }
+.opt:hover { border-color: var(--green-dark); }
+.opt.ghost { border-style: dashed; color: var(--muted); }
+.total { padding: 10px 14px; display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed var(--border); }
+.total .lbl { font-size: 14px; color: var(--muted); font-weight: 600; }
+.total .amt { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+.split { padding: 0 14px 8px; font-size: 13px; color: var(--ink-soft); display: flex; justify-content: space-between; }
+.acts { padding: 4px 10px 10px; display: flex; gap: 8px; }
+.btn { white-space: nowrap; height: 50px; border-radius: 14px; border: 2px solid var(--border); background: var(--card); font-size: 15px; font-weight: 600; padding: 0 14px; }
+.btn.go { flex: 1; border: 0; background: var(--green); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.go:disabled { background: #A7C4B3; cursor: not-allowed; }
+.btn.sm { height: 44px; font-size: 14px; flex: 1; }
+.done { margin: 0 10px 10px; height: 42px; border-radius: 12px; background: var(--mine); color: var(--green); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.fx { padding: 6px 14px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.fx div { display: flex; gap: 10px; align-items: center; }
+.fx svg { flex-shrink: 0; }
+.link { background: none; border: 0; padding: 0; color: var(--green-dark); font-weight: 700; text-decoration: underline; font-size: 14px; min-height: 32px; }
+.due { margin: 4px 14px 10px; padding: 12px 14px; border-radius: 14px; background: var(--udhaar-bg); display: flex; justify-content: space-between; align-items: center; }
+.due .big { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.due.clear { background: #DDF3E4; }
+.cust { width: 100%; min-height: 56px; border: 0; border-top: 1px solid var(--line); background: var(--card); display: flex; align-items: center; gap: 12px; padding: 8px 14px; text-align: left; }
+.av { width: 38px; height: 38px; border-radius: 50%; background: var(--green-dark); color: #F7F5F2; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.av.light { background: var(--chip); color: var(--ink); }
+.sub { font-size: 13px; color: var(--muted); }
+.filters { display: flex; gap: 6px; padding: 0 12px 10px; flex-wrap: wrap; }
+.fchip { height: 36px; padding: 0 12px; border-radius: 18px; border: 2px solid var(--border); background: var(--card); font-size: 13px; font-weight: 600; }
+.fchip[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px 14px 12px; }
+.tile { background: #F7F5F2; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; }
+.tile b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.payform { display: flex; gap: 8px; padding: 0 10px 10px; flex-wrap: wrap; }
+.payform input, .payform select { height: 44px; border-radius: 12px; border: 2px solid var(--border); padding: 0 10px; font: inherit; font-size: 15px; min-width: 0; }
+.payform input { flex: 1; }
+.err { color: var(--danger); font-size: 13px; font-weight: 600; padding: 0 14px 10px; }
+
+.chips { flex-shrink: 0; display: flex; gap: 6px; overflow-x: auto; padding: 6px 8px 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.sug { flex-shrink: 0; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid #C9D7CF; background: rgba(255,255,255,.85); font-size: 13px; color: var(--ink); }
+.composer { flex-shrink: 0; padding: 8px 8px 12px; display: flex; gap: 6px; align-items: center; }
+.field { flex: 1; min-width: 0; height: 50px; border-radius: 25px; background: var(--card); display: flex; align-items: center; padding: 0 6px 0 16px; box-shadow: 0 1px 1px rgba(11,20,26,.1); }
+.field input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 16px; color: var(--ink); height: 44px; }
+.field input:focus { outline: none; }
+.field:focus-within { outline: 3px solid #2E9BD6; outline-offset: 1px; }
+.send.listening { background: #C62828; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(198,40,40,.45); } 50% { box-shadow: 0 0 0 10px rgba(198,40,40,0); } }
+.lang { margin-left: auto; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #F7F5F2; font-size: 13px; font-weight: 700; padding: 0 10px; }
+.listen-hint { flex-shrink: 0; text-align: center; font-size: 13px; font-weight: 600; color: #C62828; padding: 4px 0 0; }
+.send { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* receipt sheet (customer's view) */
+.sheet { position: absolute; inset: 0; background: var(--chat); display: flex; flex-direction: column; z-index: 5; }
+.sheet .bar { background: var(--green-dark); }
+.sheet .body { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 10px; }
+.rc-top { padding: 16px 14px 10px; text-align: center; border-bottom: 2px dashed var(--chip); }
+.rc-top .c-title { margin-top: 4px; }
+
+/* ---------- side panel ---------- */
+.panel { flex: 1; min-width: 280px; max-width: 520px; display: flex; flex-direction: column; gap: 18px; }
+.panel h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
+.lead { margin: 0; color: var(--ink-soft); line-height: 1.55; max-width: 62ch; }
+.box { background: #F6F8F7; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.box h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.try { display: flex; flex-direction: column; gap: 6px; }
+.try button { text-align: left; border: 1px solid #CFDAD4; background: var(--card); border-radius: 10px; padding: 8px 12px; font-size: 14px; line-height: 1.35; min-height: 44px; }
+.try button span { display: block; font-size: 12px; color: var(--muted); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl td, .tbl th { padding: 6px 4px; border-bottom: 1px solid #E2E8E5; text-align: left; }
+.tbl th { font-size: 12px; color: var(--muted); font-weight: 600; }
+.tbl td.r, .tbl th.r { text-align: right; font-variant-numeric: tabular-nums; }
+.low { color: var(--udhaar-ink); font-weight: 700; }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { background: #FFF1B8; } to { background: transparent; } }
+.note { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+.reset { align-self: flex-start; height: 40px; border-radius: 10px; border: 1px solid #C3CFC9; background: var(--card); padding: 0 14px; font-size: 14px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 760px) {
+  .phone { height: 78vh; min-height: 520px; }
+  .panel { max-width: 100%; }
+}
+@media (max-width: 520px) { .cols { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <section class="phone" aria-label="AwaazCRM app">
+    <div class="bar">
+      <div class="logo" aria-hidden="true">आ</div>
+      <div><div class="bar-title">AwaazCRM</div><div class="bar-sub">Sharma Kirana Store</div></div>
+      <button class="lang" id="lang" type="button" aria-label="Voice language">हिंदी</button>
+      <span class="demo-tag">Demo</span>
+    </div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="listen-hint" id="hint" hidden>Sun raha hoon… boliye</div>
+    <div class="chips" id="chips" aria-label="Example commands"></div>
+    <form class="composer" id="composer" autocomplete="off">
+      <label class="field" for="msg">
+        <input id="msg" name="msg" placeholder="Bolo ya likho…" aria-label="Type a command">
+      </label>
+      <button class="send" id="send" type="submit" aria-label="Speak">
+        <svg id="ic-mic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>
+        <svg id="ic-send" hidden width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </form>
+    <div class="sheet" id="sheet" hidden></div>
+  </section>
+
+  <aside class="panel">
+    <div>
+      <h1>AwaazCRM demo</h1>
+    </div>
+    <p class="lead">Tap the green mic and speak, or type what a shopkeeper would say. The bill parsing and item matching are the same code as the backend; everything runs in your browser on sample data for Sharma Kirana Store.</p>
+    <div class="box">
+      <h2>Try these</h2>
+      <div class="try" id="try"></div>
+    </div>
+    <div class="cols">
+      <div class="box">
+        <h2>Stock</h2>
+        <table class="tbl" id="stock"></table>
+      </div>
+      <div class="box">
+        <h2>Khata (baaki)</h2>
+        <table class="tbl" id="khata"></table>
+      </div>
+    </div>
+    <p class="note">Voice uses your browser's own speech recognition (Chrome on Android or desktop, Safari on iPhone) and needs internet. Choose हिंदी or Hinglish at the top of the phone. WhatsApp messages are shown as previews; nothing is sent. Your changes stay in this browser only.</p>
+    <button class="reset" id="reset" type="button">Start over with sample data</button>
+  </aside>
+</div>
+
+<script>/*__CORE__*/</script>
+<script>
+(() => {
+  const A = window.Aawaz;
+  const LANG = 'hinglish';
+  const STORE = { name: 'Sharma Kirana Store' };
+  const r = (p) => A.formatRupees(p);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+  const DAY = 86400000;
+  const now = () => new Date();
+  const localDate = (d = now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+  const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  const fmtDay = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+  const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+  const first = (n) => n.split(' ')[0];
+
+  /* ---------- sample data (from the design) ---------- */
+  function seed() {
+    const t = Date.now();
+    const iso = (daysAgo) => new Date(t - daysAgo * DAY).toISOString();
+    const item = (name, unit, unitSize, rupees, stock, extra = {}) => ({
+      id: uid(), name, unit, unitSize, price: rupees * 100, stock, stockLabel: 'pc', lowStockThreshold: 5, aliases: [], isActive: true, ...extra,
+    });
+    const items = [
+      item('Atta', 'kg', 5, 245, 24, { stockLabel: 'bag' }),
+      item('Toor dal', 'kg', 1, 160, 12),
+      item('Sarson tel', 'l', 1, 170, 10, { aliases: ['mustard oil'] }),
+      item('Sarson tel', 'ml', 500, 90, 10),
+      item('Moong dal', 'kg', 1, 130, 20),
+      item('Maida', 'kg', 1, 45, 20),
+      item('Chawal', 'kg', 1, 60, 50),
+      item('Namak', 'pc', 1, 25, 30),
+      item('Cheeni', 'kg', 1, 45, 3),
+    ];
+    const cust = (name, phone, daysSincePurchase, consent = true) => ({
+      id: uid(), name, phone, consent, balance: 0, totalPurchases: 0, totalPaid: 0,
+      lastPurchaseAt: daysSincePurchase === null ? null : iso(daysSincePurchase), createdAt: iso(40),
+    });
+    const customers = [
+      cust('Ramesh Yadav', '+919812345321', 2),
+      cust('Sunita Devi', '+919812345322', 2),
+      cust('Mohd. Irfan', null, 1),
+      cust('Kavita Sharma', null, 0),
+      cust('Pappu Singh', null, 21),
+    ];
+    const s = { items, customers, ledger: [], bills: [], counter: 0, drafts: {}, chat: [] };
+    // Opening khata history, as on the "Khata" design screen.
+    const [ramesh, sunita, irfan] = customers;
+    const old = (c, daysAgo, type, amount, label) => {
+      c.balance += amount;
+      if (type === 'bill') c.totalPurchases += amount; else c.totalPaid -= amount;
+      s.ledger.push({ id: uid(), customerId: c.id, type, amount, balanceAfter: c.balance, label, at: iso(daysAgo) });
+    };
+    old(ramesh, 13, 'bill', 112000, 'Bill #0118 · 4 item');
+    old(ramesh, 7, 'bill', 62000, 'Bill #0131 · 5 item');
+    old(ramesh, 3, 'payment', -50000, 'Jama kiya · UPI');
+    old(sunita, 5, 'bill', 145000, 'Bill #0127 · 6 item');
+    old(irfan, 1, 'bill', 62000, 'Bill #0139 · 3 item');
+    s.chat.push({ id: uid(), from: 'bot', kind: 'welcome', at: now().toISOString() });
+    return s;
+  }
+
+  const KEY = 'awaaz-demo-v1';
+  let S;
+  try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { S = null; }
+  if (!S || !S.items) S = seed();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage unavailable */ } };
+
+  const byId = (list, id) => list.find((x) => x.id === id);
+  const activeItems = () => S.items.filter((i) => i.isActive);
+
+  /* ---------- business logic (mirrors the backend services) ---------- */
+  function resolveCustomer(spoken) {
+    const matches = S.customers
+      .map((c) => ({ c, score: Math.max(A.similarity(spoken, c.name), A.similarity(spoken, first(c.name))) }))
+      .filter((m) => m.score >= 0.75)
+      .sort((a, b) => b.score - a.score);
+    if (!matches.length) return { status: 'not_found' };
+    const exact = matches.filter((m) => m.score === 1);
+    if (exact.length === 1) return { status: 'found', customer: exact[0].c };
+    if (matches.length === 1) return { status: 'found', customer: matches[0].c };
+    return { status: 'ambiguous', candidates: matches.map((m) => m.c) };
+  }
+
+  const lineFromItem = (item, quantity) => ({
+    itemId: item.id, name: item.name, sizeLabel: A.sizeLabel(item), quantity, unitPrice: item.price, amount: A.lineAmount(item.price, quantity),
+  });
+  const draftTotal = (d) => d.lines.reduce((t, l) => t + l.amount, 0);
+
+  function createDraft(intent, transcript) {
+    const d = { id: uid(), status: 'draft', paymentMode: intent.paymentMode, upfront: intent.upfront || null, customerId: null, lines: [], issues: [], transcript };
+    for (const line of intent.lines) {
+      const res = A.resolveLine(activeItems(), line);
+      if (res.kind === 'ok') d.lines.push(lineFromItem(res.item, res.quantity));
+      else d.issues.push(res.issue);
+    }
+    if (intent.customerName) {
+      const m = resolveCustomer(intent.customerName);
+      if (m.status === 'found') d.customerId = m.customer.id;
+      else if (m.status === 'ambiguous') d.issues.unshift({ id: uid(), kind: 'customer_ambiguous', name: intent.customerName, options: m.candidates.map((c) => ({ customerId: c.id, label: c.name })) });
+      else d.issues.unshift({ id: uid(), kind: 'customer_unknown', name: intent.customerName, options: [] });
+    } else if (intent.paymentMode === 'udhaar') {
+      d.issues.unshift({ id: uid(), kind: 'customer_required', options: [] });
+    }
+    S.drafts[d.id] = d;
+    return d;
+  }
+
+  function resolveIssue(d, issueId, choice) {
+    const issue = d.issues.find((i) => i.id === issueId);
+    if (!issue) return;
+    if (choice.remove) {
+      if (issue.kind.startsWith('customer_') && d.paymentMode === 'udhaar') return;
+    } else if (choice.customerId) {
+      d.customerId = choice.customerId;
+    } else if (choice.newCustomer) {
+      const c = { id: uid(), name: choice.newCustomer, phone: null, consent: false, balance: 0, totalPurchases: 0, totalPaid: 0, lastPurchaseAt: null, createdAt: now().toISOString() };
+      S.customers.push(c);
+      d.customerId = c.id;
+    } else if (choice.itemId) {
+      const item = byId(S.items, choice.itemId);
+      const opt = issue.options.find((o) => o.itemId === choice.itemId);
+      d.lines.push(lineFromItem(item, opt?.quantity ?? issue.quantity ?? 1));
+    }
+    d.issues = d.issues.filter((i) => i.id !== issueId);
+  }
+
+  function confirmDraft(d) {
+    const total = draftTotal(d);
+    if (d.issues.length) return { error: 'Pehle upar ke sawaal ka jawab dijiye.' };
+    if (!d.lines.length) return { error: 'Bill mein koi item nahi hai.' };
+    let paidCash = 0, paidUpi = 0, credit = 0;
+    if (d.paymentMode === 'cash') paidCash = total;
+    else if (d.paymentMode === 'upi') paidUpi = total;
+    else {
+      if (!d.customerId) return { error: 'Udhaar bill ke liye grahak chahiye.' };
+      const up = d.upfront?.amount || 0;
+      if (up >= total) return { error: 'Jitna diya utna poora bill hai. Cash ya UPI chuniye.' };
+      if (d.upfront?.method === 'upi') paidUpi = up; else paidCash = up;
+      credit = total - up;
+    }
+    const fy = A.financialYear(localDate());
+    if (S.counterFy !== fy) { S.counterFy = fy; S.counter = 0; }
+    S.counter += 1;
+    d.invoiceNumber = A.invoiceNumber(fy, S.counter);
+    d.status = 'confirmed';
+    d.confirmedAt = now().toISOString();
+    d.total = total; d.paidCash = paidCash; d.paidUpi = paidUpi; d.credit = credit;
+    for (const l of d.lines) { const it = byId(S.items, l.itemId); if (it) it.stock = Math.round((it.stock - l.quantity) * 1000) / 1000; }
+    const fx = [A.reply(LANG, 'stockReduced', { n: d.lines.length })];
+    let receipt = null;
+    const c = d.customerId ? byId(S.customers, d.customerId) : null;
+    if (c) {
+      c.lastPurchaseAt = d.confirmedAt;
+      c.totalPurchases += total;
+      c.totalPaid += paidCash + paidUpi;
+      if (credit > 0) {
+        const before = c.balance;
+        c.balance += credit;
+        S.ledger.push({ id: uid(), customerId: c.id, type: 'bill', amount: credit, balanceAfter: c.balance, label: `Bill ${d.invoiceNumber} · ${d.lines.length} item`, at: d.confirmedAt });
+        fx.push(A.reply(LANG, 'khataChanged', { name: first(c.name), before, after: c.balance }));
+        // Receipts are sent for udhaar bills only, and only with consent.
+        if (c.phone && c.consent) {
+          receipt = A.receiptMessage({
+            storeName: STORE.name, customerName: c.name, invoiceNumber: d.invoiceNumber,
+            lines: d.lines.map((l) => ({ name: l.name, sizeLabel: l.sizeLabel, quantity: l.quantity, amount: l.amount })),
+            total, paidNow: paidCash + paidUpi, credit, balance: c.balance, link: `aawaz.app/r/${d.id.slice(0, 8)}`,
+          });
+          fx.push(A.reply(LANG, 'receiptSent', { name: first(c.name) }));
+        } else {
+          fx.push(c.phone ? `${first(c.name)} ki WhatsApp sahmati nahi hai, receipt nahi bheji` : `${first(c.name)} ka number nahi hai, receipt nahi bheji`);
+        }
+      }
+    }
+    S.bills.push(d);
+    delete S.drafts[d.id];
+    return { fx, receipt };
+  }
+
+  function recordPayment(c, paise, method) {
+    c.balance -= paise;
+    c.totalPaid += paise;
+    S.ledger.push({ id: uid(), customerId: c.id, type: 'payment', amount: -paise, balanceAfter: c.balance, label: `Jama kiya · ${method.toUpperCase()}`, at: now().toISOString() });
+  }
+
+  function summary() {
+    const today = localDate();
+    const bills = S.bills.filter((b) => localDate(new Date(b.confirmedAt)) === today);
+    const sum = (f) => bills.reduce((t, b) => t + f(b), 0);
+    const repaid = S.ledger.filter((e) => e.type === 'payment' && localDate(new Date(e.at)) === today).reduce((t, e) => t - e.amount, 0);
+    return {
+      total: sum((b) => b.total), count: bills.length, paidNow: sum((b) => b.paidCash + b.paidUpi), credit: sum((b) => b.credit), repaid,
+      newCustomers: S.customers.filter((c) => localDate(new Date(c.createdAt)) === today).length,
+      low: S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold),
+      top: S.customers.filter((c) => c.balance > 0).sort((a, b) => b.balance - a.balance).slice(0, 3),
+    };
+  }
+  const isInactive = (c) => Date.now() - new Date(c.lastPurchaseAt || c.createdAt).getTime() > 14 * DAY;
+
+  /* ---------- conversation ---------- */
+  const say = (from, kind, data = {}) => { S.chat.push({ id: uid(), from, kind, at: now().toISOString(), ...data }); };
+  const botText = (text) => say('bot', 'text', { text });
+
+  function handle(text) {
+    say('me', 'said', { text });
+    const intent = A.parseCommand(text);
+    const withCustomer = (name, fn) => {
+      const m = resolveCustomer(name);
+      if (m.status === 'found') return fn(m.customer);
+      if (m.status === 'ambiguous') return say('bot', 'pickCustomer', { text: A.reply(LANG, 'customerAmbiguous', { name }), ids: m.candidates.map((c) => c.id), then: intent.type });
+      return botText(A.reply(LANG, 'customerNotFound', { name }));
+    };
+    switch (intent.type) {
+      case 'create_bill': {
+        const d = createDraft(intent, text);
+        botText(d.issues.length ? A.reply(LANG, 'billNeedsInput', { n: d.issues.length }) : A.reply(LANG, 'billDraft', { customer: d.customerId ? byId(S.customers, d.customerId).name : null, count: d.lines.length, total: draftTotal(d) }));
+        say('bot', 'bill', { billId: d.id });
+        break;
+      }
+      case 'query_balance':
+        withCustomer(intent.customerName, (c) => { botText(A.reply(LANG, 'balance', { name: c.name, balance: c.balance })); say('bot', 'khata', { customerId: c.id }); });
+        break;
+      case 'record_payment':
+        withCustomer(intent.customerName, (c) => {
+          recordPayment(c, intent.amount, intent.method);
+          botText(A.reply(LANG, 'paymentRecorded', { name: c.name, amount: intent.amount, balance: c.balance }));
+        });
+        break;
+      case 'send_reminder':
+        withCustomer(intent.customerName, (c) => sendReminder(c));
+        break;
+      case 'list_customers': {
+        const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
+        botText(A.reply(LANG, 'customers', { total: S.customers.length, dues }));
+        say('bot', 'customers', { filter: 'all' });
+        break;
+      }
+      case 'daily_summary': {
+        const s = summary();
+        botText(A.reply(LANG, 'summary', { sales: s.total, bills: s.count }));
+        say('bot', 'summary');
+        break;
+      }
+      case 'low_stock': {
+        const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold);
+        botText(A.reply(LANG, 'lowStock', { n: low.length }));
+        if (low.length) say('bot', 'lowstock');
+        break;
+      }
+      default:
+        botText(A.reply(LANG, 'notUnderstood'));
+    }
+  }
+
+  function sendReminder(c) {
+    if (c.balance <= 0) return botText(`${c.name} ka kuch baaki nahi hai.`);
+    if (!c.phone) return botText(`${c.name} ka phone number nahi hai, yaad nahi dila sakte.`);
+    if (!c.consent) return botText(`${c.name} ne WhatsApp messages ki sahmati nahi di hai.`);
+    botText(A.reply(LANG, 'reminderQueued', { name: c.name }));
+    say('bot', 'wa', { title: `WhatsApp → ${c.name}`, text: A.reminderMessage({ storeName: STORE.name, customerName: c.name, balance: c.balance, link: `aawaz.app/c/${c.id.slice(0, 8)}` }) });
+  }
+
+  /* ---------- rendering ---------- */
+  const icon = {
+    check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    box: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>',
+    book: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h5"/></svg>',
+    send: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>',
+  };
+  const fxIcon = (t) => (t.startsWith('Stock') ? icon.box : t.includes('khata') ? icon.book : icon.send);
+
+  const ISSUE_Q = {
+    choose_variant: (i) => `${esc(i.name)}: kaunsa size? Ek tap mein chuniye`,
+    unclear: (i) => 'Ek item saaf nahi suna. Kaunsa tha?',
+    not_found: (i) => `"${esc(i.name)}" saamaan list mein nahi hai`,
+    price_missing: (i) => `${esc(i.name)} ka daam nahi pata`,
+    customer_unknown: (i) => `"${esc(i.name)}" naam ka grahak nahi mila`,
+    customer_ambiguous: (i) => `"${esc(i.name)}" naam ke ek se zyada grahak hain. Kaun?`,
+    customer_required: () => 'Udhaar kiske naam likhein?',
+  };
+
+  function issueHtml(d, i) {
+    const opts = [];
+    if (i.kind === 'customer_required') {
+      for (const c of S.customers.slice(0, 5)) opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-customer="${c.id}">${esc(c.name)}</button>`);
+    } else if (i.kind === 'customer_unknown') {
+      opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-new="${esc(i.name)}">+ Naya grahak: ${esc(i.name)}</button>`);
+      if (d.paymentMode !== 'udhaar') opts.push(`<button class="opt ghost" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-remove="1">Bina naam ke</button>`);
+    } else {
+      for (const o of i.options) {
+        if (o.customerId) opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-customer="${o.customerId}">${esc(o.label)}</button>`);
+        else opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-item="${o.itemId}">${esc(o.label)}${o.quantity && o.quantity !== 1 ? ` × ${o.quantity}` : ''}${o.amount != null ? ` · ${r(o.amount)}` : ''}</button>`);
+      }
+      opts.push(`<button class="opt ghost" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-remove="1">Hatao</button>`);
+    }
+    return `<div class="ask"><div class="ask-q">${ISSUE_Q[i.kind](i)}</div>${i.raw ? `<div class="ask-raw">Suna: “${esc(i.raw)}”</div>` : ''}<div class="opts">${opts.join('')}</div></div>`;
+  }
+
+  function billHtml(msg) {
+    const d = S.drafts[msg.billId] || S.bills.find((b) => b.id === msg.billId);
+    if (!d) return '';
+    const c = d.customerId ? byId(S.customers, d.customerId) : null;
+    const total = d.status === 'confirmed' ? d.total : draftTotal(d);
+    const mode = d.paymentMode === 'udhaar' ? '<span class="pill udhaar">UDHAAR</span>' : `<span class="pill cash">${d.paymentMode.toUpperCase()}</span>`;
+    const lines = d.lines.map((l) => `<div class="row"><span class="qty">${l.quantity}${l.sizeLabel ? '' : ' pc'}</span><span class="grow">${esc(l.name)}${l.sizeLabel ? ` <span class="sub">${esc(l.sizeLabel)}</span>` : ''}</span><span class="num">${r(l.amount)}</span></div>`).join('');
+    const issues = d.status === 'draft' ? d.issues.map((i) => issueHtml(d, i)).join('') : '';
+    const up = d.upfront?.amount ? `<div class="split"><span>Abhi diye (${d.upfront.method === 'upi' ? 'UPI' : 'cash'})</span><span class="num">${r(d.upfront.amount)}</span></div><div class="split"><span>Udhaar mein</span><span class="num">${r(Math.max(total - d.upfront.amount, 0))}</span></div>` : '';
+    let foot = '';
+    if (d.status === 'draft') {
+      foot = `${msg.error ? `<div class="err">${esc(msg.error)}</div>` : ''}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">Radd karo</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}Haan, pakka karo</button></div>`;
+    } else if (d.status === 'confirmed') {
+      foot = `<div class="done">${icon.check}Pakka hua · ${esc(d.invoiceNumber)} · ${fmtTime(d.confirmedAt)}</div>`;
+    } else {
+      foot = '<div class="done" style="background:#F1E3E1;color:#8C2B20">Bill radd kiya</div>';
+    }
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${d.status === 'draft' ? 'Bill · check karein' : `Bill ${esc(d.invoiceNumber || '')}`}</div><div class="c-title">${c ? esc(c.name) : 'Grahak'}</div></div>${mode}</div>${lines}${issues}<div class="total"><span class="lbl">Total · ${d.lines.length} item</span><span class="amt">${r(total)}</span></div>${up}${foot}</div>`;
+  }
+
+  function khataHtml(msg) {
+    const c = byId(S.customers, msg.customerId);
+    if (!c) return '';
+    const entries = S.ledger.filter((e) => e.customerId === c.id).slice(-4).reverse();
+    const rows = entries.map((e) => `<div class="row"><span class="sub" style="width:48px">${fmtDay(e.at)}</span><span class="grow">${esc(e.label)}</span><span class="num" style="${e.amount < 0 ? 'color:var(--green)' : ''}">${e.amount < 0 ? '− ' + r(-e.amount) : '+ ' + r(e.amount)}</span></div>`).join('');
+    const pay = msg.payOpen ? `<form class="payform" data-a="payform" data-customer="${c.id}" data-msg="${msg.id}"><input id="amt-${msg.id}" name="amt" inputmode="decimal" placeholder="Kitne rupaye?" aria-label="Amount in rupees" required><select id="m-${msg.id}" name="method" aria-label="Method"><option value="upi">UPI</option><option value="cash">Cash</option></select><button class="btn go" type="submit" style="flex:0 0 auto">Jama</button></form>` : '';
+    return `<div class="bot"><div class="c-head"><div style="display:flex;gap:10px;align-items:center"><span class="av">${initials(c.name)}</span><div><div class="c-title" style="font-size:18px">${esc(c.name)}</div><div class="sub">Khata · ${entries.length ? S.ledger.filter((e) => e.customerId === c.id).length + ' entry' : 'koi entry nahi'}</div></div></div></div>
+      <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">Kul baaki</div><div class="big">${r(Math.max(c.balance, 0))}</div></div></div>
+      ${rows ? `<div class="eyebrow" style="padding:0 14px 4px">Pichhla hisaab</div>${rows}` : ''}
+      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="payopen" data-msg="${msg.id}">Paisa mila</button><button class="btn sm" data-a="remind" data-customer="${c.id}">Yaad dilao</button></div>${pay}</div>`;
+  }
+
+  function customersHtml(msg) {
+    const f = msg.filter || 'all';
+    const list = S.customers.filter((c) => f === 'all' || (f === 'dues' ? c.balance > 0 : isInactive(c))).sort((a, b) => b.balance - a.balance);
+    const counts = { all: S.customers.length, dues: S.customers.filter((c) => c.balance > 0).length, inactive: S.customers.filter(isInactive).length };
+    const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
+    const chip = (k, label) => `<button class="fchip" aria-pressed="${f === k}" data-a="filter" data-msg="${msg.id}" data-f="${k}">${label} ${counts[k]}</button>`;
+    const rows = list.map((c) => `<button class="cust" data-a="open" data-customer="${c.id}"><span class="av ${c.balance > 0 ? '' : 'light'}">${initials(c.name)}</span><span class="grow" style="flex:1;min-width:0"><span style="display:block;font-weight:600">${esc(c.name)}</span><span class="sub" style="${isInactive(c) ? 'color:var(--udhaar-ink);font-weight:600' : ''}">${isInactive(c) ? `${Math.floor((Date.now() - new Date(c.lastPurchaseAt || c.createdAt)) / (7 * DAY))} hafte se nahi aaye` : `Aakhri kharid · ${c.lastPurchaseAt ? (localDate(new Date(c.lastPurchaseAt)) === localDate() ? 'aaj' : fmtDay(c.lastPurchaseAt)) : '—'}`}</span></span>${c.balance > 0 ? `<span class="num" style="color:var(--udhaar-ink)">${r(c.balance)}</span>` : '<span class="sub" style="color:var(--green);font-weight:600">Hisaab saaf</span>'}</button>`).join('');
+    return `<div class="bot"><div class="c-head"><div><div class="c-title">Aapke grahak · ${counts.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div></div><div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>${rows || '<div class="row sub">Koi grahak nahi</div>'}</div>`;
+  }
+
+  function summaryHtml() {
+    const s = summary();
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">Aaj ki bikri · ${fmtDay(now().toISOString())}</div><div class="c-title" style="font-size:30px;font-weight:800">${r(s.total)}</div><div class="sub">${s.count} bill</div></div></div>
+      <div class="grid2"><div class="tile"><span class="sub">Cash + UPI</span><b>${r(s.paidNow)}</b></div><div class="tile"><span class="sub">Udhaar diya</span><b style="color:var(--udhaar-ink)">${r(s.credit)}</b></div><div class="tile"><span class="sub">Udhaar wapas</span><b style="color:var(--green)">${r(s.repaid)}</b></div><div class="tile"><span class="sub">Naye grahak</span><b>${s.newCustomers}</b></div></div>
+      ${s.low.length ? `<div class="eyebrow" style="padding:0 14px 4px">Stock kam hai</div>${s.low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('')}` : ''}
+      ${s.top.length ? `<div class="eyebrow" style="padding:10px 14px 4px">Sabse zyada udhaar</div>${s.top.map((c) => `<div class="row"><span class="grow">${esc(c.name)}</span><span class="num">${r(c.balance)}</span></div>`).join('')}` : ''}<div style="height:6px"></div></div>`;
+  }
+
+  function lowHtml() {
+    const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold);
+    return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">Kal ki kharid list</div></div>${low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)} bache</span></div>`).join('')}</div>`;
+  }
+
+  function welcomeHtml() {
+    return `<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Hara mic dabaiye aur boliye, jaise:<br><i>“Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do”</i><br><span class="sub">Neeche diye sujhaav par tap karke bhi try kar sakte hain.</span></div>`;
+  }
+
+  function msgHtml(m) {
+    if (m.from === 'me') return `<div class="me"><div class="said">“${esc(m.text)}”</div><div class="time">${fmtTime(m.at)}</div></div>`;
+    switch (m.kind) {
+      case 'welcome': return welcomeHtml();
+      case 'text': return `<div class="bot plain">${esc(m.text)}</div>`;
+      case 'bill': return billHtml(m);
+      case 'khata': return khataHtml(m);
+      case 'customers': return customersHtml(m);
+      case 'summary': return summaryHtml();
+      case 'lowstock': return lowHtml();
+      case 'fx': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">${esc(m.title)}</div></div><div class="fx">${m.lines.map((t) => `<div>${fxIcon(t)}<span>${esc(t)}</span></div>`).join('')}${m.billId ? `<div><button class="link" data-a="receipt" data-bill="${m.billId}">Grahak ki rasid dekho</button></div>` : ''}</div></div>`;
+      case 'voice': return `<div class="bot plain">${esc(m.text.replace(m.url, '').trim())}${m.url ? `<br><a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700;word-break:break-all">${esc(m.url)}</a>` : ''}</div>`;
+      case 'wa': return `<div class="wa"><b>${esc(m.title)} · preview</b>${esc(m.text)}</div>`;
+      case 'pickCustomer': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:16px">${esc(m.text)}</div></div><div class="opts" style="padding:0 14px 12px">${m.ids.map((id) => { const c = byId(S.customers, id); return c ? `<button class="opt" data-a="open" data-customer="${id}">${esc(c.name)}</button>` : ''; }).join('')}</div></div>`;
+      default: return '';
+    }
+  }
+
+  const chatEl = document.getElementById('chat');
+  function renderChat(scroll = true) {
+    chatEl.innerHTML = `<div class="day">Aaj</div>` + S.chat.map(msgHtml).join('');
+    if (scroll) chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  let lastStock = {}, lastKhata = {};
+  function renderPanel() {
+    const stockRows = S.items.map((i) => {
+      const k = i.id; const changed = lastStock[k] !== undefined && lastStock[k] !== i.stock; lastStock[k] = i.stock;
+      return `<tr class="${changed ? 'flash' : ''}"><td>${esc(A.itemDisplayName(i))}</td><td class="r ${i.stock <= i.lowStockThreshold ? 'low' : ''}">${i.stock}</td></tr>`;
+    }).join('');
+    document.getElementById('stock').innerHTML = `<thead><tr><th>Item</th><th class="r">Stock</th></tr></thead><tbody>${stockRows}</tbody>`;
+    const kRows = [...S.customers].sort((a, b) => b.balance - a.balance).map((c) => {
+      const changed = lastKhata[c.id] !== undefined && lastKhata[c.id] !== c.balance; lastKhata[c.id] = c.balance;
+      return `<tr class="${changed ? 'flash' : ''}"><td>${esc(c.name)}</td><td class="r">${c.balance > 0 ? r(c.balance) : '—'}</td></tr>`;
+    }).join('');
+    document.getElementById('khata').innerHTML = `<thead><tr><th>Grahak</th><th class="r">Baaki</th></tr></thead><tbody>${kRows}</tbody>`;
+  }
+
+  const render = (scroll = true) => { renderChat(scroll); renderPanel(); save(); };
+
+  /* ---------- receipt sheet (what the customer sees) ---------- */
+  const sheet = document.getElementById('sheet');
+  function openReceipt(billId) {
+    const b = S.bills.find((x) => x.id === billId);
+    if (!b) return;
+    const c = b.customerId ? byId(S.customers, b.customerId) : null;
+    const lines = b.lines.map((l) => `<div class="row"><span class="grow">${esc(l.name)}${l.sizeLabel ? ` · ${esc(l.sizeLabel)}` : ''} × ${l.quantity}</span><span class="num">${r(l.amount)}</span></div>`).join('');
+    sheet.innerHTML = `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="close" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="logo" style="background:#F7F5F2;color:var(--ink);font-size:15px">SK</div><div><div class="bar-title">${esc(STORE.name)}</div><div class="bar-sub">Grahak ke phone par</div></div></div>
+      <div class="body"><div class="bot" style="max-width:none"><div class="rc-top"><div class="eyebrow">Rasid · ${esc(b.invoiceNumber)} · ${fmtDay(b.confirmedAt)}</div><div class="c-title">${c ? `Namaste ${esc(c.name)} ji` : 'Rasid'}</div></div>${lines}
+      <div class="total"><span class="lbl">Total</span><span class="amt">${r(b.total)}</span></div>
+      ${b.paidCash + b.paidUpi > 0 && b.credit > 0 ? `<div class="split"><span>Abhi diye</span><span class="num">${r(b.paidCash + b.paidUpi)}</span></div>` : ''}
+      ${b.credit > 0 && c ? `<div class="due"><div><div class="eyebrow" style="color:var(--udhaar-ink)">Udhaar mein likha ${r(b.credit)}</div><div class="sub">Aapka kul baaki</div></div><span class="big" style="font-size:26px">${r(c.balance)}</span></div>` : ''}
+      <div class="sub" style="padding:4px 14px 14px">Dhanyavaad! Kisi galti ke liye dukaan par bataiye.</div></div></div>`;
+    sheet.hidden = false;
+    sheet.querySelector('[data-a="close"]').focus();
+  }
+
+  /* ---------- events ---------- */
+  const input = document.getElementById('msg');
+  /* ---------- voice (browser speech recognition) ---------- */
+  const VOICE_URL = '__VOICE_URL__';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const sendBtn = document.getElementById('send');
+  const hint = document.getElementById('hint');
+  const langBtn = document.getElementById('lang');
+  const LANGS = [
+    { code: 'hi-IN', label: 'हिंदी' },
+    { code: 'en-IN', label: 'Hinglish' },
+  ];
+  let langIdx = 0;
+  try { langIdx = Number(localStorage.getItem('awaaz-demo-lang')) === 1 ? 1 : 0; } catch { /* ignore */ }
+  const showLang = () => { langBtn.textContent = LANGS[langIdx].label; langBtn.setAttribute('aria-label', `Voice language: ${LANGS[langIdx].label}. Tap to change`); };
+  showLang();
+  langBtn.addEventListener('click', () => {
+    langIdx = 1 - langIdx; showLang();
+    try { localStorage.setItem('awaaz-demo-lang', String(langIdx)); } catch { /* ignore */ }
+  });
+
+  let rec = null;
+  let listening = false;
+  const syncButton = () => {
+    const typing = input.value.trim().length > 0;
+    document.getElementById('ic-mic').hidden = typing;
+    document.getElementById('ic-send').hidden = !typing;
+    sendBtn.setAttribute('aria-label', typing ? 'Send' : listening ? 'Stop listening' : 'Speak');
+    sendBtn.classList.toggle('listening', listening);
+    hint.hidden = !listening;
+  };
+  input.addEventListener('input', syncButton);
+
+  function voiceProblem(kind) {
+    const where = VOICE_URL ? ` Voice ke liye demo yahan kholiye: ${VOICE_URL}` : '';
+    const msg = {
+      unsupported: 'Is browser mein bolne wala feature nahi hai. Android/desktop par Chrome, ya iPhone par Safari mein kholiye.' + where,
+      blocked: 'Mic ki permission nahi mili. Browser mein is site ke liye microphone allow kijiye.' + where,
+      network: 'Awaaz pehchanne ke liye internet chahiye. Net check karke phir boliye.',
+      nothing: 'Kuch sunai nahi diya. Mic dabakar phir se boliye.',
+    }[kind];
+    say('bot', 'voice', { text: msg, url: kind === 'unsupported' || kind === 'blocked' ? VOICE_URL : '' });
+    render();
+  }
+
+  function startListening() {
+    if (!SR) return voiceProblem('unsupported');
+    rec = new SR();
+    rec.lang = LANGS[langIdx].code;
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    let finalText = '';
+    let failed = false;
+    rec.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t; else interim += t;
+      }
+      input.value = (finalText + interim).trim();
+    };
+    rec.onerror = (e) => {
+      failed = true;
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') voiceProblem('blocked');
+      else if (e.error === 'network') voiceProblem('network');
+      else if (e.error === 'no-speech') voiceProblem('nothing');
+    };
+    rec.onend = () => {
+      listening = false;
+      const text = (finalText || input.value).trim();
+      if (!failed && text) {
+        input.value = '';
+        handle(text);
+        render();
+      }
+      syncButton();
+    };
+    try {
+      rec.start();
+      listening = true;
+      input.value = '';
+      syncButton();
+    } catch {
+      voiceProblem('blocked');
+    }
+  }
+
+  document.getElementById('composer').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (listening) { rec?.stop(); return; }
+    if (!text) { startListening(); return; }
+    input.value = '';
+    syncButton();
+    handle(text);
+    render();
+  });
+
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-a]');
+    if (!b || b.tagName === 'FORM') return;
+    const a = b.dataset.a;
+    if (a === 'resolve') {
+      const d = S.drafts[b.dataset.bill]; if (!d) return;
+      resolveIssue(d, b.dataset.issue, { itemId: b.dataset.item, customerId: b.dataset.customer, newCustomer: b.dataset.new, remove: b.dataset.remove === '1' });
+      render(false);
+    } else if (a === 'confirm') {
+      const d = S.drafts[b.dataset.bill]; if (!d) return;
+      const msg = S.chat.find((m) => m.kind === 'bill' && m.billId === d.id);
+      const res = confirmDraft(d);
+      if (res.error) { if (msg) msg.error = res.error; render(false); return; }
+      if (msg) delete msg.error;
+      say('bot', 'fx', { title: A.reply(LANG, 'billConfirmed'), lines: res.fx, billId: d.id });
+      if (res.receipt) say('bot', 'wa', { title: 'WhatsApp → ' + byId(S.customers, d.customerId).name, text: res.receipt });
+      render();
+    } else if (a === 'discard') {
+      const d = S.drafts[b.dataset.bill]; if (!d) return;
+      d.status = 'cancelled'; S.bills.push(d); delete S.drafts[d.id];
+      render(false);
+    } else if (a === 'open') {
+      const c = byId(S.customers, b.dataset.customer); if (!c) return;
+      say('me', 'said', { text: `${first(c.name)} ka khata` });
+      say('bot', 'khata', { customerId: c.id });
+      render();
+    } else if (a === 'filter') {
+      const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.filter = b.dataset.f;
+      render(false);
+    } else if (a === 'payopen') {
+      const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.payOpen = !m.payOpen;
+      render(false);
+      document.getElementById(`amt-${b.dataset.msg}`)?.focus();
+    } else if (a === 'remind') {
+      const c = byId(S.customers, b.dataset.customer); if (c) { sendReminder(c); render(); }
+    } else if (a === 'receipt') {
+      openReceipt(b.dataset.bill);
+    } else if (a === 'close') {
+      sheet.hidden = true;
+    } else if (a === 'try') {
+      handle(b.dataset.text); render();
+      if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
+  document.addEventListener('submit', (e) => {
+    const f = e.target.closest('[data-a="payform"]');
+    if (!f) return;
+    e.preventDefault();
+    const rupees = parseFloat(String(f.amt.value).replace(/[,₹\s]/g, ''));
+    const c = byId(S.customers, f.dataset.customer);
+    if (!c || !(rupees > 0)) return;
+    const paise = Math.round(rupees * 100);
+    recordPayment(c, paise, f.method.value);
+    const m = S.chat.find((x) => x.id === f.dataset.msg); if (m) m.payOpen = false;
+    botText(A.reply(LANG, 'paymentRecorded', { name: c.name, amount: paise, balance: c.balance }));
+    render();
+  });
+
+  /* ---------- examples ---------- */
+  const EXAMPLES = [
+    ['Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do', 'Voice bill · asks “Kaunsa size?”'],
+    ['Ramesh ka kitna baaki hai?', 'Khata check'],
+    ['Paanch kilo chawal, ek namak, aur do kilo m…l?', 'Unclear word · offers best guesses'],
+    ['Sunita ko do kilo cheeni, 50 abhi diye baaki udhaar', 'Part payment on udhaar'],
+    ['Ramesh ne paanch sau rupaye diye UPI se', 'Payment received'],
+    ['Grahak list dikhao', 'Customer list with filters'],
+    ['Pappu ko teen kilo maida udhaar mein likh do', 'New customer on the fly'],
+    ['aaj ka hisaab', 'Daily summary'],
+    ['kaunsa stock kam hai', 'Low stock / kharid list'],
+  ];
+  document.getElementById('try').innerHTML = EXAMPLES.map(([t, d]) => `<button data-a="try" data-text="${esc(t)}">“${esc(t)}”<span>${esc(d)}</span></button>`).join('');
+  document.getElementById('chips').innerHTML = EXAMPLES.map(([t, d]) => `<button class="sug" data-a="try" data-text="${esc(t)}" title="${esc(t)}">${esc(d.split(' · ')[0])}</button>`).join('');
+
+  document.getElementById('reset').addEventListener('click', () => {
+    S = seed(); lastStock = {}; lastKhata = {}; sheet.hidden = true; render();
+  });
+
+  render();
+})();
+</script>

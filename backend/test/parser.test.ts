@@ -147,3 +147,44 @@ describe('GST helpers', () => {
     expect(lineTax(6000, 0, { inclusive: true, interState: false })).toMatchObject({ taxableValue: 6000, cgst: 0, sgst: 0 });
   });
 });
+
+import { transliterate } from '../src/lib/translit.js';
+
+describe('Hindi script (what phone speech recognition returns)', () => {
+  it('transliterates Devanagari to Hinglish', () => {
+    expect(transliterate('रमेश का कितना बाकी है')).toBe('ramesh ka kitna baaki hai');
+    expect(transliterate('दो सरसों तेल उधार में लिख दो')).toBe('do sarson tel udhaar mein likh do');
+    expect(transliterate('already roman')).toBe('already roman');
+  });
+
+  it('parses the main voice bill spoken in Hindi', () => {
+    const intent = parseCommand('रमेश को पांच किलो आटा, एक किलो तूर दाल, दो सरसों तेल उधार में लिख दो');
+    expect(intent).toMatchObject({ type: 'create_bill', customerName: 'Ramesh', paymentMode: 'udhaar' });
+    if (intent.type !== 'create_bill') throw new Error();
+    expect(intent.lines.map((l) => [l.name, l.count, l.measure])).toEqual([
+      ['aata', null, { value: 5, unit: 'kg' }],
+      ['toor daal', null, { value: 1, unit: 'kg' }],
+      ['sarson tel', 2, null],
+    ]);
+  });
+
+  it.each([
+    ['रमेश ने पांच सौ रुपये दिए यूपीआई से', { type: 'record_payment', amount: 50000, method: 'upi' }],
+    ['ग्राहक लिस्ट दिखाओ', { type: 'list_customers' }],
+    ['आज का हिसाब', { type: 'daily_summary' }],
+    ['कौन सा स्टॉक कम है', { type: 'low_stock' }],
+    ['रमेश को याद दिलाओ', { type: 'send_reminder', customerName: 'Ramesh' }],
+    ['सुनीता को दो किलो चीनी, पचास अभी दिए बाकी उधार', { type: 'create_bill', upfront: { amount: 5000, method: 'cash' } }],
+  ])('%s', (text, expected) => {
+    expect(parseCommand(text)).toMatchObject(expected);
+  });
+
+  it('reads multipliers and loanword units', () => {
+    const intent = parseCommand('पांच सौ ग्राम जीरा और एक पैकेट मैगी');
+    if (intent.type !== 'create_bill') throw new Error();
+    expect(intent.lines.map((l) => [l.name, l.count, l.measure])).toEqual([
+      ['jeera', null, { value: 500, unit: 'g' }],
+      ['maggi', 1, null],
+    ]);
+  });
+});
