@@ -91,6 +91,21 @@ describe('parseCommand: other intents', () => {
     expect(parseCommand('Ramesh ko yaad dilao')).toEqual({ type: 'send_reminder', customerName: 'Ramesh' });
   });
 
+  it('stock received ("maal aaya")', () => {
+    const intent = parseCommand('Maal aaya: 20 bag atta, 10 sarson tel 1 litre aur paanch kilo cheeni');
+    expect(intent).toMatchObject({ type: 'stock_in', supplier: null });
+    if (intent.type !== 'stock_in') throw new Error();
+    expect(intent.lines.map((l) => [l.name, l.count, l.measure])).toEqual([
+      ['atta', 20, null],
+      ['sarson tel', 10, { value: 1, unit: 'l' }],
+      ['cheeni', null, { value: 5, unit: 'kg' }],
+    ]);
+    expect(parseCommand('Gupta Traders se maal aaya 12 toor dal')).toMatchObject({ type: 'stock_in', supplier: 'Gupta Traders' });
+    expect(parseCommand('गुप्ता ट्रेडर्स से माल आया बीस बैग आटा')).toMatchObject({ type: 'stock_in' });
+    // Low stock is a different question
+    expect(parseCommand('kaunsa stock kam hai')).toEqual({ type: 'low_stock' });
+  });
+
   it('returns unknown for empty input and chatter', () => {
     expect(parseCommand('   ')).toEqual({ type: 'unknown' });
     expect(parseCommand('hmm')).toEqual({ type: 'unknown' });

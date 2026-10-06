@@ -166,6 +166,40 @@ export const items = pgTable(
   ],
 );
 
+/** Stock received ("maal aaya"), optionally from a named supplier. */
+export const stockReceipts = pgTable(
+  'stock_receipts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    supplier: varchar('supplier', { length: 120 }),
+    note: varchar('note', { length: 200 }),
+    // Sum of quantity × cost price for lines with a cost price (paise).
+    totalCost: money('total_cost').notNull().default(0),
+    clientId: varchar('client_id', { length: 64 }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('stock_receipts_store_idx').on(t.storeId, t.createdAt), uniqueIndex('stock_receipts_client_unique').on(t.storeId, t.clientId)],
+);
+
+export const stockReceiptItems = pgTable(
+  'stock_receipt_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    receiptId: uuid('receipt_id')
+      .notNull()
+      .references(() => stockReceipts.id, { onDelete: 'cascade' }),
+    itemId: uuid('item_id')
+      .notNull()
+      .references(() => items.id, { onDelete: 'cascade' }),
+    quantity: qty('quantity').notNull(),
+    costPrice: money('cost_price'), // per pack, paise
+  },
+  (t) => [index('stock_receipt_items_receipt_idx').on(t.receiptId)],
+);
+
 /* ---------- Customers (grahak) & khata ---------- */
 
 export const customers = pgTable(
@@ -376,6 +410,12 @@ export const outboundMessages = pgTable(
   },
   (t) => [index('outbound_pending_idx').on(t.status, t.sendAfter)],
 );
+
+export const stockReceiptsRelations = relations(stockReceipts, ({ many }) => ({ items: many(stockReceiptItems) }));
+export const stockReceiptItemsRelations = relations(stockReceiptItems, ({ one }) => ({
+  receipt: one(stockReceipts, { fields: [stockReceiptItems.receiptId], references: [stockReceipts.id] }),
+  item: one(items, { fields: [stockReceiptItems.itemId], references: [items.id] }),
+}));
 
 export const billsRelations = relations(bills, ({ many, one }) => ({
   items: many(billItems),

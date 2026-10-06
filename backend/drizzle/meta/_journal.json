@@ -15,6 +15,13 @@
       "when": 1791009669055,
       "tag": "0001_gst_part_payment_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791288973220,
+      "tag": "0002_stock_receipts",
+      "breakpoints": true
     }
   ]
 }

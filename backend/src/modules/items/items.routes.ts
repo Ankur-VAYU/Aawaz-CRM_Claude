@@ -6,6 +6,7 @@ import { items } from '../../db/schema.js';
 import { conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
 import { itemDisplayName } from '../../lib/serialize.js';
 import { validate } from '../../lib/validate.js';
+import { getReceipt, listReceipts, receiveStock } from './stock-in.service.js';
 
 const rupeesToPaise = z.number().nonnegative().max(10_000_000).transform((r) => Math.round(r * 100));
 
@@ -45,6 +46,23 @@ const updateItemBody = z
 // Stock adjustments are deltas so two devices restocking at once don't overwrite each other.
 const adjustStockBody = z.object({ delta: z.number().min(-1_000_000).max(1_000_000) });
 const idParams = z.object({ id: z.uuid() });
+const receiveBody = z.object({
+  supplier: z.string().trim().min(1).max(120).nullable().optional(),
+  note: z.string().trim().max(200).optional(),
+  clientId: z.string().trim().min(8).max(64).optional(),
+  lines: z
+    .array(
+      z.object({
+        itemId: z.uuid(),
+        quantity: z.number().positive().max(1_000_000),
+        /** Purchase price per pack in rupees (optional, for margins later). */
+        costPrice: z.number().nonnegative().max(10_000_000).transform((r) => Math.round(r * 100)).nullable().optional(),
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+const receiptsQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20) });
 const listQuery = z.object({
   search: z.string().trim().max(80).optional(),
   includeInactive: z.enum(['true', 'false']).default('false'),
@@ -118,6 +136,25 @@ export default async function itemRoutes(app: FastifyInstance, { db }: { db: Db 
       return out;
     });
     return reply.code(201).send({ data: rows.map(present), missingPrice: rows.filter((r) => r.price === null).length });
+  });
+
+  // "Maal aaya": receive stock for several items at once.
+  app.post('/receive', async (req, reply) => {
+    const body = validate(receiveBody, req.body);
+    const result = await receiveStock(db, req.store.id, body);
+    return reply.code(result.duplicate ? 200 : 201).send(result);
+  });
+
+  app.get('/receipts', async (req) => {
+    const { limit } = validate(receiptsQuery, req.query);
+    return { data: await listReceipts(db, req.store.id, limit) };
+  });
+
+  app.get('/receipts/:id', async (req) => {
+    const { id } = validate(idParams, req.params);
+    const receipt = await getReceipt(db, req.store.id, id);
+    if (!receipt) throw notFound('Stock receipt not found');
+    return { receipt };
   });
 
   app.get('/:id', async (req) => {

@@ -9,6 +9,7 @@ import { validate } from '../../lib/validate.js';
 import type { BillsService } from '../bills/bills.service.js';
 import { presentCustomer } from '../customers/customers.routes.js';
 import { recordPayment, resolveCustomer, sendReminder } from '../customers/customers.service.js';
+import { previewStockIn } from '../items/stock-in.service.js';
 import { dailySummary } from '../summary/summary.service.js';
 import { parseCommand } from './parser.js';
 
@@ -125,6 +126,16 @@ export default async function assistantRoutes(app: FastifyInstance, { db, billsS
       case 'daily_summary': {
         const summary = await dailySummary(db, store);
         return answer(reply(lang, 'summary', { sales: summary.sales.total, bills: summary.sales.bills }), { summary });
+      }
+
+      case 'stock_in': {
+        const catalog = await db.select().from(items).where(and(eq(items.storeId, store.id), eq(items.isActive, true)));
+        const preview = previewStockIn(catalog, intent.lines);
+        const text = preview.unmatched.length
+          ? `${preview.matched.length} item mile, ${preview.unmatched.length} saaf nahi hue. Check karke pakka karein.`
+          : `${preview.matched.length} item ka maal. Check karke pakka karein.`;
+        // Nothing changes until the app sends POST /items/receive.
+        return answer(text, { stockIn: { supplier: intent.supplier, ...preview } });
       }
 
       case 'low_stock': {

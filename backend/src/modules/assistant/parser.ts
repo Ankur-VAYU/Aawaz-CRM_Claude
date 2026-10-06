@@ -42,6 +42,8 @@ export type Intent =
   | { type: 'list_customers' }
   | { type: 'daily_summary' }
   | { type: 'low_stock' }
+  /** "Maal aaya: 20 bag atta, 10 sarson tel" — stock received from a supplier. */
+  | { type: 'stock_in'; supplier: string | null; lines: ParsedLine[] }
   | { type: 'unknown' };
 
 const NUMBER_WORDS: Record<string, number> = {
@@ -176,6 +178,20 @@ const UPFRONT_RE = new RegExp(
 // Words that are left over after removing a part payment and must not become bill lines.
 const LEFTOVER_WORDS = new Set(['baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke']);
 
+// "maal aaya", "Gupta Traders se maal aaya", "stock jodo", "naya stock aaya"
+const STOCK_IN_RE =
+  /^(?:(.+?)\s+se\s+)?(?:naya\s+)?(?:maal|stock|saamaan|saman)\s+(?:aaya hai|aa gaya|aagaya|aa gaye|aaya|aya|aaye|aye|mila|jodo|joda|daalo|dalo|add karo|add|in)\b[\s:,-]*/;
+
+function splitLines(body: string): ParsedLine[] {
+  return body
+    .split(/,|;|…(?=\s|$)|\baur\b|\band\b|\bphir\b|\bek aur\b|\.(?!\d)/)
+    .map((s) => s.trim())
+    .filter((s) => s && s.replace(/[\s…?]/g, '').length > 0)
+    .map(parseLine)
+    .filter((l): l is ParsedLine => l !== null)
+    .filter((l) => l.unclear || l.count !== null || l.measure !== null || !l.name.split(' ').every((w) => LEFTOVER_WORDS.has(w)));
+}
+
 const NAME_STOPWORDS = new Set(['aaj', 'abhi', 'jaldi', 'mujhe', 'hume', 'humko', 'mera', 'meri']);
 
 function cleanName(name: string): string | null {
@@ -191,6 +207,15 @@ function cleanName(name: string): string | null {
 export function parseCommand(input: string): Intent {
   const text = clean(input);
   if (!text) return { type: 'unknown' };
+
+  const stockIn = text.match(STOCK_IN_RE);
+  if (stockIn) {
+    const lines = splitLines(text.slice(stockIn[0].length));
+    if (lines.length) {
+      const supplier = stockIn[1] ? cleanName(stockIn[1]) : null;
+      return { type: 'stock_in', supplier, lines };
+    }
+  }
 
   if (/\b(grahak|graahak|grahakon|customer|customers)\b.*\b(list|suchi|dikhao|dikha|batao)\b/.test(text)) {
     return { type: 'list_customers' };
@@ -251,14 +276,7 @@ export function parseCommand(input: string): Intent {
       body = body.replace(paid[0], ' ');
     }
   }
-  body = body.replace(FILLER_RE, ' ');
-  const lines = body
-    .split(/,|;|…(?=\s|$)|\baur\b|\band\b|\bphir\b|\bek aur\b|\.(?!\d)/)
-    .map((s) => s.trim())
-    .filter((s) => s && s.replace(/[\s…?]/g, '').length > 0)
-    .map(parseLine)
-    .filter((l): l is ParsedLine => l !== null)
-    .filter((l) => l.unclear || l.count !== null || l.measure !== null || !l.name.split(' ').every((w) => LEFTOVER_WORDS.has(w)));
+  const lines = splitLines(body.replace(FILLER_RE, ' '));
 
   if (!lines.length) return { type: 'unknown' };
   // Without a quantity, a customer or a payment word, a lone word ("hmm", "haan") isn't a bill.
