@@ -269,6 +269,8 @@ export interface BillIssue {
   itemId?: string;
   quantity?: number;
   options: BillIssueOption[];
+  /** The item was added to the inventory automatically from this bill (removed again if dropped). */
+  autoAdded?: boolean;
 }
 
 export const documentType = pgEnum('document_type', ['tax_invoice', 'bill_of_supply', 'bill']);

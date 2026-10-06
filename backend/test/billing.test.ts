@@ -205,12 +205,32 @@ describe('drafts: customers, prices and edits', () => {
     expect((await t.inject('GET', `/api/v1/items/${item('Maida 1 kg').id}`, token)).json().item.price).toBe(4800);
   });
 
-  it('reports items not in the catalogue, which can be removed or added by hand', async () => {
+  it('adds items that are not in the inventory, asking only for the price', async () => {
     const { token } = await t.shop();
-    const res = await t.say(token, 'ek kilo cheeni aur do sabun');
+    const res = await t.say(token, 'ek kilo cheeni, do sabun aur teen kilo pyaaz');
+    const [sabun, pyaaz] = res.bill.issues;
+    expect(sabun).toMatchObject({ kind: 'price_missing', name: 'Sabun', quantity: 2, autoAdded: true });
+    expect(pyaaz).toMatchObject({ kind: 'price_missing', name: 'Pyaaz 1 kg', quantity: 3, autoAdded: true });
+    const inventory = (await t.inject('GET', '/api/v1/items?search=pyaaz', token)).json().data;
+    expect(inventory).toHaveLength(1);
+    expect(inventory[0]).toMatchObject({ unit: 'kg', price: null, stock: 0 });
+
+    // Price given once: on the bill and saved on the item
+    const r = await t.inject('POST', `/api/v1/bills/${res.bill.id}/resolve`, token, { issueId: pyaaz.id, unitPrice: 40 });
+    expect(r.json().bill.total).toBe(4500 + 12000);
+    expect((await t.inject('GET', `/api/v1/items/${pyaaz.itemId}`, token)).json().item.price).toBe(4000);
+
+    // Dropped from the bill: the automatic inventory entry goes away again
+    await t.inject('POST', `/api/v1/bills/${res.bill.id}/resolve`, token, { issueId: sabun.id, remove: true });
+    expect((await t.inject('GET', `/api/v1/items/${sabun.itemId}`, token)).statusCode).toBe(404);
+    expect((await t.inject('POST', `/api/v1/bills/${res.bill.id}/confirm`, token)).statusCode).toBe(200);
+  });
+
+  it('a bill line that is not an item can still be added by hand', async () => {
+    const { token } = await t.shop();
+    const res = await t.say(token, 'ek kilo cheeni, do sabun');
     const issue = res.bill.issues[0];
-    expect(issue).toMatchObject({ kind: 'not_found', name: 'sabun' });
-    const r = await t.inject('POST', `/api/v1/bills/${res.bill.id}/resolve`, token, { issueId: issue.id, name: 'Sabun', unitPrice: 30 });
+    const r = await t.inject('POST', `/api/v1/bills/${res.bill.id}/resolve`, token, { issueId: issue.id, unitPrice: 30 });
     expect(r.json().bill).toMatchObject({ total: 4500 + 6000, canConfirm: true });
   });
 

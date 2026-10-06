@@ -22,7 +22,7 @@ import { localDate } from '../../lib/time.js';
 import { generateShareToken } from '../../lib/tokens.js';
 import type { PaymentMode, ParsedLine } from '../assistant/parser.js';
 import { enqueueCustomerMessage, postLedgerEntry, resolveCustomer, shareLink } from '../customers/customers.service.js';
-import { resolveLine } from './matching.js';
+import { quantityFor, resolveLine } from './matching.js';
 
 export interface LineInput {
   itemId?: string;
@@ -109,6 +109,24 @@ export class BillsService {
     }
     const catalog = await this.catalog(this.db, store.id);
     const resolved = input.lines.map((l) => resolveLine(catalog, l));
+    // Items the shop doesn't have yet go straight into the inventory; only their price is asked.
+    for (let k = 0; k < resolved.length; k++) {
+      const r = resolved[k];
+      if (r.kind !== 'issue' || r.issue.kind !== 'not_found') continue;
+      const added = await autoAddItem(this.db, store.id, input.lines[k]);
+      if (!added) continue;
+      resolved[k] = {
+        kind: 'issue',
+        issue: {
+          ...r.issue,
+          kind: 'price_missing',
+          name: itemDisplayName(added.item),
+          itemId: added.item.id,
+          quantity: added.quantity,
+          autoAdded: added.created,
+        },
+      };
+    }
     const issues: BillIssue[] = resolved.flatMap((r) => (r.kind === 'issue' ? [r.issue] : []));
     const lines: StoredLine[] = resolved.flatMap((r) => (r.kind === 'ok' ? [this.lineFromItem(r.item, r.quantity, r.item.price!)] : []));
 
@@ -422,7 +440,11 @@ export class BillsService {
         } else {
           throw badRequest('Give customerId or newCustomer (or remove: true)');
         }
-      } else if (!input.remove) {
+      } else if (input.remove || (issue.autoAdded && input.itemId && input.itemId !== issue.itemId)) {
+        // Dropped, or swapped for an existing item: undo the automatic inventory entry if unused.
+        if (issue.autoAdded && issue.itemId) await removeUnusedAutoItem(tx, issue.itemId);
+      }
+      if (!issue.kind.startsWith('customer_') && !input.remove) {
         const catalog = await this.catalog(tx, store.id);
         const itemId = input.itemId ?? issue.itemId;
         lines = await this.currentLines(tx, billId);
@@ -439,7 +461,8 @@ export class BillsService {
               { id: crypto.randomUUID(), kind: 'price_missing', raw: issue.raw, name: itemDisplayName(item), itemId: item.id, quantity, options: [] },
             ];
           } else {
-            if (input.savePrice && input.unitPrice !== undefined) {
+            // A price for an item added from this bill is that item's price from now on.
+            if ((input.savePrice || issue.autoAdded) && input.unitPrice !== undefined) {
               await tx.update(items).set({ price: input.unitPrice }).where(eq(items.id, item.id));
             }
             lines.push(this.lineFromItem(item, quantity, unitPrice));
@@ -646,4 +669,38 @@ export class BillsService {
     });
     return this.get(store.id, billId);
   }
+}
+
+const titleCase = (s: string) => s.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+
+/**
+ * Adds an item the shop doesn't have yet ("pyaaz" heard on a bill) to the inventory: sold loose per
+ * kg / litre when a weight or volume was said, otherwise per piece; no price and zero stock until
+ * the shopkeeper fills them in. Returns null for words too short to be a real item name.
+ */
+export async function autoAddItem(db: Db, storeId: string, line: ParsedLine) {
+  const name = titleCase(line.name.trim());
+  if (line.unclear || name.replace(/[^\p{L}]/gu, '').length < 3) return null;
+  const unit = line.measure ? (line.measure.unit === 'g' || line.measure.unit === 'kg' ? 'kg' : 'l') : 'pc';
+  const [created] = await db
+    .insert(items)
+    .values({ storeId, name, unit, unitSize: 1, price: null, stock: 0 })
+    .onConflictDoNothing()
+    .returning();
+  const item =
+    created ??
+    (await db.query.items.findFirst({
+      where: and(eq(items.storeId, storeId), eq(items.nameKey, name.toLowerCase()), eq(items.unit, unit), eq(items.unitSize, 1)),
+    }));
+  if (!item) return null;
+  if (!created && !item.isActive) await db.update(items).set({ isActive: true }).where(eq(items.id, item.id));
+  return { item, created: Boolean(created), quantity: quantityFor(item, line.count, line.measure) ?? line.count ?? 1 };
+}
+
+/** Deletes an automatically added item again, unless a bill already uses it or it got a price. */
+async function removeUnusedAutoItem(tx: Db, itemId: string) {
+  await tx.execute(sql`
+    delete from ${items}
+    where ${items.id} = ${itemId} and ${items.price} is null
+      and not exists (select 1 from ${billItems} where ${billItems.itemId} = ${itemId})`);
 }

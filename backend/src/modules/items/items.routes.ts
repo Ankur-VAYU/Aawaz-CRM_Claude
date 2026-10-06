@@ -53,7 +53,10 @@ const receiveBody = z.object({
   lines: z
     .array(
       z.object({
-        itemId: z.uuid(),
+        itemId: z.uuid().optional(),
+        /** For an item not in the inventory yet: it is added (selling price can be set later). */
+        name: z.string().trim().min(1).max(80).optional(),
+        unit: z.enum(['kg', 'l', 'pc']).optional(),
         quantity: z.number().positive().max(1_000_000),
         /** Purchase price per pack in rupees (optional, for margins later). */
         costPrice: z.number().nonnegative().max(10_000_000).transform((r) => Math.round(r * 100)).nullable().optional(),

@@ -23,6 +23,7 @@ describe('inventory in ("maal aaya")', () => {
       ['Sarson tel 1 L', 10],
     ]);
     expect(res.stockIn.unmatched).toHaveLength(1);
+    expect(res.stockIn.unmatched[0].newItem).toEqual({ name: 'Sabun', unit: 'pc', quantity: 2 });
     expect((await t.inject('GET', `/api/v1/items/${item('Atta 5 kg').id}`, token)).json().item.stock).toBe(24);
 
     const body = {
@@ -52,6 +53,17 @@ describe('inventory in ("maal aaya")', () => {
     const list = (await t.inject('GET', '/api/v1/items/receipts', token)).json().data;
     expect(list).toHaveLength(1);
     expect(list[0].items).toHaveLength(2);
+  });
+
+  it('adds new items to the inventory when stock arrives', async () => {
+    const { token } = await t.shop();
+    const r = await t.inject('POST', '/api/v1/items/receive', token, {
+      lines: [{ name: 'pyaaz', unit: 'kg', quantity: 25, costPrice: 30 }],
+    });
+    expect(r.statusCode).toBe(201);
+    const items = (await t.inject('GET', '/api/v1/items?search=pyaaz', token)).json().data;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ name: 'Pyaaz', unit: 'kg', stock: 25, price: null });
   });
 
   it('refuses items from another shop', async () => {

@@ -103,6 +103,7 @@ const WORDS: Record<string, string> = {
   'स्टॉक': 'stock', 'स्टाक': 'stock', 'लिस्ट': 'list', 'बिल': 'bill', 'समरी': 'summary',
   'किलो': 'kilo', 'केजी': 'kg', 'ग्राम': 'gram', 'लीटर': 'litre', 'लिटर': 'litre', 'एमएल': 'ml',
   'बैग': 'bag', 'बोरी': 'bori', 'पैकेट': 'packet', 'पैकेट्स': 'packets', 'बोतल': 'bottle', 'डिब्बा': 'dabba', 'डिब्बे': 'dabbe',
+  'दीजिए': 'dijiye', 'दीजिये': 'dijiye', 'दिजिए': 'dijiye', 'कीजिए': 'kijiye', 'चाहिए': 'chahiye', 'प्याज': 'pyaaz', 'प्याज़': 'pyaaz',
   'दिए': 'diye', 'दिये': 'diye', 'लिए': 'liye', 'लिये': 'liye', 'गए': 'gaye', 'आए': 'aaye',
   'मैगी': 'maggi', 'बिस्कुट': 'biscuit', 'साबुन': 'sabun',
 };

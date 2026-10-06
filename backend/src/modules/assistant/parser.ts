@@ -176,7 +176,7 @@ const EN_FILLER_RE =
   /\b(put (it )?|add (it )?|write (it )?)?(on|in|to) (credit|account|his account|her account|their account|khata)\b|\b(on credit|pay later|please|bill|make a bill|make bill)\b|\b(by|via|through|in|with) (upi|cash|online|gpay|phonepe|paytm)\b/g;
 const UPI_RE = /\b(upi|online|gpay|google pay|phonepe|phone pe|paytm|qr)\b/;
 const FILLER_RE =
-  /\b(udhaar|udhar|udhari|khate|khaate|khata|credit)\s*(me|mein|main|par|pe)?\s*(likh|daal|dal|jod|chadha)?\s*(do|dijiye|dena|de)?\b|\b(upi|online|gpay|phonepe|paytm|cash|nakad)\s*(se|me|mein|main)?\s*(diye|diya|payment)?\b|\b(likh|likho|likh do|bill bana|bill banao|bana do|banao|de do|dena|do na|dijiye|chahiye|please|plz|ka bill|ke liye)\b/g;
+  /\b(udhaar|udhar|udhari|khate|khaate|khata|credit)\s*(me|mein|main|par|pe)?\s*(likh|daal|dal|jod|chadha)?\s*(do|dijiye|dena|de)?\b|\b(upi|online|gpay|phonepe|paytm|cash|nakad)\s*(se|me|mein|main)?\s*(diye|diya|payment)?\b|\b(de dijiye|de dijie|de deejie|de dena|de do|dedo|likh lijiye|likh dijiye|likh lo|likh do|likho|likh|daal do|kar do|bhej do|bill banao|bill bana|bana do|banao|dena|do na|dijiye|dijie|deejie|chahiye|chahie|chaahie|please|plz|ka bill|ke liye)\b/g;
 
 // "500 abhi diye", "do sau cash mein diye", "300 UPI se mile"
 const AMOUNT_WORDS = `(?:\\d[\\d,]*(?:\\.\\d+)?|\\b(?:${[...Object.keys(NUMBER_WORDS), ...Object.keys(MULTIPLIERS)].join('|')})\\b)`;
@@ -189,7 +189,7 @@ const UPFRONT_EN_RE = new RegExp(
 );
 // Words that are left over after removing a part payment and must not become bill lines.
 const LEFTOVER_WORDS = new Set([
-  'baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke',
+  'baaki', 'baki', 'bacha', 'bache', 'bas', 'abhi', 'aur', 'hai', 'ka', 'ki', 'ke', 'de', 'dijiye', 'ji',
   'rest', 'remaining', 'balance', 'now', 'the', 'and', 'it', 'is', 'give', 'gave', 'sell', 'sold',
 ]);
 
@@ -224,11 +224,56 @@ function englishBillCustomer(text: string): { name: string; body: string } | nul
   return null;
 }
 
+const isQtyWord = (w: string) => parseNumberToken(w) !== null || Boolean(MULTIPLIERS[w]);
+
+/**
+ * Splits a run of items said without "aur" or commas: "2 kilo aata 3 kilo pyaaj" → two lines,
+ * "atta 5 kg cheeni 2 kg" → two lines. A size after the name ("sarson tel 1 litre") stays put.
+ */
+function splitRun(segment: string): string[] {
+  const words = segment.split(/\s+/).filter(Boolean);
+  const out: string[][] = [];
+  let cur: string[] = [];
+  let hasQty = false;
+  let hasName = false;
+  let nameFirst: boolean | null = null;
+  let lastWasQty = false;
+  const flush = () => {
+    if (cur.length) out.push(cur);
+    cur = [];
+    hasQty = hasName = lastWasQty = false;
+    nameFirst = null;
+  };
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (isQtyWord(w)) {
+      let j = i;
+      while (j < words.length && (isQtyWord(words[j]) || UNIT_WORDS[words[j]])) j++;
+      const nameFollows = j < words.length;
+      if (hasQty && hasName && nameFollows) flush();
+      if (nameFirst === null) nameFirst = false;
+      cur.push(...words.slice(i, j));
+      i = j - 1;
+      hasQty = true;
+      lastWasQty = true;
+    } else {
+      if (nameFirst && hasQty && lastWasQty) flush();
+      if (nameFirst === null) nameFirst = true;
+      cur.push(w);
+      hasName = true;
+      lastWasQty = false;
+    }
+  }
+  flush();
+  return out.map((ws) => ws.join(' '));
+}
+
 function splitLines(body: string): ParsedLine[] {
   return body
     .split(/,|;|…(?=\s|$)|\baur\b|\band\b|\bphir\b|\bek aur\b|\.(?!\d)/)
     .map((s) => s.trim())
     .filter((s) => s && s.replace(/[\s…?]/g, '').length > 0)
+    .flatMap(splitRun)
     .map(parseLine)
     .filter((l): l is ParsedLine => l !== null)
     .filter((l) => l.unclear || l.count !== null || l.measure !== null || !l.name.split(' ').every((w) => LEFTOVER_WORDS.has(w)));

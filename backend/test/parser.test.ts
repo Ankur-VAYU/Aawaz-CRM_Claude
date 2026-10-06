@@ -63,6 +63,27 @@ describe('parseCommand: bills', () => {
     expect(upi.lines.map((l) => l.name)).toEqual(['cheeni']);
   });
 
+  it('splits items said without "aur" or commas', () => {
+    const hi = parseCommand('राम को 2 किलो आटा 3 किलो प्याज दे दीजिए');
+    expect(hi).toMatchObject({ type: 'create_bill', customerName: 'Raam' });
+    if (hi.type !== 'create_bill') throw new Error();
+    expect(hi.lines.map((l) => [l.name, l.measure])).toEqual([
+      ['aata', { value: 2, unit: 'kg' }],
+      ['pyaaz', { value: 3, unit: 'kg' }],
+    ]);
+    const nameFirst = parseCommand('atta 5 kg cheeni 2 kg');
+    if (nameFirst.type !== 'create_bill') throw new Error();
+    expect(nameFirst.lines.map((l) => l.name)).toEqual(['atta', 'cheeni']);
+    const counts = parseCommand('paanch kilo chawal ek namak ek packet maggi');
+    if (counts.type !== 'create_bill') throw new Error();
+    expect(counts.lines.map((l) => l.name)).toEqual(['chawal', 'namak', 'maggi']);
+    // A size after the name is not a new item
+    expect(parseLine('2 x sarson tel 1 litre')).toMatchObject({ name: 'sarson tel', count: 2 });
+    const one = parseCommand('do sarson tel 1 litre');
+    if (one.type !== 'create_bill') throw new Error();
+    expect(one.lines).toHaveLength(1);
+  });
+
   it('handles Devanagari digits', () => {
     expect(parseLine('५ kg atta')).toMatchObject({ name: 'atta', measure: { value: 5, unit: 'kg' } });
   });
