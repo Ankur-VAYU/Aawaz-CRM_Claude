@@ -684,7 +684,7 @@ export async function autoAddItem(db: Db, storeId: string, line: ParsedLine) {
   const unit = line.measure ? (line.measure.unit === 'g' || line.measure.unit === 'kg' ? 'kg' : 'l') : 'pc';
   const [created] = await db
     .insert(items)
-    .values({ storeId, name, unit, unitSize: 1, price: null, stock: 0 })
+    .values({ storeId, name, unit, unitSize: 1, price: null, stock: 0, stockLabel: unit })
     .onConflictDoNothing()
     .returning();
   const item =

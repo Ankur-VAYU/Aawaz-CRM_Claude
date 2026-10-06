@@ -37,7 +37,7 @@ export async function receiveStock(db: Db, storeId: string, input: ReceiveInput)
         if (l.itemId) continue;
         const name = l.name!.trim().replace(/\b\p{L}/gu, (c) => c.toUpperCase());
         const unit = l.unit ?? 'pc';
-        const [created] = await tx.insert(items).values({ storeId, name, unit, unitSize: 1, price: null, stock: 0 }).onConflictDoNothing().returning();
+        const [created] = await tx.insert(items).values({ storeId, name, unit, unitSize: 1, price: null, stock: 0, stockLabel: unit }).onConflictDoNothing().returning();
         const item =
           created ??
           (await tx.query.items.findFirst({

@@ -1,5 +1,5 @@
 // The demo runs the backend's own parsing, matching and reply code in the browser.
-export { parseCommand } from '../backend/src/modules/assistant/parser.js';
+export { parseCommand, parseLine } from '../backend/src/modules/assistant/parser.js';
 export { resolveLine, quantityFor } from '../backend/src/modules/bills/matching.js';
 export { similarity } from '../backend/src/lib/text.js';
 export { transliterate } from '../backend/src/lib/translit.js';

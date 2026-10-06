@@ -316,6 +316,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     'issue.newCustomer': ['+ Naya grahak: {name}', '+ नया ग्राहक: {name}', '+ New customer: {name}'],
     'issue.noName': ['Bina naam ke', 'बिना नाम के', 'Without a name'],
     remove: ['Hatao', 'हटाओ', 'Remove'],
+    'issue.newItem': ['+ Naya item: {name}', '+ नया आइटम: {name}', '+ New item: {name}'],
+    'issue.autoAdded': ['{name} naya item hai. Inventory mein jod diya — bas daam bataiye.', '{name} नया आइटम है। इन्वेंटरी में जोड़ दिया — बस दाम बताइए।', '{name} is a new item. Added to your inventory — just tell me the price.'],
+    'issue.orPick': ['Ya inme se koi:', 'या इनमें से कोई:', 'Or one of these:'],
+    'price.submit': ['Daam daalo, bill mein jodo', 'दाम डालो, बिल में जोड़ो', 'Set price, add to bill'],
+    'si.new': ['NAYA', 'नया', 'NEW'],
+    'si.newAdded': ['{n} naye item inventory mein jode', '{n} नए आइटम इन्वेंटरी में जोड़े', '{n} new item(s) added to inventory'],
+    'ni.pricePer': ['Daam ₹ (1 {u} ka)', 'दाम ₹ (1 {u} का)', 'Price ₹ (per {u})'],
+    'ni.addToBill': ['Item banao, bill mein jodo', 'आइटम बनाओ, बिल में जोड़ो', 'Create item, add to bill'],
+    'ni.needPrice': ['Daam daaliye.', 'दाम डालिए।', 'Enter a price.'],
+    'bill.answerFirst': ['Pakka karne se pehle upar ke {n} sawaal ka jawab dijiye', 'पक्का करने से पहले ऊपर के {n} सवालों का जवाब दीजिए', 'Answer the {n} question(s) above to confirm'],
+    'bill.cancelAsk': ['Yeh bill radd karein?', 'यह बिल रद्द करें?', 'Cancel this bill?'],
+    'bill.cancelYes': ['Haan, radd karo', 'हाँ, रद्द करें', 'Yes, cancel'],
+    'bill.cancelNo': ['Nahi, rakho', 'नहीं, रखो', 'No, keep it'],
     'err.answers': ['Pehle upar ke sawaal ka jawab dijiye.', 'पहले ऊपर के सवाल का जवाब दीजिए।', 'Please answer the question above first.'],
     'err.noItems': ['Bill mein koi item nahi hai.', 'बिल में कोई आइटम नहीं है।', 'The bill has no items.'],
     'err.creditOff': ['Is dukaan mein udhaar band hai (Dukaan tab mein badlein).', 'इस दुकान में उधार बंद है (दुकान टैब में बदलें)।', 'Credit is turned off for this shop (change it in the Shop tab).'],
@@ -695,6 +708,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     for (const line of intent.lines) {
       const res = A.resolveLine(activeItems(), line);
       if (res.kind === 'ok') d.lines.push(lineFromItem(res.item, res.quantity));
+      else if (res.issue.kind === 'not_found') d.issues.push(autoAddIssue(line, res.issue));
       else d.issues.push(res.issue);
     }
     if (intent.customerName) {
@@ -709,6 +723,28 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     return d;
   }
 
+  const titleCase = (s) => s.replace(/(^|\s)(\S)/g, (m, sp, c) => sp + c.toUpperCase());
+  const unitFor = (line) => (line.measure ? (line.measure.unit === 'g' || line.measure.unit === 'kg' ? 'kg' : 'l') : 'pc');
+
+  /** Items the shop doesn't have yet go straight into the inventory; the bill only asks the price. */
+  function autoAddIssue(line, issue) {
+    const name = titleCase(line.name.trim());
+    if (line.unclear || name.replace(/[^\p{L}]/gu, '').length < 3) return issue;
+    const unit = unitFor(line);
+    let item = S.items.find((i) => i.name.toLowerCase() === name.toLowerCase() && i.unit === unit && i.unitSize === 1);
+    let created = false;
+    if (!item) { item = makeItem(name, unit, 1, null, 0, unit); S.items.push(item); created = true; }
+    item.isActive = true;
+    const quantity = A.quantityFor(item, line.count, line.measure) ?? line.count ?? 1;
+    return { ...issue, kind: 'price_missing', name: A.itemDisplayName(item), itemId: item.id, quantity, autoAdded: created };
+  }
+
+  function dropAutoItem(itemId) {
+    const it = byId(S.items, itemId);
+    const used = S.bills.some((b) => b.lines.some((l) => l.itemId === itemId)) || Object.values(S.drafts).some((d) => d.lines.some((l) => l.itemId === itemId));
+    if (it && it.price == null && !used) S.items = S.items.filter((i) => i.id !== itemId);
+  }
+
   function addCustomer(name, phone, consent) {
     const c = makeCustomer(name, phone, consent);
     S.customers.push(c);
@@ -718,6 +754,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function resolveIssue(d, issueId, choice) {
     const issue = d.issues.find((i) => i.id === issueId);
     if (!issue) return;
+    // Dropped, or swapped for an existing item: undo the automatic inventory entry if unused.
+    if (issue.autoAdded && (choice.remove || (choice.itemId && choice.itemId !== issue.itemId))) dropAutoItem(issue.itemId);
     if (choice.remove) {
       if (issue.kind.startsWith('customer_') && d.paymentMode === 'udhaar') return;
     } else if (choice.customerId) {
@@ -801,8 +839,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   }
 
   function receiveStock(supplier, lines) {
-    const rec = { id: uid(), supplier: supplier || null, at: now().toISOString(), totalCost: 0, lines: [] };
+    const rec = { id: uid(), supplier: supplier || null, at: now().toISOString(), totalCost: 0, lines: [], added: 0 };
     for (const l of lines) {
+      if (l.newItem && !l.itemId) {
+        const ex = S.items.find((i) => i.name.toLowerCase() === l.newItem.name.toLowerCase() && i.unit === l.newItem.unit && i.unitSize === 1);
+        if (ex) l.itemId = ex.id;
+        else { const it = makeItem(l.newItem.name, l.newItem.unit, 1, null, 0, l.newItem.unit); S.items.push(it); l.itemId = it.id; rec.added += 1; }
+      }
       const it = byId(S.items, l.itemId);
       if (!it || !(l.quantity > 0)) continue;
       it.stock = Math.round((it.stock + l.quantity) * 1000) / 1000;
@@ -865,7 +908,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
           const res = A.resolveLine(activeItems(), line);
           if (res.kind === 'ok') sd.lines.push({ itemId: res.item.id, quantity: res.quantity });
           else if (res.issue.kind === 'price_missing' && res.issue.itemId) sd.lines.push({ itemId: res.issue.itemId, quantity: res.issue.quantity ?? 1 });
-          else sd.unmatched.push({ id: uid(), raw: res.issue.raw || line.raw, quantity: line.count ?? 1, options: res.issue.options });
+          else if (!line.unclear && line.name.replace(/[^\p{L}]/gu, '').length >= 3) {
+            const unit = unitFor(line);
+            const qty = line.measure ? line.measure.value * (line.measure.unit === 'g' || line.measure.unit === 'ml' ? 0.001 : 1) * (line.count ?? 1) : (line.count ?? 1);
+            sd.lines.push({ newItem: { name: titleCase(line.name.trim()), unit }, quantity: qty });
+          } else sd.unmatched.push({ id: uid(), raw: res.issue.raw || line.raw, quantity: line.count ?? 1, options: res.issue.options });
         }
         S.stockDrafts[sd.id] = sd;
         botText(say_('stockInPreview', { matched: sd.lines.length, unmatched: sd.unmatched.length }));
@@ -937,7 +984,34 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     } else if (i.kind === 'customer_unknown') {
       opts.push(btn(`data-new="${esc(i.name)}"`, esc(t('issue.newCustomer', { name: i.name }))));
       if (d.paymentMode !== 'udhaar') opts.push(btn('data-remove="1"', esc(t('issue.noName')), true));
+    } else if (i.kind === 'price_missing' && i.itemId && byId(S.items, i.itemId)) {
+      const it = byId(S.items, i.itemId);
+      const fid = `${d.id.slice(0, 6)}-${i.id.slice(0, 6)}`;
+      const sugg = i.options.filter((o) => o.itemId && o.itemId !== i.itemId);
+      return `<div class="ask"><div class="ask-q">${esc(t(i.autoAdded ? 'issue.autoAdded' : 'issue.price_missing', { name: i.name }))}</div>${i.raw ? `<div class="ask-raw">${esc(t('heard'))}: “${esc(i.raw)}”</div>` : ''}
+        <form class="form" style="padding:0" data-form="setprice" data-bill="${d.id}" data-issue="${i.id}">
+          <label for="sp-${fid}">${esc(t('ni.pricePer', { u: t(`u.${it.unit}`) }))}<input id="sp-${fid}" name="price" inputmode="decimal" placeholder="40"></label>
+          <div class="err"></div>
+          <div class="opts"><button class="btn go" type="submit" style="height:44px">${esc(t('price.submit'))}</button>${btn('data-remove="1"', esc(t('remove')), true)}</div>
+        </form>${sugg.length ? `<div class="sub">${esc(t('issue.orPick'))}</div><div class="opts">${sugg.map((o) => btn(`data-item="${o.itemId}"`, `${esc(o.label)}${o.amount != null ? ` · ${r(o.amount)}` : ''}`)).join('')}</div>` : ''}</div>`;
     } else {
+      if (i.kind === 'not_found' && i.name) {
+        if (i.newOpen) {
+          const parsed = A.parseLine(i.raw || i.name);
+          const guess = parsed?.measure ? (parsed.measure.unit === 'g' ? 'kg' : parsed.measure.unit === 'ml' ? 'l' : parsed.measure.unit) : 'pc';
+          const nice = i.name.split(' ').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+          const uid_ = `${d.id.slice(0, 6)}-${i.id.slice(0, 6)}`;
+          return `<div class="ask"><div class="ask-q">${esc(t('issue.not_found', { name: i.name }))}</div>${i.raw ? `<div class="ask-raw">${esc(t('heard'))}: “${esc(i.raw)}”</div>` : ''}
+            <form class="form" style="padding:0" data-form="newitem" data-bill="${d.id}" data-issue="${i.id}">
+              <div class="two"><label for="nn-${uid_}">${esc(t('cu.name'))}<input id="nn-${uid_}" name="name" required maxlength="80" value="${esc(nice)}"></label>
+              <label for="nu-${uid_}">${esc(t('ni.unit'))}<select id="nu-${uid_}" name="unit">${['kg', 'l', 'pc'].map((u) => `<option value="${u}" ${u === guess ? 'selected' : ''}>${esc(t(`u.${u}`))}</option>`).join('')}</select></label></div>
+              <label for="np-${uid_}">${esc(t('ni.pricePer', { u: t(`u.${guess}`) }))}<input id="np-${uid_}" name="price" inputmode="decimal" placeholder="40"></label>
+              <div class="err" id="ne-${uid_}"></div>
+              <div class="opts"><button class="btn go" type="submit" style="height:44px">${esc(t('ni.addToBill'))}</button>${btn('data-remove="1"', esc(t('remove')), true)}</div>
+            </form></div>`;
+        }
+        opts.push(`<button class="opt" data-a="newitem-open" data-bill="${d.id}" data-issue="${i.id}">${esc(t('issue.newItem', { name: i.name }))}</button>`);
+      }
       for (const o of i.options) {
         if (o.customerId) opts.push(btn(`data-customer="${o.customerId}"`, esc(o.label)));
         else opts.push(btn(`data-item="${o.itemId}"`, `${esc(o.label)}${o.quantity && o.quantity !== 1 ? ` × ${o.quantity}` : ''}${o.amount != null ? ` · ${r(o.amount)}` : ''}`));
@@ -958,7 +1032,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const up = d.upfront?.amount ? `<div class="split"><span>${esc(t('bill.paidNow', { m: modeLabel(d.upfront.method) }))}</span><span class="num">${r(d.upfront.amount)}</span></div><div class="split"><span>${esc(t('bill.onCredit'))}</span><span class="num">${r(Math.max(total - d.upfront.amount, 0))}</span></div>` : '';
     let foot;
     if (d.status === 'draft') {
-      foot = `${msg.error ? `<div class="err">${esc(t(msg.error))}</div>` : ''}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">${esc(t('bill.cancel'))}</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}${esc(t('bill.confirm'))}</button></div>`;
+      const hintLine = d.issues.length ? `<div class="sub" style="padding:0 14px 6px;color:var(--udhaar-ink);font-weight:600">${esc(t('bill.answerFirst', { n: d.issues.length }))}</div>` : '';
+      foot = msg.askCancel
+        ? `<div class="ask" style="background:#F9E7E5"><div class="ask-q" style="color:#8C2B20">${esc(t('bill.cancelAsk'))}</div><div class="opts"><button class="opt" data-a="discard-yes" data-bill="${d.id}" style="border-color:#C9867D">${esc(t('bill.cancelYes'))}</button><button class="opt" data-a="discard-no" data-bill="${d.id}">${esc(t('bill.cancelNo'))}</button></div></div>`
+        : `${msg.error ? `<div class="err">${esc(t(msg.error))}</div>` : ''}${hintLine}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">${esc(t('bill.cancel'))}</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}${esc(t('bill.confirm'))}</button></div>`;
     } else if (d.status === 'confirmed') {
       foot = `<div class="done">${icon.check}${esc(t('bill.done'))} · ${esc(d.invoiceNumber)} · ${fmtTime(d.confirmedAt)}</div>`;
     } else {
@@ -970,7 +1047,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function stockInHtml(msg) {
     const sd = S.stockDrafts[msg.draftId] || msg.done;
     if (!sd) return '';
-    const lines = sd.lines.map((l) => { const it = byId(S.items, l.itemId); return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${esc(t('si.now', { s: `${it.stock} ${it.stockLabel}` }))}</span></div>`; }).join('');
+    const lines = sd.lines.map((l) => {
+      if (l.newItem) return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(l.newItem.name)}${l.newItem.unit !== 'pc' ? ` <span class="sub">${esc(t(`u.${l.newItem.unit}`))}</span>` : ''}</span><span class="pill udhaar">${esc(t('si.new'))}</span></div>`;
+      const it = byId(S.items, l.itemId);
+      return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${esc(t('si.now', { s: `${it.stock} ${it.stockLabel}` }))}</span></div>`;
+    }).join('');
     const unmatched = sd.status === 'draft' ? sd.unmatched.map((u) => `<div class="ask"><div class="ask-q">${esc(t('si.notFound'))}</div><div class="ask-raw">${esc(t('heard'))}: “${esc(u.raw)}”</div><div class="opts">${u.options.map((o) => `<button class="opt" data-a="si-pick" data-draft="${sd.id}" data-u="${u.id}" data-item="${o.itemId}">${esc(o.label)}</button>`).join('')}<button class="opt ghost" data-a="si-drop" data-draft="${sd.id}" data-u="${u.id}">${esc(t('remove'))}</button></div></div>`).join('') : '';
     const foot = sd.status === 'draft'
       ? `<div class="acts"><button class="btn" data-a="si-cancel" data-draft="${sd.id}">${esc(t('bill.cancel'))}</button><button class="btn go" data-a="si-confirm" data-draft="${sd.id}" ${sd.unmatched.length || !sd.lines.length ? 'disabled' : ''}>${icon.check}${esc(t('si.add'))}</button></div>`
@@ -1534,9 +1615,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         if (res.receipt) say('bot', 'wa', { title: 'WhatsApp → ' + byId(S.customers, d.customerId).name, text: res.receipt });
         render(); break;
       }
-      case 'discard': {
+      case 'discard': case 'discard-no': {
+        const msg = S.chat.find((m) => m.kind === 'bill' && m.billId === b.dataset.bill); if (!msg) return;
+        msg.askCancel = a === 'discard';
+        render({ scroll: false }); break;
+      }
+      case 'discard-yes': {
         const d = S.drafts[b.dataset.bill]; if (!d) return;
+        const msg = S.chat.find((m) => m.kind === 'bill' && m.billId === d.id); if (msg) delete msg.askCancel;
         d.status = 'cancelled'; S.bills.push(d); delete S.drafts[d.id];
+        render({ scroll: false }); break;
+      }
+      case 'newitem-open': {
+        const d = S.drafts[b.dataset.bill]; if (!d) return;
+        const issue = d.issues.find((x) => x.id === b.dataset.issue); if (issue) issue.newOpen = true;
         render({ scroll: false }); break;
       }
       case 'si-pick': {
@@ -1556,7 +1648,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         sd.status = 'done';
         const msg = S.chat.find((m) => m.kind === 'stockin' && m.draftId === sd.id); if (msg) msg.done = sd;
         delete S.stockDrafts[sd.id];
-        botText(t('si.toast', { n: sd.lines.length, sup: sd.supplier ? ` (${sd.supplier})` : '' }));
+        const rec = S.receipts[0];
+        botText(t('si.toast', { n: sd.lines.length, sup: sd.supplier ? ` (${sd.supplier})` : '' }) + (rec?.added ? ` ${t('si.newAdded', { n: rec.added })}.` : ''));
         render(); break;
       }
       case 'si-cancel': {
@@ -1658,6 +1751,35 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const f = form.dataset.form;
     const ui = S.ui;
     if (f.startsWith('onb-')) return onbSubmit(form);
+    if (f === 'setprice') {
+      const d = S.drafts[form.dataset.bill]; if (!d) return;
+      const issue = d.issues.find((x) => x.id === form.dataset.issue); if (!issue) return;
+      const paise = rupeesToPaise(form.price.value);
+      if (!(paise > 0)) { form.querySelector('.err').textContent = t('ni.needPrice'); return; }
+      const item = byId(S.items, issue.itemId); if (!item) return;
+      item.price = paise; // saved on the item for next time
+      d.lines.push(lineFromItem(item, issue.quantity ?? 1));
+      d.issues = d.issues.filter((x) => x.id !== issue.id);
+      render({ scroll: false });
+      return;
+    }
+    if (f === 'newitem') {
+      const d = S.drafts[form.dataset.bill]; if (!d) return;
+      const issue = d.issues.find((x) => x.id === form.dataset.issue); if (!issue) return;
+      const price = parseFloat(String(form.price.value).replace(/[,₹\s]/g, ''));
+      if (!(price > 0)) { form.querySelector('.err').textContent = t('ni.needPrice'); return; }
+      const name = form.name.value.trim();
+      const unit = form.unit.value;
+      // A new item sold loose (per kg / litre / piece). Stock starts at 0 until "Maal aaya".
+      const item = makeItem(name[0].toUpperCase() + name.slice(1), unit, 1, price, 0, 'pc', issue.name && issue.name.toLowerCase() !== name.toLowerCase() ? [issue.name] : []);
+      S.items.push(item);
+      const parsed = A.parseLine(issue.raw || issue.name);
+      const qty = (parsed && A.quantityFor(item, parsed.count, parsed.measure)) || issue.quantity || 1;
+      d.lines.push(lineFromItem(item, qty));
+      d.issues = d.issues.filter((x) => x.id !== issue.id);
+      render({ scroll: false });
+      return;
+    }
     if (f === 'pay' || f === 'cpay') {
       const paise = rupeesToPaise(form.amt.value);
       const c = byId(S.customers, form.dataset.customer);
