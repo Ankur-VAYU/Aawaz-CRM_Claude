@@ -41,6 +41,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 21px; flex-shrink: 0; }
 .bar-title { font-weight: 700; font-size: 17px; line-height: 1.1; }
 .bar-sub { font-size: 12.5px; color: var(--header-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.lang option { color: #233D44; background: #fff; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { min-height: 40px; padding: 0 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--card); font-size: 14px; font-weight: 600; }
+.seg button[aria-pressed="true"] { border-color: var(--green); background: #E8F6EE; color: var(--green-dark); }
 .lang { margin-left: auto; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #F7F5F2; font-size: 13px; font-weight: 700; padding: 0 10px; }
 .demo-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.16); padding: 4px 7px; border-radius: 999px; }
 .tabs { flex-shrink: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--green-dark); }
@@ -189,23 +193,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     <div class="bar">
       <div class="logo" aria-hidden="true">आ</div>
       <div style="min-width:0"><div class="bar-title">AwaazCRM</div><div class="bar-sub" id="shopname">Sharma Kirana Store</div></div>
-      <button class="lang" id="lang" type="button" aria-label="Voice language">हिंदी</button>
+      <select class="lang" id="applang" aria-label="App language"><option value="hi">हिंदी</option><option value="hinglish">Hinglish</option><option value="en">English</option></select>
       <span class="demo-tag">Demo</span>
     </div>
     <div class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" data-a="tab" data-tab="chat" id="tab-chat">Baat</button>
-      <button class="tab" role="tab" data-a="tab" data-tab="customers" id="tab-customers">Grahak</button>
-      <button class="tab" role="tab" data-a="tab" data-tab="stock" id="tab-stock">Stock</button>
-      <button class="tab" role="tab" data-a="tab" data-tab="shop" id="tab-shop">Dukaan</button>
+      <button class="tab" role="tab" data-a="tab" data-tab="chat" id="tab-chat"></button>
+      <button class="tab" role="tab" data-a="tab" data-tab="customers" id="tab-customers"></button>
+      <button class="tab" role="tab" data-a="tab" data-tab="stock" id="tab-stock"></button>
+      <button class="tab" role="tab" data-a="tab" data-tab="shop" id="tab-shop"></button>
     </div>
 
     <div class="screen" id="screen-chat">
       <div class="chat" id="chat" aria-live="polite"></div>
-      <div class="listen-hint" id="hint" hidden>Sun raha hoon… boliye</div>
+      <div class="listen-hint" id="hint" hidden></div>
       <div class="chips" id="chips" aria-label="Example commands"></div>
       <form class="composer" id="composer" autocomplete="off">
         <label class="field" for="msg">
-          <input id="msg" name="msg" placeholder="Bolo ya likho…" aria-label="Type a command">
+          <input id="msg" name="msg" aria-label="Type a command">
         </label>
         <button class="send" id="send" type="submit" aria-label="Speak">
           <svg id="ic-mic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>
@@ -224,6 +228,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     <h1>AwaazCRM demo</h1>
     <p class="lead">Tap the green mic and speak, or type what a shopkeeper would say. The tabs on the phone show the other screens. Parsing, item matching and replies use the same code as the backend; everything runs in your browser.</p>
     <div class="box">
+      <h2>Language</h2>
+      <div><div class="sub" style="margin-bottom:6px">App and replies</div><div class="seg" id="panel-lang"></div></div>
+      <div><div class="sub" style="margin-bottom:6px">Voice recognition (what the mic listens for)</div><div class="seg" id="panel-voice"></div></div>
+    </div>
+    <div class="box">
       <h2>Open a function</h2>
       <div class="feats">
         <button data-a="onboard">Onboarding<span>New shop setup, step by step</span></button>
@@ -235,7 +244,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       </div>
     </div>
     <div class="box">
-      <h2>Try saying</h2>
+      <h2>Try saying <span id="try-lang" style="text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
       <div class="try" id="try"></div>
     </div>
     <div class="cols">
@@ -248,7 +257,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         <table class="tbl" id="khata"></table>
       </div>
     </div>
-    <p class="note">Voice uses your browser's own speech recognition (Chrome on Android or desktop, Safari on iPhone) and needs internet. Choose हिंदी or Hinglish at the top of the phone. WhatsApp messages and the login code are shown as previews; nothing is sent. GST invoices are built in the backend but not shown in this demo. Your changes stay in this browser only.</p>
+    <p class="note">Voice uses your browser's own speech recognition (Chrome on Android or desktop, Safari on iPhone) and needs internet. Pick the app language (हिंदी, Hinglish or English) at the top of the phone; the voice setting is separate. WhatsApp messages and the login code are shown as previews; nothing is sent. GST invoices are built in the backend but not shown in this demo. Your changes stay in this browser only.</p>
     <button class="reset" id="reset" type="button">Start over with sample data</button>
   </aside>
 </div>
@@ -264,29 +273,340 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const now = () => new Date();
   const localDate = (d = now()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
   const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
-  const fmtDay = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+  const fmtDay = (iso) => new Date(iso).toLocaleDateString(LANG() === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
   const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
   const first = (n) => n.split(' ')[0];
   const rupeesToPaise = (v) => Math.round(parseFloat(String(v).replace(/[,₹\s]/g, '')) * 100);
 
+  /* ---------- translations: [Hinglish, हिंदी, English] ---------- */
+  const T = {
+    'tab.chat': ['Baat', 'बात', 'Chat'],
+    'tab.customers': ['Grahak', 'ग्राहक', 'Customers'],
+    'tab.stock': ['Stock', 'स्टॉक', 'Stock'],
+    'tab.shop': ['Dukaan', 'दुकान', 'Shop'],
+    placeholder: ['Bolo ya likho…', 'बोलिए या लिखिए…', 'Speak or type…'],
+    listening: ['Sun raha hoon… boliye', 'सुन रहा हूँ… बोलिए', 'Listening… speak now'],
+    today: ['Aaj', 'आज', 'Today'],
+    todayLower: ['aaj', 'आज', 'today'],
+    'welcome.1': ['Namaste! Main AwaazCRM hoon.', 'नमस्ते! मैं आवाज़CRM हूँ।', 'Hello! I am AwaazCRM.'],
+    'welcome.2': ['Hara mic dabaiye aur boliye, jaise:', 'हरा माइक दबाइए और बोलिए, जैसे:', 'Tap the green mic and speak, for example:'],
+    'welcome.3': ['Upar ke tab mein Grahak, Stock aur Dukaan ki details hain.', 'ऊपर के टैब में ग्राहक, स्टॉक और दुकान की जानकारी है।', 'The tabs at the top have Customers, Stock and Shop details.'],
+    'bill.check': ['Bill · check karein', 'बिल · जाँच करें', 'Bill · please check'],
+    'bill.customer': ['Grahak', 'ग्राहक', 'Customer'],
+    'bill.total': ['Total · {n} item', 'कुल · {n} आइटम', 'Total · {n} item(s)'],
+    'bill.paidNow': ['Abhi diye ({m})', 'अभी दिए ({m})', 'Paid now ({m})'],
+    'bill.onCredit': ['Udhaar mein', 'उधार में', 'On credit'],
+    'bill.cancel': ['Radd karo', 'रद्द करें', 'Cancel'],
+    'bill.confirm': ['Haan, pakka karo', 'हाँ, पक्का करें', 'Yes, confirm'],
+    'bill.done': ['Pakka hua', 'पक्का हुआ', 'Confirmed'],
+    'bill.cancelled': ['Bill radd kiya', 'बिल रद्द किया', 'Bill cancelled'],
+    'mode.udhaar': ['UDHAAR', 'उधार', 'CREDIT'],
+    'mode.cash': ['CASH', 'नकद', 'CASH'],
+    'mode.upi': ['UPI', 'UPI', 'UPI'],
+    'm.cash': ['cash', 'नकद', 'cash'],
+    'm.upi': ['UPI', 'UPI', 'UPI'],
+    'issue.choose_variant': ['{name}: kaunsa size? Ek tap mein chuniye', '{name}: कौन सा साइज़? एक टैप में चुनिए', '{name}: which size? Pick with one tap'],
+    'issue.unclear': ['Ek item saaf nahi suna. Kaunsa tha?', 'एक आइटम साफ़ नहीं सुना। कौन सा था?', 'One item was not clear. Which one was it?'],
+    'issue.not_found': ['"{name}" saamaan list mein nahi hai', '"{name}" सामान की सूची में नहीं है', '"{name}" is not in your item list'],
+    'issue.price_missing': ['{name} ka daam nahi pata. Stock tab mein daam daaliye.', '{name} का दाम नहीं पता। स्टॉक टैब में दाम डालिए।', 'No price for {name}. Add it in the Stock tab.'],
+    'issue.customer_unknown': ['"{name}" naam ka grahak nahi mila', '"{name}" नाम का ग्राहक नहीं मिला', 'No customer named "{name}"'],
+    'issue.customer_ambiguous': ['"{name}" naam ke ek se zyada grahak hain. Kaun?', '"{name}" नाम के एक से ज़्यादा ग्राहक हैं। कौन?', 'More than one customer is called "{name}". Which one?'],
+    'issue.customer_required': ['Udhaar kiske naam likhein?', 'उधार किसके नाम लिखें?', 'Whose account should this go on?'],
+    heard: ['Suna', 'सुना', 'Heard'],
+    'issue.newCustomer': ['+ Naya grahak: {name}', '+ नया ग्राहक: {name}', '+ New customer: {name}'],
+    'issue.noName': ['Bina naam ke', 'बिना नाम के', 'Without a name'],
+    remove: ['Hatao', 'हटाओ', 'Remove'],
+    'err.answers': ['Pehle upar ke sawaal ka jawab dijiye.', 'पहले ऊपर के सवाल का जवाब दीजिए।', 'Please answer the question above first.'],
+    'err.noItems': ['Bill mein koi item nahi hai.', 'बिल में कोई आइटम नहीं है।', 'The bill has no items.'],
+    'err.creditOff': ['Is dukaan mein udhaar band hai (Dukaan tab mein badlein).', 'इस दुकान में उधार बंद है (दुकान टैब में बदलें)।', 'Credit is turned off for this shop (change it in the Shop tab).'],
+    'err.needCustomer': ['Udhaar bill ke liye grahak chahiye.', 'उधार बिल के लिए ग्राहक चाहिए।', 'A credit bill needs a customer.'],
+    'err.paidAll': ['Jitna diya utna poora bill hai. Cash ya UPI chuniye.', 'जितना दिया उतना पूरा बिल है। नकद या UPI चुनिए।', 'The amount paid covers the whole bill. Choose cash or UPI.'],
+    'rcpt.noConsent': ['{name} ki WhatsApp sahmati nahi hai, receipt nahi bheji', '{name} की WhatsApp सहमति नहीं है, रसीद नहीं भेजी', 'No WhatsApp consent from {name}, receipt not sent'],
+    'rcpt.noPhone': ['{name} ka number nahi hai, receipt nahi bheji', '{name} का नंबर नहीं है, रसीद नहीं भेजी', 'No phone number for {name}, receipt not sent'],
+    'rcpt.see': ['Grahak ki rasid dekho', 'ग्राहक की रसीद देखें', "See the customer's receipt"],
+    'si.eyebrow': ['Maal aaya', 'माल आया', 'Stock received'],
+    'si.items': ['{n} item', '{n} आइटम', '{n} item(s)'],
+    'si.now': ['abhi {s}', 'अभी {s}', 'now {s}'],
+    'si.notFound': ['Yeh item list mein nahi mila', 'यह आइटम सूची में नहीं मिला', 'Not found in your item list'],
+    'si.add': ['Stock mein jodo', 'स्टॉक में जोड़ो', 'Add to stock'],
+    'si.added': ['Stock mein jod diya', 'स्टॉक में जोड़ दिया', 'Added to stock'],
+    'si.cancelled': ['Radd kiya', 'रद्द किया', 'Cancelled'],
+    'si.toast': ['Stock mein {n} item jod diye{sup}.', 'स्टॉक में {n} आइटम जोड़ दिए{sup}।', 'Added {n} item(s) to stock{sup}.'],
+    'kh.entries': ['Khata · {n} entry', 'खाता · {n} एंट्री', 'Account · {n} entries'],
+    'kh.due': ['Kul baaki', 'कुल बाकी', 'Total due'],
+    'kh.clear': ['Hisaab saaf', 'हिसाब साफ़', 'Nothing due'],
+    'kh.full': ['Poora hisaab', 'पूरा हिसाब', 'Full account'],
+    'kh.recent': ['Pichhla hisaab', 'पिछला हिसाब', 'Recent entries'],
+    'kh.paid': ['Paisa mila', 'पैसा मिला', 'Payment received'],
+    'kh.remind': ['Yaad dilao', 'याद दिलाओ', 'Send reminder'],
+    'kh.amount': ['Kitne rupaye?', 'कितने रुपये?', 'How many rupees?'],
+    'kh.save': ['Jama', 'जमा', 'Save'],
+    'lg.bill': ['Bill {no} · {n} item', 'बिल {no} · {n} आइटम', 'Bill {no} · {n} item(s)'],
+    'lg.paidbill': ['Bill {no} · {n} item · {m}', 'बिल {no} · {n} आइटम · {m}', 'Bill {no} · {n} item(s) · {m}'],
+    'lg.payment': ['Jama kiya · {m}', 'जमा किया · {m}', 'Paid · {m}'],
+    'lg.reversed': ['Galat entry hataayi', 'गलत एंट्री हटाई', 'Wrong entry removed'],
+    'lg.cancelled': ['Bill radd hua', 'बिल रद्द हुआ', 'Bill cancelled'],
+    'cu.weeks': ['{n} hafte se nahi aaye', '{n} हफ़्ते से नहीं आए', 'Not seen for {n} weeks'],
+    'cu.last': ['Aakhri kharid · {d}', 'आख़िरी ख़रीद · {d}', 'Last purchase · {d}'],
+    'cu.title': ['Aapke grahak · {n}', 'आपके ग्राहक · {n}', 'Your customers · {n}'],
+    'cu.titleShort': ['Grahak · {n}', 'ग्राहक · {n}', 'Customers · {n}'],
+    'cu.dues': ['Kul udhaar baaki', 'कुल उधार बाकी', 'Total credit due'],
+    'f.all': ['Sab', 'सब', 'All'],
+    'f.dues': ['Udhaar wale', 'उधार वाले', 'With dues'],
+    'f.inactive': ['Kaafi din se nahi aaye', 'काफ़ी दिन से नहीं आए', 'Not seen lately'],
+    'cu.none': ['Koi grahak nahi mila', 'कोई ग्राहक नहीं मिला', 'No customers found'],
+    'cu.search': ['Naam ya number se dhoondho', 'नाम या नंबर से ढूँढें', 'Search by name or number'],
+    'cu.alltx': ['Sab len-den', 'सब लेन-देन', 'All transactions'],
+    'cu.add': ['+ Naya grahak', '+ नया ग्राहक', '+ New customer'],
+    'cu.back': ['Grahak', 'ग्राहक', 'Customers'],
+    'cu.new': ['Naya grahak', 'नया ग्राहक', 'New customer'],
+    'cu.name': ['Naam', 'नाम', 'Name'],
+    'cu.namePh': ['Jaise: Ramesh Yadav', 'जैसे: रमेश यादव', 'e.g. Ramesh Yadav'],
+    'cu.phoneOpt': ['Mobile number (optional)', 'मोबाइल नंबर (ज़रूरी नहीं)', 'Mobile number (optional)'],
+    'cu.phone': ['Mobile number', 'मोबाइल नंबर', 'Mobile number'],
+    'cu.consentText': ['Grahak WhatsApp par rasid aur yaad dilane ke message lene ko taiyaar hai', 'ग्राहक WhatsApp पर रसीद और याद दिलाने के मैसेज लेने को तैयार है', 'The customer agrees to get receipts and reminders on WhatsApp'],
+    'cu.addBtn': ['Grahak jodo', 'ग्राहक जोड़ें', 'Add customer'],
+    'cu.badPhone': ['Sahi mobile number daaliye (10 ank).', 'सही मोबाइल नंबर डालिए (10 अंक)।', 'Enter a valid 10-digit mobile number.'],
+    'cu.phoneExists': ['Is number ka grahak pehle se hai.', 'इस नंबर का ग्राहक पहले से है।', 'A customer with this number already exists.'],
+    'cu.added': ['{name} jud gaye.', '{name} जुड़ गए।', '{name} added.'],
+    'cu.noPhone': ['Number nahi hai', 'नंबर नहीं है', 'No number'],
+    'cu.since': ['{d} se grahak', '{d} से ग्राहक', 'Customer since {d}'],
+    'cu.asOf': ['{d} tak<br>ka hisaab', '{d} तक<br>का हिसाब', 'As of<br>{d}'],
+    'cu.bought': ['Kul kharid', 'कुल ख़रीद', 'Total bought'],
+    'cu.paid': ['Jama kiya', 'जमा किया', 'Total paid'],
+    'cu.consent': ['WhatsApp sahmati', 'WhatsApp सहमति', 'WhatsApp consent'],
+    'cu.consentOn': ['Rasid aur yaad dilane ke message jaayenge', 'रसीद और याद दिलाने के मैसेज जाएँगे', 'Receipts and reminders will be sent'],
+    'cu.consentOff': ['Message nahi jaayenge', 'मैसेज नहीं जाएँगे', 'No messages will be sent'],
+    'cu.consentNoPhone': ['Pehle number jodiye', 'पहले नंबर जोड़िए', 'Add a number first'],
+    'cu.consentRemove': ['Hatao', 'हटाओ', 'Withdraw'],
+    'cu.consentGive': ['Haan, di hai', 'हाँ, दी है', 'Yes, given'],
+    'cu.edit': ['Badlo', 'बदलो', 'Edit'],
+    'cu.payAmt': ['Kitne rupaye', 'कितने रुपये', 'Amount (₹)'],
+    'cu.payHow': ['Kaise', 'कैसे', 'How'],
+    'cu.note': ['Note (optional)', 'नोट (ज़रूरी नहीं)', 'Note (optional)'],
+    'cu.notePh': ['Jaise: aadha hisaab', 'जैसे: आधा हिसाब', 'e.g. part payment'],
+    'cu.paySubmit': ['Paisa mila · jama karo', 'पैसा मिला · जमा करें', 'Record payment'],
+    'cu.save': ['Save karo', 'सेव करें', 'Save'],
+    'cu.saved': ['Details save ho gayi.', 'जानकारी सेव हो गई।', 'Details saved.'],
+    'cu.consentSaved': ['Sahmati likh li. Ab udhaar rasid aur reminder jaayenge.', 'सहमति लिख ली। अब उधार रसीद और रिमाइंडर जाएँगे।', 'Consent recorded. Credit receipts and reminders will be sent.'],
+    'cu.consentWithdrawn': ['Sahmati hata di. Ab message nahi jaayenge.', 'सहमति हटा दी। अब मैसेज नहीं जाएँगे।', 'Consent withdrawn. No more messages.'],
+    'cu.reversed': ['Galat entry hata di. Khata pehle jaisa ho gaya.', 'गलत एंट्री हटा दी। खाता पहले जैसा हो गया।', 'Wrong entry removed. The account is back as it was.'],
+    'cu.remindSeeChat': ['Chat (Baat tab) mein reminder ka preview dekhiye.', 'चैट (बात टैब) में रिमाइंडर का प्रीव्यू देखिए।', 'See the reminder preview in the Chat tab.'],
+    'cu.tx': ['Len-den · {n}', 'लेन-देन · {n}', 'Transactions · {n}'],
+    'cu.noTx': ['Abhi koi len-den nahi', 'अभी कोई लेन-देन नहीं', 'No transactions yet'],
+    'cu.undo': ['Galat? Hatao', 'गलत? हटाओ', 'Wrong? Undo'],
+    'cu.receipt': ['Rasid', 'रसीद', 'Receipt'],
+    'cu.balanceAfter': ['Baaki {x}', 'बाकी {x}', 'Balance {x}'],
+    'cu.allTitle': ['Sab len-den', 'सब लेन-देन', 'All transactions'],
+    'cu.allSub': ['Udhaar bill, jama, aur cash/UPI bill — sab ek jagah', 'उधार बिल, जमा, और नकद/UPI बिल — सब एक जगह', 'Credit bills, payments and cash/UPI bills in one place'],
+    'st.title': ['Saamaan · {n}', 'सामान · {n}', 'Items · {n}'],
+    'st.low': ['{n} item ka stock kam', '{n} आइटम का स्टॉक कम', '{n} item(s) low on stock'],
+    'st.ok': ['Sab ka stock theek hai', 'सबका स्टॉक ठीक है', 'All items have enough stock'],
+    'st.receive': ['Maal aaya', 'माल आया', 'Stock received'],
+    'st.newItem': ['+ Naya item', '+ नया आइटम', '+ New item'],
+    'st.noPrice': ['Daam nahi', 'दाम नहीं', 'No price'],
+    'st.history': ['Maal aane ki history', 'माल आने का इतिहास', 'Stock received history'],
+    'st.noHistory': ['Abhi koi entry nahi', 'अभी कोई एंट्री नहीं', 'No entries yet'],
+    'st.tip': ['Tip: Baat tab mein boliye — “Maal aaya: 20 bag atta, 10 sarson tel 1 litre”', 'सुझाव: बात टैब में बोलिए — “माल आया: बीस बैग आटा, दस सरसों तेल एक लीटर”', 'Tip: in the Chat tab say “Received stock: 20 bags atta, 10 mustard oil 1 litre”'],
+    'st.back': ['Stock', 'स्टॉक', 'Stock'],
+    'rv.sub': ['Kitna aaya likhiye; kharid daam optional hai', 'कितना आया लिखिए; ख़रीद दाम ज़रूरी नहीं', 'Enter how much came in; purchase price is optional'],
+    'rv.supplier': ['Kahan se (supplier, optional)', 'कहाँ से (सप्लायर, ज़रूरी नहीं)', 'From (supplier, optional)'],
+    'rv.supplierPh': ['Jaise: Gupta Traders', 'जैसे: गुप्ता ट्रेडर्स', 'e.g. Gupta Traders'],
+    'rv.item': ['Item', 'आइटम', 'Item'],
+    'rv.qty': ['Kitna', 'कितना', 'Qty'],
+    'rv.cost': ['Kharid ₹', 'ख़रीद ₹', 'Cost ₹'],
+    'rv.opt': ['opt.', 'वैकल्पिक', 'opt.'],
+    'rv.choose': ['— chuniye —', '— चुनिए —', '— choose —'],
+    'rv.more': ['+ Aur item', '+ और आइटम', '+ More items'],
+    'rv.err': ['Kam se kam ek item aur kitna aaya, likhiye.', 'कम से कम एक आइटम और कितना आया, लिखिए।', 'Enter at least one item and quantity.'],
+    'ni.title': ['Naya item', 'नया आइटम', 'New item'],
+    'ni.namePh': ['Jaise: Cheeni', 'जैसे: चीनी', 'e.g. Sugar'],
+    'ni.size': ['Size', 'साइज़', 'Size'],
+    'ni.unit': ['Unit', 'इकाई', 'Unit'],
+    'ni.price': ['Bechne ka daam ₹', 'बेचने का दाम ₹', 'Selling price ₹'],
+    'ni.stock': ['Abhi stock', 'अभी स्टॉक', 'Current stock'],
+    'ni.exists': ['Yeh item isi size mein pehle se hai.', 'यह आइटम इसी साइज़ में पहले से है।', 'This item already exists in this size.'],
+    'ni.add': ['Item jodo', 'आइटम जोड़ें', 'Add item'],
+    'u.kg': ['kg', 'किलो', 'kg'], 'u.g': ['gram', 'ग्राम', 'gram'], 'u.l': ['litre', 'लीटर', 'litre'], 'u.ml': ['ml', 'मि.ली.', 'ml'], 'u.pc': ['piece', 'पीस', 'piece'],
+    'sh.mobile': ['Mobile', 'मोबाइल', 'Mobile'],
+    'sh.pin': ['PIN code', 'पिन कोड', 'PIN code'],
+    'sh.credit': ['Udhaar', 'उधार', 'Credit'],
+    'sh.creditYes': ['Haan, dete hain', 'हाँ, देते हैं', 'Yes, we give credit'],
+    'sh.creditNo': ['Nahi', 'नहीं', 'No'],
+    'sh.gstNone': ['Nahi', 'नहीं', 'None'],
+    'sh.panOnly': ['Sirf PAN · {pan}', 'सिर्फ़ PAN · {pan}', 'PAN only · {pan}'],
+    'sh.appLang': ['App ki bhasha', 'ऐप की भाषा', 'App language'],
+    'sh.voice': ['Awaaz pehchan', 'आवाज़ पहचान', 'Voice recognition'],
+    'sh.reply': ['Jawab', 'जवाब', 'Replies'],
+    'sh.voiceText': ['Awaaz + likha hua', 'आवाज़ + लिखा हुआ', 'Voice + text'],
+    'sh.textOnly': ['Sirf likha hua', 'सिर्फ़ लिखा हुआ', 'Text only'],
+    'sh.creditOff': ['Udhaar band karo', 'उधार बंद करें', 'Turn credit off'],
+    'sh.creditOn': ['Udhaar chalu karo', 'उधार चालू करें', 'Turn credit on'],
+    'sh.voiceAuto': ['Auto (bhasha ke hisaab se)', 'अपने-आप (भाषा के हिसाब से)', 'Auto (follows app language)'],
+    'sh.newShop': ['Nayi dukaan setup', 'नई दुकान सेटअप', 'Set up a new shop'],
+    'sh.newShopSub': ['Onboarding: number, dukaan, GST, bhasha, saamaan', 'ऑनबोर्डिंग: नंबर, दुकान, GST, भाषा, सामान', 'Onboarding: number, shop, GST, language, items'],
+    'sh.start': ['Onboarding shuru karo', 'ऑनबोर्डिंग शुरू करें', 'Start onboarding'],
+    'sum.title': ['Aaj ki bikri · {d}', 'आज की बिक्री · {d}', "Today's sales · {d}"],
+    'sum.bills': ['{n} bill', '{n} बिल', '{n} bill(s)'],
+    'sum.paid': ['Cash + UPI', 'नकद + UPI', 'Cash + UPI'],
+    'sum.given': ['Udhaar diya', 'उधार दिया', 'Credit given'],
+    'sum.back': ['Udhaar wapas', 'उधार वापस', 'Credit repaid'],
+    'sum.new': ['Naye grahak', 'नए ग्राहक', 'New customers'],
+    'sum.low': ['Stock kam hai', 'स्टॉक कम है', 'Low stock'],
+    'sum.top': ['Sabse zyada udhaar', 'सबसे ज़्यादा उधार', 'Highest dues'],
+    'low.title': ['Kal ki kharid list', 'कल की ख़रीद सूची', 'Shopping list for tomorrow'],
+    'low.left': ['{n} {l} bache', '{n} {l} बचे', '{n} {l} left'],
+    'low.btn': ['Maal aaya? Stock jodo', 'माल आया? स्टॉक जोड़ें', 'Stock arrived? Add it'],
+    'rm.nothing': ['{name} ka kuch baaki nahi hai.', '{name} का कुछ बाकी नहीं है।', '{name} owes nothing.'],
+    'rm.noPhone': ['{name} ka phone number nahi hai, yaad nahi dila sakte.', '{name} का फ़ोन नंबर नहीं है, याद नहीं दिला सकते।', 'No phone number for {name}, cannot send a reminder.'],
+    'rm.noConsent': ['{name} ne WhatsApp messages ki sahmati nahi di hai. Grahak tab mein sahmati likh sakte hain.', '{name} ने WhatsApp मैसेज की सहमति नहीं दी है। ग्राहक टैब में सहमति लिख सकते हैं।', '{name} has not agreed to WhatsApp messages. You can record consent in the Customers tab.'],
+    preview: ['preview', 'प्रीव्यू', 'preview'],
+    'rc.onPhone': ['Grahak ke phone par', 'ग्राहक के फ़ोन पर', "On the customer's phone"],
+    'rc.title': ['Rasid', 'रसीद', 'Receipt'],
+    'rc.hello': ['Namaste {name} ji', 'नमस्ते {name} जी', 'Hello {name}'],
+    'rc.total': ['Total', 'कुल', 'Total'],
+    'rc.paidNow': ['Abhi diye', 'अभी दिए', 'Paid now'],
+    'rc.credit': ['Udhaar mein likha {x}', 'उधार में लिखा {x}', 'Added to account {x}'],
+    'rc.yourDue': ['Aapka kul baaki', 'आपका कुल बाकी', 'Your total due'],
+    'rc.thanks': ['Dhanyavaad! Kisi galti ke liye dukaan par bataiye.', 'धन्यवाद! किसी गलती के लिए दुकान पर बताइए।', 'Thank you! Please tell the shop if anything is wrong.'],
+    'v.unsupported': ['Is browser mein bolne wala feature nahi hai. Android/desktop par Chrome, ya iPhone par Safari mein kholiye.', 'इस ब्राउज़र में बोलने वाला फ़ीचर नहीं है। Android/डेस्कटॉप पर Chrome, या iPhone पर Safari में खोलिए।', 'Voice input is not available in this browser. Open it in Chrome on Android/desktop, or Safari on iPhone.'],
+    'v.blocked': ['Mic ki permission nahi mili. Browser mein is site ke liye microphone allow kijiye.', 'माइक की अनुमति नहीं मिली। ब्राउज़र में इस साइट के लिए माइक्रोफ़ोन चालू कीजिए।', 'Microphone permission was not given. Allow the microphone for this site in your browser.'],
+    'v.network': ['Awaaz pehchanne ke liye internet chahiye. Net check karke phir boliye.', 'आवाज़ पहचानने के लिए इंटरनेट चाहिए। नेट जाँच कर फिर बोलिए।', 'Voice recognition needs internet. Check your connection and try again.'],
+    'v.nothing': ['Kuch sunai nahi diya. Mic dabakar phir se boliye.', 'कुछ सुनाई नहीं दिया। माइक दबाकर फिर से बोलिए।', 'Did not hear anything. Tap the mic and speak again.'],
+    'v.where': ['Voice ke liye demo yahan kholiye:', 'आवाज़ के लिए डेमो यहाँ खोलिए:', 'For voice, open the demo here:'],
+    // onboarding
+    'ob.close': ['Setup band karo', 'सेटअप बंद करें', 'Close setup'],
+    'ob.step': ['Setup · step {n}/5', 'सेटअप · चरण {n}/5', 'Setup · step {n}/5'],
+    'ob.s.number': ['Number', 'नंबर', 'Number'],
+    'ob.s.shop': ['Dukaan', 'दुकान', 'Shop'],
+    'ob.s.gst': ['GST', 'GST', 'GST'],
+    'ob.s.lang': ['Bhasha', 'भाषा', 'Language'],
+    'ob.s.items': ['Saamaan', 'सामान', 'Items'],
+    'ob.hello': ['Namaste! Main AwaazCRM hoon.', 'नमस्ते! मैं आवाज़CRM हूँ।', 'Hello! I am AwaazCRM.'],
+    'ob.pitch': ['Aapki dukaan ka bolne wala bahi-khata. Na typing, na lamba form.', 'आपकी दुकान का बोलने वाला बही-खाता। न टाइपिंग, न लंबा फ़ॉर्म।', 'A ledger for your shop that you talk to. No typing, no long forms.'],
+    'ob.f1': ['Bol ke bill banao', 'बोल कर बिल बनाओ', 'Make bills by speaking'],
+    'ob.f2': ['Udhaar apne-aap khate mein', 'उधार अपने-आप खाते में', 'Credit goes into the account automatically'],
+    'ob.f3': ['Har raat dukaan ka hisaab', 'हर रात दुकान का हिसाब', 'A summary of your shop every night'],
+    'ob.phone': ['Aapka WhatsApp number', 'आपका WhatsApp नंबर', 'Your WhatsApp number'],
+    'ob.codeHint': ['Demo: asli app mein yeh code WhatsApp par aata. Aapka code:', 'डेमो: असली ऐप में यह कोड WhatsApp पर आता। आपका कोड:', 'Demo: in the real app this code comes on WhatsApp. Your code:'],
+    'ob.code': ['6 ank ka code', '6 अंकों का कोड', '6-digit code'],
+    'ob.sendCode': ['Code bhejo', 'कोड भेजो', 'Send code'],
+    'ob.checkCode': ['Code check karo', 'कोड जाँचो', 'Verify code'],
+    'ob.terms': ['Aage badhne par aap Shartein aur Privacy Policy maante hain. Aapka aur grahakon ka data sirf aapki dukaan ke liye use hoga.', 'आगे बढ़ने पर आप शर्तें और प्राइवेसी पॉलिसी मानते हैं। आपका और ग्राहकों का डेटा सिर्फ़ आपकी दुकान के लिए इस्तेमाल होगा।', 'By continuing you accept the Terms and Privacy Policy. Your and your customers\' data is used only for your shop.'],
+    'ob.badPhone': ['Sahi mobile number daaliye (10 ank).', 'सही मोबाइल नंबर डालिए (10 अंक)।', 'Enter a valid 10-digit mobile number.'],
+    'ob.badCode': ['Code galat hai. Upar diya code daaliye.', 'कोड गलत है। ऊपर दिया कोड डालिए।', 'Wrong code. Enter the code shown above.'],
+    'ob.shopAsk': ['Badhiya! Ab <b>dukaan ka naam, shahar</b> aur <b>aapka naam</b> bataiye.', 'बढ़िया! अब <b>दुकान का नाम, शहर</b> और <b>आपका नाम</b> बताइए।', 'Great! Now tell me the <b>shop name, city</b> and <b>your name</b>.'],
+    'ob.shopName': ['Dukaan ka naam', 'दुकान का नाम', 'Shop name'],
+    'ob.owner': ['Maalik ka naam', 'मालिक का नाम', 'Owner name'],
+    'ob.city': ['Shahar', 'शहर', 'City'],
+    'ob.pin': ['PIN code', 'पिन कोड', 'PIN code'],
+    'ob.creditQ': ['Kya aap udhaar dete hain?', 'क्या आप उधार देते हैं?', 'Do you give credit (udhaar)?'],
+    'ob.yesNext': ['Sahi hai, aage', 'सही है, आगे', 'Looks right, next'],
+    'ob.badPin': ['PIN code 6 ank ka hota hai.', 'पिन कोड 6 अंकों का होता है।', 'A PIN code has 6 digits.'],
+    'ob.gstAsk': ['Kya dukaan ka <b>GST number</b> hai? Hai to har bill par chhap jayega.', 'क्या दुकान का <b>GST नंबर</b> है? है तो हर बिल पर छपेगा।', 'Does the shop have a <b>GST number</b>? If so, it will be printed on every bill.'],
+    'ob.gstOptional': ['Zaroori nahi · GST nahi hai to sirf PAN bhi chalega', 'ज़रूरी नहीं · GST नहीं है तो सिर्फ़ PAN भी चलेगा', 'Optional · if you have no GST, PAN alone is fine'],
+    'ob.hasGst': ['Haan, GST hai', 'हाँ, GST है', 'Yes, I have GST'],
+    'ob.panOnly': ['Sirf PAN hai', 'सिर्फ़ PAN है', 'PAN only'],
+    'ob.later': ['Baad mein', 'बाद में', 'Later'],
+    'ob.gstin': ['GSTIN (15 akshar)', 'GSTIN (15 अक्षर)', 'GSTIN (15 characters)'],
+    'ob.scheme': ['GST scheme', 'GST स्कीम', 'GST scheme'],
+    'ob.regular': ['Regular (tax invoice)', 'रेगुलर (टैक्स इनवॉइस)', 'Regular (tax invoice)'],
+    'ob.composition': ['Composition (bill of supply)', 'कम्पोज़िशन (बिल ऑफ़ सप्लाई)', 'Composition (bill of supply)'],
+    'ob.pan': ['PAN (10 akshar)', 'PAN (10 अक्षर)', 'PAN (10 characters)'],
+    'ob.notNow': ['Abhi nahi, aage', 'अभी नहीं, आगे', 'Not now, next'],
+    'ob.safe': ['Surakshit rakha jayega · sirf aapke bills ke liye', 'सुरक्षित रखा जाएगा · सिर्फ़ आपके बिलों के लिए', 'Kept safe · used only for your bills'],
+    'ob.badGstin': ['Yeh GSTIN sahi nahi lag raha. 15 akshar dobara check kijiye.', 'यह GSTIN सही नहीं लग रहा। 15 अक्षर दोबारा जाँचिए।', 'This GSTIN does not look right. Check the 15 characters again.'],
+    'ob.badPan': ['PAN sahi nahi hai (jaise ABCDE1234F).', 'PAN सही नहीं है (जैसे ABCDE1234F)।', 'PAN is not valid (e.g. ABCDE1234F).'],
+    'ob.langAsk': ['Kis bhasha mein baat karein?', 'किस भाषा में बात करें?', 'Which language should we use?'],
+    'ob.hiSub': ['Shuddh Hindi mein jawab', 'शुद्ध हिंदी में जवाब', 'Replies in Hindi'],
+    'ob.hinglishSub': ['Jaise aap bolte hain — Hindi + English', 'जैसे आप बोलते हैं — हिंदी + अंग्रेज़ी', 'The way you speak — Hindi + English'],
+    'ob.enSub': ['Saare jawab English mein', 'सारे जवाब अंग्रेज़ी में', 'All replies in English'],
+    'ob.replyAsk': ['Jawab kaise chahiye?', 'जवाब कैसे चाहिए?', 'How should replies come?'],
+    'ob.voiceTextSub': ['Bheed mein bhi sun sakein', 'भीड़ में भी सुन सकें', 'Hear it even in a crowd'],
+    'ob.textSub': ['Chupchaap padh lein', 'चुपचाप पढ़ लें', 'Read quietly'],
+    'ob.next': ['Aage badho', 'आगे बढ़ो', 'Next'],
+    'ob.itemsAsk': ['Ab dukaan ka <b>saamaan</b> batao. Daam ya stock galat ho to baad mein badal sakte hain.', 'अब दुकान का <b>सामान</b> बताओ। दाम या स्टॉक गलत हो तो बाद में बदल सकते हैं।', 'Now add your shop\'s <b>items</b>. You can fix prices or stock later.'],
+    'ob.itemsSub': ['Asli app mein: bol ke, shelf ki photo, ya purani list upload', 'असली ऐप में: बोलकर, शेल्फ़ की फ़ोटो, या पुरानी सूची अपलोड', 'In the real app: by voice, a shelf photo, or uploading an old list'],
+    'ob.sample': ['Kirana list daalo', 'किराना सूची डालें', 'Add kirana list'],
+    'ob.addItem': ['+ Item jodo', '+ आइटम जोड़ें', '+ Add item'],
+    'ob.price': ['Daam ₹', 'दाम ₹', 'Price ₹'],
+    'ob.finish': ['Sab sahi hai, shuru karo', 'सब सही है, शुरू करें', 'All good, let\'s start'],
+    'ob.ready': ['Dukaan taiyaar hai!', 'दुकान तैयार है!', 'Your shop is ready!'],
+    'ob.items': ['item', 'आइटम', 'items'],
+    'ob.language': ['bhasha', 'भाषा', 'language'],
+    'ob.creditKhata': ['udhaar khata', 'उधार खाता', 'credit'],
+    'ob.tax': ['tax', 'टैक्स', 'tax'],
+    'ob.tryFirst': ['Ab pehla bill try karo:', 'अब पहला बिल बनाकर देखिए:', 'Now try your first bill:'],
+    'ob.tryHint': ['Neeche hara mic dabakar boliye. Naya grahak apne-aap jud jayega.', 'नीचे हरा माइक दबाकर बोलिए। नया ग्राहक अपने-आप जुड़ जाएगा।', 'Tap the green mic below and speak. A new customer is added automatically.'],
+    'ob.firstBill': ['Pehla bill banao', 'पहला बिल बनाओ', 'Make the first bill'],
+    'ob.on': ['On', 'चालू', 'On'],
+    'ob.off': ['Off', 'बंद', 'Off'],
+    remove_x: ['Hatao {name}', 'हटाओ {name}', 'Remove {name}'],
+  };
+  const LANG_IDX = { hinglish: 0, hi: 1, en: 2 };
+  const LANG = () => S.store.language;
+  function t(key, vars = {}) {
+    const row = T[key];
+    let s = row ? row[LANG_IDX[LANG()] ?? 0] : key;
+    for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v));
+    return s;
+  }
+  const say_ = (key, vars) => A.reply(LANG(), key, vars);
+
+  /* ---------- example sentences per language ---------- */
+  const EXAMPLES = {
+    hinglish: [
+      ['Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do', 'Voice bill'],
+      ['Maal aaya: 20 bag atta, 10 sarson tel 1 litre aur paanch kilo cheeni', 'Inventory in'],
+      ['Ramesh ka kitna baaki hai?', 'Khata check'],
+      ['Ramesh ne paanch sau rupaye diye UPI se', 'Payment'],
+      ['Sunita ko do kilo cheeni, 50 abhi diye baaki udhaar', 'Part payment'],
+      ['Paanch kilo chawal, ek namak, aur do kilo m…l?', 'Unclear word'],
+      ['Grahak list dikhao', 'Customers'],
+      ['aaj ka hisaab', 'Summary'],
+      ['kaunsa stock kam hai', 'Low stock'],
+    ],
+    hi: [
+      ['रमेश को पांच किलो आटा, एक किलो तूर दाल, दो सरसों तेल उधार में लिख दो', 'बोलकर बिल'],
+      ['माल आया: बीस बैग आटा, दस सरसों तेल एक लीटर और पांच किलो चीनी', 'माल आया'],
+      ['रमेश का कितना बाकी है', 'खाता'],
+      ['रमेश ने पांच सौ रुपये दिए यूपीआई से', 'पैसा मिला'],
+      ['सुनीता को दो किलो चीनी, पचास अभी दिए बाकी उधार', 'आधा भुगतान'],
+      ['ग्राहक लिस्ट दिखाओ', 'ग्राहक'],
+      ['आज का हिसाब', 'हिसाब'],
+      ['कौन सा स्टॉक कम है', 'कम स्टॉक'],
+    ],
+    en: [
+      ['Give Ramesh 5 kg atta, 1 kg toor dal and 2 mustard oil on credit', 'Voice bill'],
+      ['Received stock from Gupta Traders: 20 bags atta, 10 mustard oil 1 litre', 'Inventory in'],
+      ['How much does Ramesh owe?', 'Balance'],
+      ['Ramesh paid 500 by UPI', 'Payment'],
+      ['For Sunita: 2 kg sugar, paid 50 now, rest on credit', 'Part payment'],
+      ['5 kg rice and a packet of salt', 'Cash bill'],
+      ['Show customers', 'Customers'],
+      ["Today's sales", 'Summary'],
+      ['What should I buy', 'Low stock'],
+    ],
+  };
+
   /* ---------- sample data (from the design) ---------- */
   const SAMPLE_ITEMS = [
-    ['Atta', 'kg', 5, 245, 24, 'bag'],
-    ['Toor dal', 'kg', 1, 160, 12, 'pc'],
-    ['Sarson tel', 'l', 1, 170, 10, 'pc'],
-    ['Sarson tel', 'ml', 500, 90, 10, 'pc'],
-    ['Moong dal', 'kg', 1, 130, 20, 'pc'],
-    ['Maida', 'kg', 1, 45, 20, 'pc'],
-    ['Chawal', 'kg', 1, 60, 50, 'pc'],
-    ['Namak', 'pc', 1, 25, 30, 'pc'],
-    ['Cheeni', 'kg', 1, 45, 3, 'pc'],
+    ['Atta', 'kg', 5, 245, 24, 'bag', ['wheat flour', 'flour']],
+    ['Toor dal', 'kg', 1, 160, 12, 'pc', ['arhar dal']],
+    ['Sarson tel', 'l', 1, 170, 10, 'pc', ['mustard oil']],
+    ['Sarson tel', 'ml', 500, 90, 10, 'pc', ['mustard oil']],
+    ['Moong dal', 'kg', 1, 130, 20, 'pc', []],
+    ['Maida', 'kg', 1, 45, 20, 'pc', ['refined flour']],
+    ['Chawal', 'kg', 1, 60, 50, 'pc', ['rice']],
+    ['Namak', 'pc', 1, 25, 30, 'pc', ['salt']],
+    ['Cheeni', 'kg', 1, 45, 3, 'pc', ['sugar']],
   ];
-  const makeItem = (name, unit, unitSize, rupees, stock, stockLabel = 'pc') => ({
+  const makeItem = (name, unit, unitSize, rupees, stock, stockLabel = 'pc', aliases = []) => ({
     id: uid(), name, unit, unitSize: Number(unitSize), price: rupees == null || rupees === '' ? null : Math.round(Number(rupees) * 100),
-    stock: Number(stock) || 0, stockLabel, lowStockThreshold: 5, aliases: name === 'Sarson tel' ? ['mustard oil'] : [], isActive: true,
+    stock: Number(stock) || 0, stockLabel, lowStockThreshold: 5, aliases, isActive: true,
   });
   const makeCustomer = (name, phone, consent, daysSincePurchase = null, createdDaysAgo = 0) => ({
-    id: uid(), name, phone: phone || null, consent: Boolean(consent), consentAt: consent ? now().toISOString() : null,
+    id: uid(), name, phone: phone || null, consent: Boolean(consent),
     balance: 0, totalPurchases: 0, totalPaid: 0,
     lastPurchaseAt: daysSincePurchase === null ? null : new Date(Date.now() - daysSincePurchase * DAY).toISOString(),
     createdAt: new Date(Date.now() - createdDaysAgo * DAY).toISOString(),
@@ -294,16 +614,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
   function baseState(store, items, customers) {
     return {
-      v: 2, store, items, customers, ledger: [], bills: [], receipts: [], counter: 0, counterFy: null, drafts: {}, stockDrafts: {},
+      v: 3, store, items, customers, ledger: [], bills: [], receipts: [], counter: 0, counterFy: null, drafts: {}, stockDrafts: {},
+      voice: 'auto',
       chat: [{ id: uid(), from: 'bot', kind: 'welcome', at: now().toISOString() }],
       ui: { tab: 'chat', custView: 'list', custId: null, filter: 'all', search: '', stockView: 'list' },
     };
   }
 
-  function seed() {
+  function seed(language = 'hinglish') {
     const store = {
       name: 'Sharma Kirana Store', owner: 'Rajesh Sharma', city: 'Sitapur', state: 'Uttar Pradesh', pincode: '261001',
-      phone: '+919876543450', givesCredit: true, gstin: null, pan: null, gstScheme: null, language: 'hinglish', replyStyle: 'voice_text',
+      phone: '+919876543450', givesCredit: true, gstin: null, pan: null, gstScheme: null, language, replyStyle: 'voice_text',
     };
     const items = SAMPLE_ITEMS.map((x) => makeItem(...x));
     const customers = [
@@ -315,34 +636,41 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     ];
     const s = baseState(store, items, customers);
     const [ramesh, sunita, irfan] = customers;
-    const old = (c, daysAgo, type, amount, label, method) => {
+    const old = (c, daysAgo, type, amount, extra) => {
       c.balance += amount;
       if (type === 'bill') c.totalPurchases += amount; else c.totalPaid -= amount;
-      s.ledger.push({ id: uid(), customerId: c.id, type, amount, balanceAfter: c.balance, label, method, at: new Date(Date.now() - daysAgo * DAY).toISOString() });
+      s.ledger.push({ id: uid(), customerId: c.id, type, amount, balanceAfter: c.balance, at: new Date(Date.now() - daysAgo * DAY).toISOString(), ...extra });
     };
-    old(ramesh, 13, 'bill', 112000, 'Bill #0118 · 4 item');
-    old(ramesh, 7, 'bill', 62000, 'Bill #0131 · 5 item');
-    old(ramesh, 3, 'payment', -50000, 'Jama kiya · UPI', 'upi');
-    old(sunita, 5, 'bill', 145000, 'Bill #0127 · 6 item');
-    old(irfan, 1, 'bill', 62000, 'Bill #0139 · 3 item');
+    old(ramesh, 13, 'bill', 112000, { invoiceNumber: '#0118', itemCount: 4 });
+    old(ramesh, 7, 'bill', 62000, { invoiceNumber: '#0131', itemCount: 5 });
+    old(ramesh, 3, 'payment', -50000, { method: 'upi' });
+    old(sunita, 5, 'bill', 145000, { invoiceNumber: '#0127', itemCount: 6 });
+    old(irfan, 1, 'bill', 62000, { invoiceNumber: '#0139', itemCount: 3 });
     s.receipts.push({
       id: uid(), supplier: 'Gupta Traders', at: new Date(Date.now() - 4 * DAY).toISOString(), totalCost: 528000,
-      lines: [{ itemId: items[0].id, name: 'Atta 5 kg', quantity: 20, costPrice: 22000 }, { itemId: items[6].id, name: 'Chawal 1 kg', quantity: 20, costPrice: 4400 }],
+      lines: [{ itemId: items[0].id, quantity: 20, costPrice: 22000 }, { itemId: items[6].id, quantity: 20, costPrice: 4400 }],
     });
     return s;
   }
 
-  const KEY = 'awaaz-demo-v2';
+  const KEY = 'awaaz-demo-v3';
   let S;
   try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { S = null; }
-  if (!S || S.v !== 2) S = seed();
+  if (!S || S.v !== 3) S = seed();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage unavailable */ } };
-  const LANG = () => S.store.language;
-  const say_ = (key, vars) => A.reply(LANG(), key, vars);
 
   const byId = (list, id) => list.find((x) => x.id === id);
   const activeItems = () => S.items.filter((i) => i.isActive);
   const canMessage = (c) => Boolean(c.phone && c.consent);
+  const itemName = (id) => { const it = byId(S.items, id); return it ? A.itemDisplayName(it) : '—'; };
+  const modeLabel = (m) => t(`m.${m}`);
+
+  function entryLabel(e) {
+    if (e.type === 'payment') return t('lg.payment', { m: modeLabel(e.method || 'cash') }) + (e.note ? ` · ${e.note}` : '');
+    if (e.type === 'payment_reversed') return t('lg.reversed');
+    if (e.type === 'bill_cancelled') return t('lg.cancelled');
+    return t('lg.bill', { no: e.invoiceNumber, n: e.itemCount });
+  }
 
   /* ---------- business logic (mirrors the backend services) ---------- */
   function resolveCustomer(spoken) {
@@ -360,7 +688,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const lineFromItem = (item, quantity) => ({
     itemId: item.id, name: item.name, sizeLabel: A.sizeLabel(item), quantity, unitPrice: item.price, amount: A.lineAmount(item.price, quantity),
   });
-  const draftTotal = (d) => d.lines.reduce((t, l) => t + l.amount, 0);
+  const draftTotal = (d) => d.lines.reduce((s, l) => s + l.amount, 0);
 
   function createDraft(intent, transcript) {
     const d = { id: uid(), status: 'draft', paymentMode: intent.paymentMode, upfront: intent.upfront || null, customerId: null, lines: [], issues: [], transcript };
@@ -407,16 +735,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
   function confirmDraft(d) {
     const total = draftTotal(d);
-    if (d.issues.length) return { error: 'Pehle upar ke sawaal ka jawab dijiye.' };
-    if (!d.lines.length) return { error: 'Bill mein koi item nahi hai.' };
+    if (d.issues.length) return { error: 'err.answers' };
+    if (!d.lines.length) return { error: 'err.noItems' };
     let paidCash = 0, paidUpi = 0, credit = 0;
     if (d.paymentMode === 'cash') paidCash = total;
     else if (d.paymentMode === 'upi') paidUpi = total;
     else {
-      if (!S.store.givesCredit) return { error: 'Is dukaan mein udhaar band hai (Dukaan tab mein badlein).' };
-      if (!d.customerId) return { error: 'Udhaar bill ke liye grahak chahiye.' };
+      if (!S.store.givesCredit) return { error: 'err.creditOff' };
+      if (!d.customerId) return { error: 'err.needCustomer' };
       const up = d.upfront?.amount || 0;
-      if (up >= total) return { error: 'Jitna diya utna poora bill hai. Cash ya UPI chuniye.' };
+      if (up >= total) return { error: 'err.paidAll' };
       if (d.upfront?.method === 'upi') paidUpi = up; else paidCash = up;
       credit = total - up;
     }
@@ -435,17 +763,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       if (credit > 0) {
         const before = c.balance;
         c.balance += credit;
-        S.ledger.push({ id: uid(), customerId: c.id, type: 'bill', amount: credit, balanceAfter: c.balance, label: `Bill ${d.invoiceNumber} · ${d.lines.length} item`, at: d.confirmedAt, billId: d.id });
+        S.ledger.push({ id: uid(), customerId: c.id, type: 'bill', amount: credit, balanceAfter: c.balance, at: d.confirmedAt, billId: d.id, invoiceNumber: d.invoiceNumber, itemCount: d.lines.length });
         fx.push(say_('khataChanged', { name: first(c.name), before, after: c.balance }));
         if (canMessage(c)) {
           receipt = A.receiptMessage({
-            storeName: S.store.name, customerName: c.name, invoiceNumber: d.invoiceNumber,
+            lang: LANG(), storeName: S.store.name, customerName: c.name, invoiceNumber: d.invoiceNumber,
             lines: d.lines.map((l) => ({ name: l.name, sizeLabel: l.sizeLabel, quantity: l.quantity, amount: l.amount })),
             total, paidNow: paidCash + paidUpi, credit, balance: c.balance, link: `aawaz.app/r/${d.id.slice(0, 8)}`,
           });
           fx.push(say_('receiptSent', { name: first(c.name) }));
         } else {
-          fx.push(c.phone ? `${first(c.name)} ki WhatsApp sahmati nahi hai, receipt nahi bheji` : `${first(c.name)} ka number nahi hai, receipt nahi bheji`);
+          fx.push(t(c.phone ? 'rcpt.noConsent' : 'rcpt.noPhone', { name: first(c.name) }));
         }
       }
     }
@@ -457,7 +785,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function recordPayment(c, paise, method, note) {
     c.balance -= paise;
     c.totalPaid += paise;
-    const e = { id: uid(), customerId: c.id, type: 'payment', amount: -paise, balanceAfter: c.balance, label: `Jama kiya · ${method.toUpperCase()}${note ? ` · ${note}` : ''}`, method, at: now().toISOString() };
+    const e = { id: uid(), customerId: c.id, type: 'payment', amount: -paise, balanceAfter: c.balance, method, note: note || '', at: now().toISOString() };
     S.ledger.push(e);
     return e;
   }
@@ -468,7 +796,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const c = byId(S.customers, e.customerId);
     c.balance += -e.amount;
     c.totalPaid -= -e.amount;
-    S.ledger.push({ id: uid(), customerId: c.id, type: 'payment_reversed', amount: -e.amount, balanceAfter: c.balance, label: 'Galat entry hataayi', at: now().toISOString(), reversesId: e.id });
+    S.ledger.push({ id: uid(), customerId: c.id, type: 'payment_reversed', amount: -e.amount, balanceAfter: c.balance, at: now().toISOString(), reversesId: e.id });
     return true;
   }
 
@@ -479,7 +807,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       if (!it || !(l.quantity > 0)) continue;
       it.stock = Math.round((it.stock + l.quantity) * 1000) / 1000;
       it.isActive = true;
-      rec.lines.push({ itemId: it.id, name: A.itemDisplayName(it), quantity: l.quantity, costPrice: l.costPrice ?? null });
+      rec.lines.push({ itemId: it.id, quantity: l.quantity, costPrice: l.costPrice ?? null });
       if (l.costPrice != null) rec.totalCost += Math.round(l.costPrice * l.quantity);
     }
     if (rec.lines.length) S.receipts.unshift(rec);
@@ -489,8 +817,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function summary() {
     const today = localDate();
     const bills = S.bills.filter((b) => b.status === 'confirmed' && localDate(new Date(b.confirmedAt)) === today);
-    const sum = (f) => bills.reduce((t, b) => t + f(b), 0);
-    const repaid = S.ledger.filter((e) => (e.type === 'payment' || e.type === 'payment_reversed') && localDate(new Date(e.at)) === today).reduce((t, e) => t - e.amount, 0);
+    const sum = (f) => bills.reduce((s, b) => s + f(b), 0);
+    const repaid = S.ledger.filter((e) => (e.type === 'payment' || e.type === 'payment_reversed') && localDate(new Date(e.at)) === today).reduce((s, e) => s - e.amount, 0);
     return {
       total: sum((b) => b.total), count: bills.length, paidNow: sum((b) => b.paidCash + b.paidUpi), credit: sum((b) => b.credit), repaid,
       newCustomers: S.customers.filter((c) => localDate(new Date(c.createdAt)) === today).length,
@@ -505,7 +833,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const out = S.ledger.filter((e) => e.customerId === c.id).map((e) => ({ ...e, kind: 'ledger' }));
     for (const b of S.bills) {
       if (b.customerId === c.id && b.status === 'confirmed' && b.credit === 0) {
-        out.push({ id: b.id, kind: 'paidbill', at: b.confirmedAt, label: `Bill ${b.invoiceNumber} · ${b.lines.length} item · ${b.paymentMode.toUpperCase()}`, amount: b.total, billId: b.id });
+        out.push({ id: b.id, kind: 'paidbill', at: b.confirmedAt, amount: b.total, billId: b.id, invoiceNumber: b.invoiceNumber, itemCount: b.lines.length, mode: b.paymentMode });
       }
     }
     return out.sort((a, b) => new Date(b.at) - new Date(a.at));
@@ -540,7 +868,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
           else sd.unmatched.push({ id: uid(), raw: res.issue.raw || line.raw, quantity: line.count ?? 1, options: res.issue.options });
         }
         S.stockDrafts[sd.id] = sd;
-        botText(sd.unmatched.length ? `${sd.lines.length} item mile, ${sd.unmatched.length} saaf nahi hue. Check karke pakka karein.` : `${sd.lines.length} item ka maal. Check karke pakka karein.`);
+        botText(say_('stockInPreview', { matched: sd.lines.length, unmatched: sd.unmatched.length }));
         say('bot', 'stockin', { draftId: sd.id });
         break;
       }
@@ -557,7 +885,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         withCustomer(intent.customerName, (c) => sendReminder(c));
         break;
       case 'list_customers': {
-        const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
+        const dues = S.customers.reduce((s, c) => s + Math.max(c.balance, 0), 0);
         botText(say_('customers', { total: S.customers.length, dues }));
         say('bot', 'customers', { filter: 'all' });
         break;
@@ -580,11 +908,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   }
 
   function sendReminder(c) {
-    if (c.balance <= 0) return botText(`${c.name} ka kuch baaki nahi hai.`);
-    if (!c.phone) return botText(`${c.name} ka phone number nahi hai, yaad nahi dila sakte.`);
-    if (!c.consent) return botText(`${c.name} ne WhatsApp messages ki sahmati nahi di hai. Grahak tab mein sahmati likh sakte hain.`);
+    if (c.balance <= 0) return botText(t('rm.nothing', { name: c.name }));
+    if (!c.phone) return botText(t('rm.noPhone', { name: c.name }));
+    if (!c.consent) return botText(t('rm.noConsent', { name: c.name }));
     botText(say_('reminderQueued', { name: c.name }));
-    say('bot', 'wa', { title: `WhatsApp → ${c.name}`, text: A.reminderMessage({ storeName: S.store.name, customerName: c.name, balance: c.balance, link: `aawaz.app/c/${c.id.slice(0, 8)}` }) });
+    say('bot', 'wa', { title: `WhatsApp → ${c.name}`, text: A.reminderMessage({ lang: LANG(), storeName: S.store.name, customerName: c.name, balance: c.balance, link: `aawaz.app/c/${c.id.slice(0, 8)}` }) });
   }
 
   /* ---------- icons ---------- */
@@ -597,35 +925,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     mic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>',
     moon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
   };
-  const fxIcon = (t) => (/stock|स्टॉक/i.test(t) ? icon.box : /khata|खाता/i.test(t) ? icon.book : icon.send);
+  // Effect lines come in order: stock, khata, receipt.
+  const fxIcons = [icon.box, icon.book, icon.send];
 
   /* ---------- chat rendering ---------- */
-  const ISSUE_Q = {
-    choose_variant: (i) => `${esc(i.name)}: kaunsa size? Ek tap mein chuniye`,
-    unclear: () => 'Ek item saaf nahi suna. Kaunsa tha?',
-    not_found: (i) => `"${esc(i.name)}" saamaan list mein nahi hai`,
-    price_missing: (i) => `${esc(i.name)} ka daam nahi pata. Stock tab mein daam daaliye.`,
-    customer_unknown: (i) => `"${esc(i.name)}" naam ka grahak nahi mila`,
-    customer_ambiguous: (i) => `"${esc(i.name)}" naam ke ek se zyada grahak hain. Kaun?`,
-    customer_required: () => 'Udhaar kiske naam likhein?',
-  };
-
   function issueHtml(d, i) {
     const opts = [];
     const btn = (attrs, label, ghost = false) => `<button class="opt${ghost ? ' ghost' : ''}" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" ${attrs}>${label}</button>`;
     if (i.kind === 'customer_required') {
       for (const c of S.customers.slice(0, 5)) opts.push(btn(`data-customer="${c.id}"`, esc(c.name)));
     } else if (i.kind === 'customer_unknown') {
-      opts.push(btn(`data-new="${esc(i.name)}"`, `+ Naya grahak: ${esc(i.name)}`));
-      if (d.paymentMode !== 'udhaar') opts.push(btn('data-remove="1"', 'Bina naam ke', true));
+      opts.push(btn(`data-new="${esc(i.name)}"`, esc(t('issue.newCustomer', { name: i.name }))));
+      if (d.paymentMode !== 'udhaar') opts.push(btn('data-remove="1"', esc(t('issue.noName')), true));
     } else {
       for (const o of i.options) {
         if (o.customerId) opts.push(btn(`data-customer="${o.customerId}"`, esc(o.label)));
         else opts.push(btn(`data-item="${o.itemId}"`, `${esc(o.label)}${o.quantity && o.quantity !== 1 ? ` × ${o.quantity}` : ''}${o.amount != null ? ` · ${r(o.amount)}` : ''}`));
       }
-      opts.push(btn('data-remove="1"', 'Hatao', true));
+      opts.push(btn('data-remove="1"', esc(t('remove')), true));
     }
-    return `<div class="ask"><div class="ask-q">${ISSUE_Q[i.kind](i)}</div>${i.raw ? `<div class="ask-raw">Suna: “${esc(i.raw)}”</div>` : ''}<div class="opts">${opts.join('')}</div></div>`;
+    return `<div class="ask"><div class="ask-q">${esc(t(`issue.${i.kind}`, { name: i.name ?? '' }))}</div>${i.raw ? `<div class="ask-raw">${esc(t('heard'))}: “${esc(i.raw)}”</div>` : ''}<div class="opts">${opts.join('')}</div></div>`;
   }
 
   function billHtml(msg) {
@@ -633,46 +952,52 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (!d) return '';
     const c = d.customerId ? byId(S.customers, d.customerId) : null;
     const total = d.status === 'confirmed' ? d.total : draftTotal(d);
-    const mode = d.paymentMode === 'udhaar' ? '<span class="pill udhaar">UDHAAR</span>' : `<span class="pill cash">${d.paymentMode.toUpperCase()}</span>`;
+    const mode = `<span class="pill ${d.paymentMode === 'udhaar' ? 'udhaar' : 'cash'}">${esc(t(`mode.${d.paymentMode}`))}</span>`;
     const lines = d.lines.map((l) => `<div class="row"><span class="qty">${l.quantity}${l.sizeLabel ? '' : ' pc'}</span><span class="grow">${esc(l.name)}${l.sizeLabel ? ` <span class="sub">${esc(l.sizeLabel)}</span>` : ''}</span><span class="num">${r(l.amount)}</span></div>`).join('');
     const issues = d.status === 'draft' ? d.issues.map((i) => issueHtml(d, i)).join('') : '';
-    const up = d.upfront?.amount ? `<div class="split"><span>Abhi diye (${d.upfront.method === 'upi' ? 'UPI' : 'cash'})</span><span class="num">${r(d.upfront.amount)}</span></div><div class="split"><span>Udhaar mein</span><span class="num">${r(Math.max(total - d.upfront.amount, 0))}</span></div>` : '';
+    const up = d.upfront?.amount ? `<div class="split"><span>${esc(t('bill.paidNow', { m: modeLabel(d.upfront.method) }))}</span><span class="num">${r(d.upfront.amount)}</span></div><div class="split"><span>${esc(t('bill.onCredit'))}</span><span class="num">${r(Math.max(total - d.upfront.amount, 0))}</span></div>` : '';
     let foot;
     if (d.status === 'draft') {
-      foot = `${msg.error ? `<div class="err">${esc(msg.error)}</div>` : ''}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">Radd karo</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}Haan, pakka karo</button></div>`;
+      foot = `${msg.error ? `<div class="err">${esc(t(msg.error))}</div>` : ''}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">${esc(t('bill.cancel'))}</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}${esc(t('bill.confirm'))}</button></div>`;
     } else if (d.status === 'confirmed') {
-      foot = `<div class="done">${icon.check}Pakka hua · ${esc(d.invoiceNumber)} · ${fmtTime(d.confirmedAt)}</div>`;
+      foot = `<div class="done">${icon.check}${esc(t('bill.done'))} · ${esc(d.invoiceNumber)} · ${fmtTime(d.confirmedAt)}</div>`;
     } else {
-      foot = '<div class="done" style="background:#F1E3E1;color:#8C2B20">Bill radd kiya</div>';
+      foot = `<div class="done" style="background:#F1E3E1;color:#8C2B20">${esc(t('bill.cancelled'))}</div>`;
     }
-    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${d.status === 'draft' ? 'Bill · check karein' : `Bill ${esc(d.invoiceNumber || '')}`}</div><div class="c-title">${c ? esc(c.name) : 'Grahak'}</div></div>${mode}</div>${lines}${issues}<div class="total"><span class="lbl">Total · ${d.lines.length} item</span><span class="amt">${r(total)}</span></div>${up}${foot}</div>`;
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${d.status === 'draft' ? esc(t('bill.check')) : `Bill ${esc(d.invoiceNumber || '')}`}</div><div class="c-title">${c ? esc(c.name) : esc(t('bill.customer'))}</div></div>${mode}</div>${lines}${issues}<div class="total"><span class="lbl">${esc(t('bill.total', { n: d.lines.length }))}</span><span class="amt">${r(total)}</span></div>${up}${foot}</div>`;
   }
 
   function stockInHtml(msg) {
     const sd = S.stockDrafts[msg.draftId] || msg.done;
     if (!sd) return '';
-    const lines = sd.lines.map((l) => { const it = byId(S.items, l.itemId); return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">abhi ${it.stock} ${esc(it.stockLabel)}</span></div>`; }).join('');
-    const unmatched = sd.status === 'draft' ? sd.unmatched.map((u) => `<div class="ask"><div class="ask-q">Yeh item list mein nahi mila</div><div class="ask-raw">Suna: “${esc(u.raw)}”</div><div class="opts">${u.options.map((o) => `<button class="opt" data-a="si-pick" data-draft="${sd.id}" data-u="${u.id}" data-item="${o.itemId}">${esc(o.label)}</button>`).join('')}<button class="opt ghost" data-a="si-drop" data-draft="${sd.id}" data-u="${u.id}">Hatao</button></div></div>`).join('') : '';
+    const lines = sd.lines.map((l) => { const it = byId(S.items, l.itemId); return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${esc(t('si.now', { s: `${it.stock} ${it.stockLabel}` }))}</span></div>`; }).join('');
+    const unmatched = sd.status === 'draft' ? sd.unmatched.map((u) => `<div class="ask"><div class="ask-q">${esc(t('si.notFound'))}</div><div class="ask-raw">${esc(t('heard'))}: “${esc(u.raw)}”</div><div class="opts">${u.options.map((o) => `<button class="opt" data-a="si-pick" data-draft="${sd.id}" data-u="${u.id}" data-item="${o.itemId}">${esc(o.label)}</button>`).join('')}<button class="opt ghost" data-a="si-drop" data-draft="${sd.id}" data-u="${u.id}">${esc(t('remove'))}</button></div></div>`).join('') : '';
     const foot = sd.status === 'draft'
-      ? `<div class="acts"><button class="btn" data-a="si-cancel" data-draft="${sd.id}">Radd karo</button><button class="btn go" data-a="si-confirm" data-draft="${sd.id}" ${sd.unmatched.length || !sd.lines.length ? 'disabled' : ''}>${icon.check}Stock mein jodo</button></div>`
-      : sd.status === 'done' ? `<div class="done">${icon.check}Stock mein jod diya</div>` : '<div class="done" style="background:#F1E3E1;color:#8C2B20">Radd kiya</div>';
-    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">Maal aaya${sd.supplier ? ` · ${esc(sd.supplier)}` : ''}</div><div class="c-title">${sd.lines.length} item</div></div><span class="pill grey">STOCK IN</span></div>${lines}${unmatched}${foot}</div>`;
+      ? `<div class="acts"><button class="btn" data-a="si-cancel" data-draft="${sd.id}">${esc(t('bill.cancel'))}</button><button class="btn go" data-a="si-confirm" data-draft="${sd.id}" ${sd.unmatched.length || !sd.lines.length ? 'disabled' : ''}>${icon.check}${esc(t('si.add'))}</button></div>`
+      : sd.status === 'done' ? `<div class="done">${icon.check}${esc(t('si.added'))}</div>` : `<div class="done" style="background:#F1E3E1;color:#8C2B20">${esc(t('si.cancelled'))}</div>`;
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${esc(t('si.eyebrow'))}${sd.supplier ? ` · ${esc(sd.supplier)}` : ''}</div><div class="c-title">${esc(t('si.items', { n: sd.lines.length }))}</div></div><span class="pill grey">STOCK IN</span></div>${lines}${unmatched}${foot}</div>`;
   }
 
   function khataHtml(msg) {
     const c = byId(S.customers, msg.customerId);
     if (!c) return '';
     const entries = S.ledger.filter((e) => e.customerId === c.id);
-    const rows = entries.slice(-4).reverse().map((e) => `<div class="row"><span class="sub" style="width:48px">${fmtDay(e.at)}</span><span class="grow">${esc(e.label)}</span><span class="num" style="${e.amount < 0 ? 'color:var(--green)' : ''}">${e.amount < 0 ? '− ' + r(-e.amount) : '+ ' + r(e.amount)}</span></div>`).join('');
-    const pay = msg.payOpen ? `<form class="payform" data-form="pay" data-customer="${c.id}" data-msg="${msg.id}"><input id="amt-${msg.id}" name="amt" inputmode="decimal" placeholder="Kitne rupaye?" aria-label="Amount in rupees" required><select id="m-${msg.id}" name="method" aria-label="Method"><option value="upi">UPI</option><option value="cash">Cash</option></select><button class="btn go" type="submit" style="flex:0 0 auto">Jama</button></form>` : '';
-    return `<div class="bot"><div class="c-head"><div style="display:flex;gap:10px;align-items:center"><span class="av">${initials(c.name)}</span><div><div class="c-title" style="font-size:18px">${esc(c.name)}</div><div class="sub">Khata · ${entries.length} entry</div></div></div></div>
-      <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">Kul baaki</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><button class="link" data-a="open" data-customer="${c.id}">Poora hisaab</button></div>
-      ${rows ? `<div class="eyebrow" style="padding:0 14px 4px">Pichhla hisaab</div>${rows}` : ''}
-      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="payopen" data-msg="${msg.id}">Paisa mila</button><button class="btn sm" data-a="remind" data-customer="${c.id}">Yaad dilao</button></div>${pay}</div>`;
+    const rows = entries.slice(-4).reverse().map((e) => `<div class="row"><span class="sub" style="width:52px">${fmtDay(e.at)}</span><span class="grow">${esc(entryLabel(e))}</span><span class="num" style="${e.amount < 0 ? 'color:var(--green)' : ''}">${e.amount < 0 ? '− ' + r(-e.amount) : '+ ' + r(e.amount)}</span></div>`).join('');
+    const pay = msg.payOpen ? `<form class="payform" data-form="pay" data-customer="${c.id}" data-msg="${msg.id}"><input id="amt-${msg.id}" name="amt" inputmode="decimal" placeholder="${esc(t('kh.amount'))}" aria-label="${esc(t('kh.amount'))}" required><select id="m-${msg.id}" name="method" aria-label="${esc(t('cu.payHow'))}"><option value="upi">UPI</option><option value="cash">${esc(t('m.cash'))}</option></select><button class="btn go" type="submit" style="flex:0 0 auto">${esc(t('kh.save'))}</button></form>` : '';
+    return `<div class="bot"><div class="c-head"><div style="display:flex;gap:10px;align-items:center"><span class="av">${initials(c.name)}</span><div><div class="c-title" style="font-size:18px">${esc(c.name)}</div><div class="sub">${esc(t('kh.entries', { n: entries.length }))}</div></div></div></div>
+      <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">${esc(t(c.balance > 0 ? 'kh.due' : 'kh.clear'))}</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><button class="link" data-a="open" data-customer="${c.id}">${esc(t('kh.full'))}</button></div>
+      ${rows ? `<div class="eyebrow" style="padding:0 14px 4px">${esc(t('kh.recent'))}</div>${rows}` : ''}
+      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="payopen" data-msg="${msg.id}">${esc(t('kh.paid'))}</button><button class="btn sm" data-a="remind" data-customer="${c.id}">${esc(t('kh.remind'))}</button></div>${pay}</div>`;
+  }
+
+  function lastSeen(c) {
+    if (isInactive(c)) return t('cu.weeks', { n: Math.max(2, Math.floor((Date.now() - new Date(c.lastPurchaseAt || c.createdAt)) / (7 * DAY))) });
+    const d = c.lastPurchaseAt ? (localDate(new Date(c.lastPurchaseAt)) === localDate() ? t('todayLower') : fmtDay(c.lastPurchaseAt)) : '—';
+    return t('cu.last', { d });
   }
 
   function customerRows(list) {
-    return list.map((c) => `<button class="cust" data-a="open" data-customer="${c.id}"><span class="av ${c.balance > 0 ? '' : 'light'}">${initials(c.name)}</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">${esc(c.name)}</span><span class="sub" style="${isInactive(c) ? 'color:var(--udhaar-ink);font-weight:600' : ''}">${isInactive(c) ? `${Math.max(2, Math.floor((Date.now() - new Date(c.lastPurchaseAt || c.createdAt)) / (7 * DAY)))} hafte se nahi aaye` : `Aakhri kharid · ${c.lastPurchaseAt ? (localDate(new Date(c.lastPurchaseAt)) === localDate() ? 'aaj' : fmtDay(c.lastPurchaseAt)) : '—'}`}</span></span>${c.balance > 0 ? `<span class="num" style="color:var(--udhaar-ink)">${r(c.balance)}</span>` : '<span class="sub" style="color:var(--green);font-weight:600">Hisaab saaf</span>'}</button>`).join('');
+    return list.map((c) => `<button class="cust" data-a="open" data-customer="${c.id}"><span class="av ${c.balance > 0 ? '' : 'light'}">${initials(c.name)}</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">${esc(c.name)}</span><span class="sub" style="${isInactive(c) ? 'color:var(--udhaar-ink);font-weight:600' : ''}">${esc(lastSeen(c))}</span></span>${c.balance > 0 ? `<span class="num" style="color:var(--udhaar-ink)">${r(c.balance)}</span>` : `<span class="sub" style="color:var(--green);font-weight:600">${esc(t('kh.clear'))}</span>`}</button>`).join('');
   }
 
   function filtered(f, search = '') {
@@ -683,30 +1008,31 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       .sort((a, b) => b.balance - a.balance);
   }
   const counts = () => ({ all: S.customers.length, dues: S.customers.filter((c) => c.balance > 0).length, inactive: S.customers.filter(isInactive).length });
+  const totalDues = () => S.customers.reduce((s, c) => s + Math.max(c.balance, 0), 0);
 
   function customersCardHtml(msg) {
     const f = msg.filter || 'all';
     const n = counts();
-    const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
-    const chip = (k, label) => `<button class="fchip" aria-pressed="${f === k}" data-a="filter" data-msg="${msg.id}" data-f="${k}">${label} ${n[k]}</button>`;
-    return `<div class="bot"><div class="c-head"><div><div class="c-title">Aapke grahak · ${n.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div></div><div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>${customerRows(filtered(f)) || '<div class="row sub">Koi grahak nahi</div>'}</div>`;
+    const chip = (k) => `<button class="fchip" aria-pressed="${f === k}" data-a="filter" data-msg="${msg.id}" data-f="${k}">${esc(t(`f.${k}`))} ${n[k]}</button>`;
+    return `<div class="bot"><div class="c-head"><div><div class="c-title">${esc(t('cu.title', { n: n.all }))}</div><div class="sub">${esc(t('cu.dues'))} <b style="color:var(--udhaar-ink)">${r(totalDues())}</b></div></div></div><div class="filters">${chip('all')}${chip('dues')}${chip('inactive')}</div>${customerRows(filtered(f)) || `<div class="row sub">${esc(t('cu.none'))}</div>`}</div>`;
   }
 
   function summaryHtml() {
     const s = summary();
-    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">Aaj ki bikri · ${fmtDay(now().toISOString())}</div><div class="c-title" style="font-size:30px;font-weight:800">${r(s.total)}</div><div class="sub">${s.count} bill</div></div></div>
-      <div class="grid2"><div class="tile"><span class="sub">Cash + UPI</span><b>${r(s.paidNow)}</b></div><div class="tile"><span class="sub">Udhaar diya</span><b style="color:var(--udhaar-ink)">${r(s.credit)}</b></div><div class="tile"><span class="sub">Udhaar wapas</span><b style="color:var(--green)">${r(s.repaid)}</b></div><div class="tile"><span class="sub">Naye grahak</span><b>${s.newCustomers}</b></div></div>
-      ${s.low.length ? `<div class="eyebrow" style="padding:0 14px 4px">Stock kam hai</div>${s.low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('')}` : ''}
-      ${s.top.length ? `<div class="eyebrow" style="padding:10px 14px 4px">Sabse zyada udhaar</div>${s.top.map((c) => `<div class="row"><span class="grow">${esc(c.name)}</span><span class="num">${r(c.balance)}</span></div>`).join('')}` : ''}<div style="height:6px"></div></div>`;
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${esc(t('sum.title', { d: fmtDay(now().toISOString()) }))}</div><div class="c-title" style="font-size:30px;font-weight:800">${r(s.total)}</div><div class="sub">${esc(t('sum.bills', { n: s.count }))}</div></div></div>
+      <div class="grid2"><div class="tile"><span class="sub">${esc(t('sum.paid'))}</span><b>${r(s.paidNow)}</b></div><div class="tile"><span class="sub">${esc(t('sum.given'))}</span><b style="color:var(--udhaar-ink)">${r(s.credit)}</b></div><div class="tile"><span class="sub">${esc(t('sum.back'))}</span><b style="color:var(--green)">${r(s.repaid)}</b></div><div class="tile"><span class="sub">${esc(t('sum.new'))}</span><b>${s.newCustomers}</b></div></div>
+      ${s.low.length ? `<div class="eyebrow" style="padding:0 14px 4px">${esc(t('sum.low'))}</div>${s.low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('')}` : ''}
+      ${s.top.length ? `<div class="eyebrow" style="padding:10px 14px 4px">${esc(t('sum.top'))}</div>${s.top.map((c) => `<div class="row"><span class="grow">${esc(c.name)}</span><span class="num">${r(c.balance)}</span></div>`).join('')}` : ''}<div style="height:6px"></div></div>`;
   }
 
   function lowHtml() {
     const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold);
-    return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">Kal ki kharid list</div></div>${low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)} bache</span></div>`).join('')}<div class="acts" style="padding-top:8px"><button class="btn sm" data-a="go" data-tab="stock" data-view="receive">Maal aaya? Stock jodo</button></div></div>`;
+    return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">${esc(t('low.title'))}</div></div>${low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${esc(t('low.left', { n: i.stock, l: i.stockLabel }))}</span></div>`).join('')}<div class="acts" style="padding-top:8px"><button class="btn sm" data-a="go" data-tab="stock" data-view="receive">${esc(t('low.btn'))}</button></div></div>`;
   }
 
   function welcomeHtml() {
-    return `<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Hara mic dabaiye aur boliye, jaise:<br><i>“Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do”</i><br><span class="sub">Upar ke tab mein Grahak, Stock aur Dukaan ki details hain.</span></div>`;
+    const ex = EXAMPLES[LANG()][0][0];
+    return `<div class="bot plain"><b>${esc(t('welcome.1'))}</b><br>${esc(t('welcome.2'))}<br><i>“${esc(ex)}”</i><br><span class="sub">${esc(t('welcome.3'))}</span></div>`;
   }
 
   function msgHtml(m) {
@@ -714,15 +1040,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     switch (m.kind) {
       case 'welcome': return welcomeHtml();
       case 'text': return `<div class="bot plain">${esc(m.text)}</div>`;
-      case 'voice': return `<div class="bot plain">${esc(m.text.replace(m.url, '').trim())}${m.url ? `<br><a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700;word-break:break-all">${esc(m.url)}</a>` : ''}</div>`;
+      case 'voice': return `<div class="bot plain">${esc(t(m.key))}${m.url ? `<br>${esc(t('v.where'))} <a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700;word-break:break-all">${esc(m.url)}</a>` : ''}</div>`;
       case 'bill': return billHtml(m);
       case 'stockin': return stockInHtml(m);
       case 'khata': return khataHtml(m);
       case 'customers': return customersCardHtml(m);
       case 'summary': return summaryHtml();
       case 'lowstock': return lowHtml();
-      case 'fx': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">${esc(m.title)}</div></div><div class="fx">${m.lines.map((t) => `<div>${fxIcon(t)}<span>${esc(t)}</span></div>`).join('')}${m.billId ? `<div><button class="link" data-a="receipt" data-bill="${m.billId}">Grahak ki rasid dekho</button></div>` : ''}</div></div>`;
-      case 'wa': return `<div class="wa"><b>${esc(m.title)} · preview</b>${esc(m.text)}</div>`;
+      case 'fx': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">${esc(m.title)}</div></div><div class="fx">${m.lines.map((line, k) => `<div>${fxIcons[Math.min(k, 2)]}<span>${esc(line)}</span></div>`).join('')}${m.billId ? `<div><button class="link" data-a="receipt" data-bill="${m.billId}">${esc(t('rcpt.see'))}</button></div>` : ''}</div></div>`;
+      case 'wa': return `<div class="wa"><b>${esc(m.title)} · ${esc(t('preview'))}</b>${esc(m.text)}</div>`;
       case 'pickCustomer': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:16px">${esc(m.text)}</div></div><div class="opts" style="padding:0 14px 12px">${m.ids.map((id) => { const c = byId(S.customers, id); return c ? `<button class="opt" data-a="open" data-customer="${id}">${esc(c.name)}</button>` : ''; }).join('')}</div></div>`;
       default: return '';
     }
@@ -735,26 +1061,30 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (ui.custView === 'alltx') return allTransactions();
     if (ui.custView === 'add') return addCustomerForm();
     const n = counts();
-    const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
-    const chip = (k, label) => `<button class="fchip" aria-pressed="${ui.filter === k}" data-a="cfilter" data-f="${k}">${label} ${n[k]}</button>`;
+    const chip = (k) => `<button class="fchip" aria-pressed="${ui.filter === k}" data-a="cfilter" data-f="${k}">${esc(t(`f.${k}`))} ${n[k]}</button>`;
     return `
-      <input class="search" id="csearch" type="search" placeholder="Naam ya number se dhoondho" aria-label="Search customers" value="${esc(ui.search)}">
-      <div class="card"><div class="c-head"><div><div class="c-title">Grahak · ${n.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div><button class="btn tiny" data-a="cview" data-view="alltx">Sab len-den</button></div>
-      <div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>
-      <div id="clist">${customerRows(filtered(ui.filter, ui.search)) || '<div class="row sub">Koi grahak nahi mila</div>'}</div>
-      <div class="acts" style="padding-top:10px"><button class="btn go" data-a="cview" data-view="add">+ Naya grahak</button></div></div>`;
+      <input class="search" id="csearch" type="search" placeholder="${esc(t('cu.search'))}" aria-label="${esc(t('cu.search'))}" value="${esc(ui.search)}">
+      <div class="card"><div class="c-head"><div><div class="c-title">${esc(t('cu.titleShort', { n: n.all }))}</div><div class="sub">${esc(t('cu.dues'))} <b style="color:var(--udhaar-ink)">${r(totalDues())}</b></div></div><button class="btn tiny" data-a="cview" data-view="alltx">${esc(t('cu.alltx'))}</button></div>
+      <div class="filters">${chip('all')}${chip('dues')}${chip('inactive')}</div>
+      <div id="clist">${customerRows(filtered(ui.filter, ui.search)) || `<div class="row sub">${esc(t('cu.none'))}</div>`}</div>
+      <div class="acts" style="padding-top:10px"><button class="btn go" data-a="cview" data-view="add">${esc(t('cu.add'))}</button></div></div>`;
   }
 
-  function addCustomerForm(err = '') {
-    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
-      <div class="card"><div class="c-head"><div class="c-title">Naya grahak</div></div>
+  function addCustomerForm() {
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}${esc(t('cu.back'))}</button>
+      <div class="card"><div class="c-head"><div class="c-title">${esc(t('cu.new'))}</div></div>
       <form class="form" data-form="addcust">
-        <label for="nc-name">Naam<input id="nc-name" name="name" required maxlength="120" placeholder="Jaise: Ramesh Yadav"></label>
-        <label for="nc-phone">Mobile number (optional)<input id="nc-phone" name="phone" inputmode="tel" placeholder="98765 43210"></label>
-        <label class="check" for="nc-consent"><input id="nc-consent" name="consent" type="checkbox">Grahak WhatsApp par rasid aur yaad dilane ke message lene ko taiyaar hai</label>
-        <div class="err" id="nc-err">${esc(err)}</div>
-        <button class="btn go" type="submit">Grahak jodo</button>
+        <label for="nc-name">${esc(t('cu.name'))}<input id="nc-name" name="name" required maxlength="120" placeholder="${esc(t('cu.namePh'))}"></label>
+        <label for="nc-phone">${esc(t('cu.phoneOpt'))}<input id="nc-phone" name="phone" inputmode="tel" placeholder="98765 43210"></label>
+        <label class="check" for="nc-consent"><input id="nc-consent" name="consent" type="checkbox">${esc(t('cu.consentText'))}</label>
+        <div class="err" id="nc-err"></div>
+        <button class="btn go" type="submit">${esc(t('cu.addBtn'))}</button>
       </form></div>`;
+  }
+
+  function txLabel(e) {
+    if (e.kind === 'paidbill') return t('lg.paidbill', { no: e.invoiceNumber, n: e.itemCount, m: t(`mode.${e.mode}`) });
+    return entryLabel(e);
   }
 
   function txRow(e, withName = false) {
@@ -762,50 +1092,50 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const reversed = e.type === 'payment' && S.ledger.some((x) => x.reversesId === e.id);
     const sign = e.kind === 'paidbill' ? '' : e.amount < 0 ? '− ' : '+ ';
     const color = e.kind === 'paidbill' ? '' : e.amount < 0 ? 'color:var(--green)' : '';
-    const undo = e.type === 'payment' && !reversed ? `<button class="btn tiny" data-a="reverse" data-entry="${e.id}" aria-label="Undo this payment">Galat? Hatao</button>` : '';
-    const view = e.billId ? `<button class="link" data-a="receipt" data-bill="${e.billId}" style="font-size:12px;min-height:24px">Rasid</button>` : '';
-    return `<div class="row" style="align-items:flex-start"><span class="sub" style="width:48px;padding-top:2px">${fmtDay(e.at)}</span><span class="grow"><span class="${reversed ? 'strike' : ''}">${withName && c ? `<b>${esc(c.name)}</b> · ` : ''}${esc(e.label)}</span>${e.kind === 'ledger' && !withName ? `<br><span class="sub">Baaki ${r(e.balanceAfter)}</span>` : ''} ${view}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="num" style="${color}">${sign}${r(Math.abs(e.amount))}</span>${undo}</span></div>`;
+    const undo = e.type === 'payment' && !reversed ? `<button class="btn tiny" data-a="reverse" data-entry="${e.id}">${esc(t('cu.undo'))}</button>` : '';
+    const view = e.billId ? `<button class="link" data-a="receipt" data-bill="${e.billId}" style="font-size:12px;min-height:24px">${esc(t('cu.receipt'))}</button>` : '';
+    return `<div class="row" style="align-items:flex-start"><span class="sub" style="width:52px;padding-top:2px">${fmtDay(e.at)}</span><span class="grow"><span class="${reversed ? 'strike' : ''}">${withName && c ? `<b>${esc(c.name)}</b> · ` : ''}${esc(txLabel(e))}</span>${e.kind === 'ledger' && !withName ? `<br><span class="sub">${esc(t('cu.balanceAfter', { x: r(e.balanceAfter) }))}</span>` : ''} ${view}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="num" style="${color}">${sign}${r(Math.abs(e.amount))}</span>${undo}</span></div>`;
   }
 
   function customerDetail(c) {
     const tx = customerTx(c);
     const ui = S.ui;
     const payForm = ui.payOpen ? `<form class="form" data-form="cpay" data-customer="${c.id}" style="border-top:1px solid var(--line)">
-        <div class="two"><label for="cp-amt">Kitne rupaye<input id="cp-amt" name="amt" inputmode="decimal" required placeholder="500"></label>
-        <label for="cp-m">Kaise<select id="cp-m" name="method"><option value="cash">Cash</option><option value="upi">UPI</option></select></label></div>
-        <label for="cp-note">Note (optional)<input id="cp-note" name="note" maxlength="60" placeholder="Jaise: aadha hisaab"></label>
-        <button class="btn go" type="submit">Paisa mila · jama karo</button></form>` : '';
+        <div class="two"><label for="cp-amt">${esc(t('cu.payAmt'))}<input id="cp-amt" name="amt" inputmode="decimal" required placeholder="500"></label>
+        <label for="cp-m">${esc(t('cu.payHow'))}<select id="cp-m" name="method"><option value="cash">${esc(t('m.cash'))}</option><option value="upi">UPI</option></select></label></div>
+        <label for="cp-note">${esc(t('cu.note'))}<input id="cp-note" name="note" maxlength="60" placeholder="${esc(t('cu.notePh'))}"></label>
+        <button class="btn go" type="submit">${esc(t('cu.paySubmit'))}</button></form>` : '';
     const edit = ui.editOpen ? `<form class="form" data-form="editcust" data-customer="${c.id}" style="border-top:1px solid var(--line)">
-        <label for="ec-name">Naam<input id="ec-name" name="name" required maxlength="120" value="${esc(c.name)}"></label>
-        <label for="ec-phone">Mobile number<input id="ec-phone" name="phone" inputmode="tel" value="${esc(c.phone ? c.phone.replace('+91', '') : '')}"></label>
+        <label for="ec-name">${esc(t('cu.name'))}<input id="ec-name" name="name" required maxlength="120" value="${esc(c.name)}"></label>
+        <label for="ec-phone">${esc(t('cu.phone'))}<input id="ec-phone" name="phone" inputmode="tel" value="${esc(c.phone ? c.phone.replace('+91', '') : '')}"></label>
         <div class="err" id="ec-err"></div>
-        <button class="btn go" type="submit">Save karo</button></form>` : '';
-    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
+        <button class="btn go" type="submit">${esc(t('cu.save'))}</button></form>` : '';
+    const consentSub = canMessage(c) ? t('cu.consentOn') : c.phone ? t('cu.consentOff') : t('cu.consentNoPhone');
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}${esc(t('cu.back'))}</button>
       <div class="card">
-        <div class="c-head"><div style="display:flex;gap:12px;align-items:center"><span class="av big">${initials(c.name)}</span><div><div class="c-title">${esc(c.name)}</div><div class="sub">${c.phone ? esc(A.maskPhone(c.phone)) : 'Number nahi hai'} · ${fmtDay(c.createdAt)} se grahak</div></div></div></div>
-        <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">${c.balance > 0 ? 'Kul baaki' : 'Hisaab saaf'}</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><span class="sub" style="text-align:right">${fmtDay(now().toISOString())} tak<br>ka hisaab</span></div>
-        <div class="grid2"><div class="tile"><span class="sub">Kul kharid</span><b>${r(c.totalPurchases)}</b></div><div class="tile"><span class="sub">Jama kiya</span><b style="color:var(--green)">${r(c.totalPaid)}</b></div></div>
-        <div class="row"><span class="grow">WhatsApp sahmati<br><span class="sub">${canMessage(c) ? 'Rasid aur yaad dilane ke message jaayenge' : c.phone ? 'Message nahi jaayenge' : 'Pehle number jodiye'}</span></span><button class="btn tiny" data-a="consent" data-customer="${c.id}" ${c.phone ? '' : 'disabled'}>${c.consent ? 'Hatao' : 'Haan, di hai'}</button></div>
-        <div class="acts" style="padding-top:10px"><button class="btn sm go" data-a="cpayopen">Paisa mila</button><button class="btn sm" data-a="remind" data-customer="${c.id}">Yaad dilao</button><button class="btn sm" data-a="ceditopen">Badlo</button></div>
+        <div class="c-head"><div style="display:flex;gap:12px;align-items:center"><span class="av big">${initials(c.name)}</span><div><div class="c-title">${esc(c.name)}</div><div class="sub">${c.phone ? esc(A.maskPhone(c.phone)) : esc(t('cu.noPhone'))} · ${esc(t('cu.since', { d: fmtDay(c.createdAt) }))}</div></div></div></div>
+        <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">${esc(t(c.balance > 0 ? 'kh.due' : 'kh.clear'))}</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><span class="sub" style="text-align:right">${t('cu.asOf', { d: esc(fmtDay(now().toISOString())) })}</span></div>
+        <div class="grid2"><div class="tile"><span class="sub">${esc(t('cu.bought'))}</span><b>${r(c.totalPurchases)}</b></div><div class="tile"><span class="sub">${esc(t('cu.paid'))}</span><b style="color:var(--green)">${r(c.totalPaid)}</b></div></div>
+        <div class="row"><span class="grow">${esc(t('cu.consent'))}<br><span class="sub">${esc(consentSub)}</span></span><button class="btn tiny" data-a="consent" data-customer="${c.id}" ${c.phone ? '' : 'disabled'}>${esc(t(c.consent ? 'cu.consentRemove' : 'cu.consentGive'))}</button></div>
+        <div class="acts" style="padding-top:10px"><button class="btn sm go" data-a="cpayopen">${esc(t('kh.paid'))}</button><button class="btn sm" data-a="remind" data-customer="${c.id}">${esc(t('kh.remind'))}</button><button class="btn sm" data-a="ceditopen">${esc(t('cu.edit'))}</button></div>
         ${payForm}${edit}
         ${ui.flash ? `<div class="ok" style="padding:0 14px 10px">${esc(ui.flash)}</div>` : ''}
       </div>
-      <div class="section-t">Len-den · ${tx.length}</div>
-      <div class="card">${tx.map((e) => txRow(e)).join('') || '<div class="row sub">Abhi koi len-den nahi</div>'}</div>`;
+      <div class="section-t">${esc(t('cu.tx', { n: tx.length }))}</div>
+      <div class="card">${tx.map((e) => txRow(e)).join('') || `<div class="row sub">${esc(t('cu.noTx'))}</div>`}</div>`;
   }
 
   function allTransactions() {
     const all = [];
     for (const e of S.ledger) all.push({ ...e, kind: 'ledger' });
     for (const b of S.bills) {
-      if (b.status !== 'confirmed') continue;
-      if (b.credit > 0) continue; // already in the khata
-      all.push({ id: b.id, kind: 'paidbill', customerId: b.customerId, at: b.confirmedAt, label: `Bill ${b.invoiceNumber} · ${b.lines.length} item · ${b.paymentMode.toUpperCase()}`, amount: b.total, billId: b.id });
+      if (b.status !== 'confirmed' || b.credit > 0) continue; // credit bills are already in the khata
+      all.push({ id: b.id, kind: 'paidbill', customerId: b.customerId, at: b.confirmedAt, amount: b.total, billId: b.id, invoiceNumber: b.invoiceNumber, itemCount: b.lines.length, mode: b.paymentMode });
     }
     all.sort((a, b) => new Date(b.at) - new Date(a.at));
-    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
-      <div class="card"><div class="c-head"><div><div class="c-title">Sab len-den</div><div class="sub">Udhaar bill, jama, aur cash/UPI bill — sab ek jagah</div></div></div>
-      ${all.map((e) => txRow(e, true)).join('') || '<div class="row sub">Abhi koi len-den nahi</div>'}</div>`;
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}${esc(t('cu.back'))}</button>
+      <div class="card"><div class="c-head"><div><div class="c-title">${esc(t('cu.allTitle'))}</div><div class="sub">${esc(t('cu.allSub'))}</div></div></div>
+      ${all.map((e) => txRow(e, true)).join('') || `<div class="row sub">${esc(t('cu.noTx'))}</div>`}</div>`;
   }
 
   /* ---------- Stock tab ---------- */
@@ -813,141 +1143,162 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const ui = S.ui;
     if (ui.stockView === 'receive') return receiveForm();
     if (ui.stockView === 'additem') return addItemForm();
-    const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold).length;
-    const rows = S.items.filter((i) => i.isActive).map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}<br><span class="sub">${i.price == null ? 'Daam nahi' : r(i.price)}</span></span><span class="num ${i.stock <= i.lowStockThreshold ? 'low' : ''}">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('');
-    const history = S.receipts.slice(0, 8).map((rc) => `<div class="row" style="align-items:flex-start"><span class="sub" style="width:48px">${fmtDay(rc.at)}</span><span class="grow">${rc.supplier ? `<b>${esc(rc.supplier)}</b><br>` : ''}${rc.lines.map((l) => `${esc(l.name)} +${l.quantity}`).join(', ')}</span><span class="num">${rc.totalCost ? r(rc.totalCost) : ''}</span></div>`).join('');
-    return `<div class="card"><div class="c-head"><div><div class="c-title">Saamaan · ${S.items.filter((i) => i.isActive).length}</div><div class="sub">${low ? `<span class="low">${low} item ka stock kam</span>` : 'Sab ka stock theek hai'}</div></div></div>
-      <div class="acts"><button class="btn go" data-a="sview" data-view="receive">${icon.box}Maal aaya</button><button class="btn sm" data-a="sview" data-view="additem">+ Naya item</button></div>${rows}</div>
-      <div class="section-t">Maal aane ki history</div>
-      <div class="card">${history || '<div class="row sub">Abhi koi entry nahi</div>'}</div>
-      <p class="sub" style="margin:0 4px">Tip: Baat tab mein boliye — “Maal aaya: 20 bag atta, 10 sarson tel 1 litre”</p>`;
+    const active = S.items.filter((i) => i.isActive);
+    const low = active.filter((i) => i.stock <= i.lowStockThreshold).length;
+    const rows = active.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}<br><span class="sub">${i.price == null ? esc(t('st.noPrice')) : r(i.price)}</span></span><span class="num ${i.stock <= i.lowStockThreshold ? 'low' : ''}">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('');
+    const history = S.receipts.slice(0, 8).map((rc) => `<div class="row" style="align-items:flex-start"><span class="sub" style="width:52px">${fmtDay(rc.at)}</span><span class="grow">${rc.supplier ? `<b>${esc(rc.supplier)}</b><br>` : ''}${rc.lines.map((l) => `${esc(itemName(l.itemId))} +${l.quantity}`).join(', ')}</span><span class="num">${rc.totalCost ? r(rc.totalCost) : ''}</span></div>`).join('');
+    return `<div class="card"><div class="c-head"><div><div class="c-title">${esc(t('st.title', { n: active.length }))}</div><div class="sub">${low ? `<span class="low">${esc(t('st.low', { n: low }))}</span>` : esc(t('st.ok'))}</div></div></div>
+      <div class="acts"><button class="btn go" data-a="sview" data-view="receive">${icon.box}${esc(t('st.receive'))}</button><button class="btn sm" data-a="sview" data-view="additem">${esc(t('st.newItem'))}</button></div>${rows}</div>
+      <div class="section-t">${esc(t('st.history'))}</div>
+      <div class="card">${history || `<div class="row sub">${esc(t('st.noHistory'))}</div>`}</div>
+      <p class="sub" style="margin:0 4px">${esc(t('st.tip'))}</p>`;
   }
 
-  const itemOptions = (sel = '') => S.items.filter((i) => i.isActive).map((i) => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(A.itemDisplayName(i))}</option>`).join('');
+  const itemOptions = () => S.items.filter((i) => i.isActive).map((i) => `<option value="${i.id}">${esc(A.itemDisplayName(i))}</option>`).join('');
+  const unitOptions = () => ['kg', 'g', 'l', 'ml', 'pc'].map((u) => `<option value="${u}">${esc(t(`u.${u}`))}</option>`).join('');
 
   function receiveForm() {
     const rows = S.ui.recvRows || 3;
+    const hide = (k, txt) => (k === 0 ? esc(txt) : `<span hidden>${esc(txt)}</span>`);
     const lines = Array.from({ length: rows }, (_, k) => `<div class="three">
-        <label for="rv-item-${k}">${k === 0 ? 'Item' : '<span hidden>Item</span>'}<select id="rv-item-${k}" name="item${k}"><option value="">— chuniye —</option>${itemOptions()}</select></label>
-        <label for="rv-qty-${k}">${k === 0 ? 'Kitna' : '<span hidden>Kitna</span>'}<input id="rv-qty-${k}" name="qty${k}" inputmode="decimal" placeholder="20"></label>
-        <label for="rv-cost-${k}">${k === 0 ? 'Kharid ₹' : '<span hidden>Kharid</span>'}<input id="rv-cost-${k}" name="cost${k}" inputmode="decimal" placeholder="opt."></label></div>`).join('');
-    return `<button class="back" data-a="sview" data-view="list">${icon.back}Stock</button>
-      <div class="card"><div class="c-head"><div><div class="c-title">Maal aaya</div><div class="sub">Kitna aaya likhiye; kharid daam optional hai</div></div></div>
+        <label for="rv-item-${k}">${hide(k, t('rv.item'))}<select id="rv-item-${k}" name="item${k}"><option value="">${esc(t('rv.choose'))}</option>${itemOptions()}</select></label>
+        <label for="rv-qty-${k}">${hide(k, t('rv.qty'))}<input id="rv-qty-${k}" name="qty${k}" inputmode="decimal" placeholder="20"></label>
+        <label for="rv-cost-${k}">${hide(k, t('rv.cost'))}<input id="rv-cost-${k}" name="cost${k}" inputmode="decimal" placeholder="${esc(t('rv.opt'))}"></label></div>`).join('');
+    return `<button class="back" data-a="sview" data-view="list">${icon.back}${esc(t('st.back'))}</button>
+      <div class="card"><div class="c-head"><div><div class="c-title">${esc(t('st.receive'))}</div><div class="sub">${esc(t('rv.sub'))}</div></div></div>
       <form class="form" data-form="receive">
-        <label for="rv-sup">Kahan se (supplier, optional)<input id="rv-sup" name="supplier" maxlength="120" placeholder="Jaise: Gupta Traders"></label>
+        <label for="rv-sup">${esc(t('rv.supplier'))}<input id="rv-sup" name="supplier" maxlength="120" placeholder="${esc(t('rv.supplierPh'))}"></label>
         ${lines}
-        <button class="btn tiny" type="button" data-a="recvmore" style="align-self:flex-start">+ Aur item</button>
+        <button class="btn tiny" type="button" data-a="recvmore" style="align-self:flex-start">${esc(t('rv.more'))}</button>
         <div class="err" id="rv-err"></div>
-        <button class="btn go" type="submit">${icon.box}Stock mein jodo</button>
+        <button class="btn go" type="submit">${icon.box}${esc(t('si.add'))}</button>
       </form></div>`;
   }
 
   function addItemForm() {
-    return `<button class="back" data-a="sview" data-view="list">${icon.back}Stock</button>
-      <div class="card"><div class="c-head"><div class="c-title">Naya item</div></div>
+    return `<button class="back" data-a="sview" data-view="list">${icon.back}${esc(t('st.back'))}</button>
+      <div class="card"><div class="c-head"><div class="c-title">${esc(t('ni.title'))}</div></div>
       <form class="form" data-form="additem">
-        <label for="ni-name">Naam<input id="ni-name" name="name" required maxlength="80" placeholder="Jaise: Cheeni"></label>
-        <div class="two"><label for="ni-size">Size<input id="ni-size" name="size" inputmode="decimal" value="1"></label>
-        <label for="ni-unit">Unit<select id="ni-unit" name="unit"><option value="kg">kg</option><option value="g">gram</option><option value="l">litre</option><option value="ml">ml</option><option value="pc">piece</option></select></label></div>
-        <div class="two"><label for="ni-price">Bechne ka daam ₹<input id="ni-price" name="price" inputmode="decimal" placeholder="45"></label>
-        <label for="ni-stock">Abhi stock<input id="ni-stock" name="stock" inputmode="decimal" value="0"></label></div>
+        <label for="ni-name">${esc(t('cu.name'))}<input id="ni-name" name="name" required maxlength="80" placeholder="${esc(t('ni.namePh'))}"></label>
+        <div class="two"><label for="ni-size">${esc(t('ni.size'))}<input id="ni-size" name="size" inputmode="decimal" value="1"></label>
+        <label for="ni-unit">${esc(t('ni.unit'))}<select id="ni-unit" name="unit">${unitOptions()}</select></label></div>
+        <div class="two"><label for="ni-price">${esc(t('ni.price'))}<input id="ni-price" name="price" inputmode="decimal" placeholder="45"></label>
+        <label for="ni-stock">${esc(t('ni.stock'))}<input id="ni-stock" name="stock" inputmode="decimal" value="0"></label></div>
         <div class="err" id="ni-err"></div>
-        <button class="btn go" type="submit">Item jodo</button>
+        <button class="btn go" type="submit">${esc(t('ni.add'))}</button>
       </form></div>`;
   }
 
   /* ---------- Dukaan tab ---------- */
+  const LANG_NAMES = { hi: 'हिंदी', hinglish: 'Hinglish', en: 'English' };
+  const VOICE_CHOICES = () => [['auto', t('sh.voiceAuto')], ['hi-IN', 'हिंदी (hi-IN)'], ['en-IN', 'English (en-IN)']];
+
   function shopScreen() {
     const s = S.store;
-    const row = (k, v) => `<div class="row"><span class="grow sub">${k}</span><span style="text-align:right">${v}</span></div>`;
+    const row = (k, v) => `<div class="row"><span class="grow sub">${esc(k)}</span><span style="text-align:right">${v}</span></div>`;
+    const seg = (items, current, action) => `<div class="seg">${items.map(([v, label]) => `<button data-a="${action}" data-val="${v}" aria-pressed="${current === v}">${esc(label)}</button>`).join('')}</div>`;
     return `<div class="card"><div class="c-head"><div><div class="c-title">${esc(s.name)}</div><div class="sub">${esc(s.owner)} · ${esc(s.city)}</div></div></div>
-      ${row('Mobile', esc(A.maskPhone(s.phone)))}
-      ${row('PIN code', esc(s.pincode || '—'))}
-      ${row('Udhaar', s.givesCredit ? 'Haan, dete hain' : 'Nahi')}
-      ${row('GST', s.gstin ? `${esc(s.gstin)}<br><span class="sub">${s.gstScheme === 'composition' ? 'Composition' : 'Regular'} · ${esc(s.state || '')}</span>` : s.pan ? `Sirf PAN · ${esc(s.pan)}` : 'Nahi')}
-      ${row('Bhasha', s.language === 'hi' ? 'हिंदी' : 'Hinglish')}
-      ${row('Jawab', s.replyStyle === 'voice_text' ? 'Awaaz + likha hua' : 'Sirf likha hua')}
-      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="togglecredit">${s.givesCredit ? 'Udhaar band karo' : 'Udhaar chalu karo'}</button><button class="btn sm" data-a="togglelang">${s.language === 'hi' ? 'Hinglish mein jawab' : 'हिंदी में जवाब'}</button></div></div>
-      <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">Nayi dukaan setup</div><div class="sub">Onboarding: number, dukaan, GST, bhasha, saamaan</div></div></div>
-      <div class="acts"><button class="btn go" data-a="onboard">Onboarding shuru karo</button></div></div>`;
+      ${row(t('sh.mobile'), esc(A.maskPhone(s.phone)))}
+      ${row(t('sh.pin'), esc(s.pincode || '—'))}
+      ${row(t('sh.credit'), esc(t(s.givesCredit ? 'sh.creditYes' : 'sh.creditNo')))}
+      ${row('GST', s.gstin ? `${esc(s.gstin)}<br><span class="sub">${s.gstScheme === 'composition' ? 'Composition' : 'Regular'} · ${esc(s.state || '')}</span>` : s.pan ? esc(t('sh.panOnly', { pan: s.pan })) : esc(t('sh.gstNone')))}
+      ${row(t('sh.reply'), esc(t(s.replyStyle === 'voice_text' ? 'sh.voiceText' : 'sh.textOnly')))}
+      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="togglecredit">${esc(t(s.givesCredit ? 'sh.creditOff' : 'sh.creditOn'))}</button></div></div>
+      <div class="card"><div class="form">
+        <div><div class="section-t" style="padding:0 0 6px">${esc(t('sh.appLang'))}</div>${seg(Object.entries(LANG_NAMES), s.language, 'setlang')}</div>
+        <div><div class="section-t" style="padding:0 0 6px">${esc(t('sh.voice'))}</div>${seg(VOICE_CHOICES(), S.voice, 'setvoice')}</div>
+      </div></div>
+      <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${esc(t('sh.newShop'))}</div><div class="sub">${esc(t('sh.newShopSub'))}</div></div></div>
+      <div class="acts"><button class="btn go" data-a="onboard">${esc(t('sh.start'))}</button></div></div>`;
   }
 
   /* ---------- onboarding (design screens 4a–4f) ---------- */
   let ONB = null;
-  const STEP_LABELS = ['Number', 'Dukaan', 'GST', 'Bhasha', 'Saamaan'];
+  // Onboarding text follows the language chosen in step 4 (until then, the current app language).
+  const tOnb = (key, vars) => {
+    if (!ONB || !ONB.d.langPicked) return t(key, vars);
+    const saved = S.store.language;
+    S.store.language = ONB.d.language;
+    try { return t(key, vars); } finally { S.store.language = saved; }
+  };
 
   function startOnboarding() {
-    ONB = { step: 0, d: { phone: '', codeSent: null, verified: false, name: '', owner: '', city: '', pincode: '', givesCredit: true, gst: 'later', gstin: '', pan: '', gstScheme: 'regular', language: 'hinglish', replyStyle: 'voice_text', items: [] } };
+    ONB = { step: 0, d: { phone: '', codeSent: null, name: '', owner: '', city: '', pincode: '', givesCredit: true, gst: 'later', gstin: '', pan: '', gstScheme: 'regular', language: LANG(), langPicked: false, replyStyle: 'voice_text', items: [] } };
     renderOnboarding();
   }
 
   function onbShell(body, stepIdx, title) {
-    const steps = STEP_LABELS.map((l, i) => `<span class="step ${i === stepIdx ? 'on' : i < stepIdx ? 'done' : ''}">${i < stepIdx ? '✓ ' : ''}${l}</span>`).join('');
-    return `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="onb-close" aria-label="Close setup">${icon.back}</button><div class="logo" aria-hidden="true">आ</div><div><div class="bar-title">AwaazCRM</div><div class="bar-sub">${esc(title)}</div></div></div>
+    const labels = ['ob.s.number', 'ob.s.shop', 'ob.s.gst', 'ob.s.lang', 'ob.s.items'];
+    const steps = labels.map((l, i) => `<span class="step ${i === stepIdx ? 'on' : i < stepIdx ? 'done' : ''}">${i < stepIdx ? '✓ ' : ''}${esc(tOnb(l))}</span>`).join('');
+    return `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="onb-close" aria-label="${esc(tOnb('ob.close'))}">${icon.back}</button><div class="logo" aria-hidden="true">आ</div><div><div class="bar-title">AwaazCRM</div><div class="bar-sub">${esc(title)}</div></div></div>
       ${stepIdx >= 0 ? `<div class="steps" aria-label="Setup steps">${steps}</div>` : ''}<div class="body">${body}</div>`;
   }
 
-  function renderOnboarding(err = '') {
+  function renderOnboarding(errKey = '') {
     const d = ONB.d;
-    const e = err ? `<div class="err">${esc(err)}</div>` : '';
+    const x = tOnb;
+    const e = errKey ? `<div class="err">${esc(x(errKey))}</div>` : '';
+    const stepTitle = (n) => x('ob.step', { n });
     let html;
     if (ONB.step === 0) {
-      html = onbShell(`<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Aapki dukaan ka bolne wala bahi-khata. Na typing, na lamba form.</div>
-        <div class="card"><div class="form"><div class="feat">${icon.mic}Bol ke bill banao</div><div class="feat">${icon.book}Udhaar apne-aap khate mein</div><div class="feat">${icon.moon}Har raat dukaan ka hisaab</div></div></div>
+      html = onbShell(`<div class="bot plain"><b>${esc(x('ob.hello'))}</b><br>${esc(x('ob.pitch'))}</div>
+        <div class="card"><div class="form"><div class="feat">${icon.mic}${esc(x('ob.f1'))}</div><div class="feat">${icon.book}${esc(x('ob.f2'))}</div><div class="feat">${icon.moon}${esc(x('ob.f3'))}</div></div></div>
         <div class="card"><form class="form" data-form="onb-phone">
-          <label for="ob-phone">Aapka WhatsApp number<input id="ob-phone" name="phone" inputmode="tel" required value="${esc(d.phone)}" placeholder="98765 43210"></label>
-          ${d.codeSent ? `<div class="code-hint">Demo: asli app mein yeh code WhatsApp par aata. Aapka code: <b>${d.codeSent}</b></div>
-          <label for="ob-code">6 ank ka code<input id="ob-code" name="code" inputmode="numeric" maxlength="6" placeholder="••••••"></label>` : ''}
-          ${e}<button class="btn go" type="submit">${d.codeSent ? 'Code check karo' : 'Code bhejo'}</button>
-          <span class="sub">Aage badhne par aap Shartein aur Privacy Policy maante hain. Aapka aur grahakon ka data sirf aapki dukaan ke liye use hoga.</span>
-        </form></div>`, 0, 'Setup · step 1/5');
+          <label for="ob-phone">${esc(x('ob.phone'))}<input id="ob-phone" name="phone" inputmode="tel" required value="${esc(d.phone)}" placeholder="98765 43210"></label>
+          ${d.codeSent ? `<div class="code-hint">${esc(x('ob.codeHint'))} <b>${d.codeSent}</b></div>
+          <label for="ob-code">${esc(x('ob.code'))}<input id="ob-code" name="code" inputmode="numeric" maxlength="6" placeholder="••••••"></label>` : ''}
+          ${e}<button class="btn go" type="submit">${esc(x(d.codeSent ? 'ob.checkCode' : 'ob.sendCode'))}</button>
+          <span class="sub">${esc(x('ob.terms'))}</span>
+        </form></div>`, 0, stepTitle(1));
     } else if (ONB.step === 1) {
-      html = onbShell(`<div class="bot plain">Badhiya! Ab <b>dukaan ka naam, shahar</b> aur <b>aapka naam</b> bataiye.</div>
+      html = onbShell(`<div class="bot plain">${x('ob.shopAsk')}</div>
         <div class="card"><form class="form" data-form="onb-shop">
-          <label for="ob-name">Dukaan ka naam<input id="ob-name" name="name" required maxlength="120" value="${esc(d.name)}" placeholder="Sharma Kirana Store"></label>
-          <label for="ob-owner">Maalik ka naam<input id="ob-owner" name="owner" required maxlength="120" value="${esc(d.owner)}" placeholder="Rajesh Sharma"></label>
-          <div class="two"><label for="ob-city">Shahar<input id="ob-city" name="city" required maxlength="80" value="${esc(d.city)}" placeholder="Sitapur"></label>
-          <label for="ob-pin">PIN code<input id="ob-pin" name="pincode" inputmode="numeric" maxlength="6" value="${esc(d.pincode)}" placeholder="261001"></label></div>
-          <label for="ob-credit">Kya aap udhaar dete hain?<select id="ob-credit" name="credit"><option value="yes" ${d.givesCredit ? 'selected' : ''}>Haan, dete hain</option><option value="no" ${d.givesCredit ? '' : 'selected'}>Nahi</option></select></label>
-          ${e}<button class="btn go" type="submit">Sahi hai, aage</button></form></div>`, 1, 'Setup · step 2/5');
+          <label for="ob-name">${esc(x('ob.shopName'))}<input id="ob-name" name="name" required maxlength="120" value="${esc(d.name)}" placeholder="Sharma Kirana Store"></label>
+          <label for="ob-owner">${esc(x('ob.owner'))}<input id="ob-owner" name="owner" required maxlength="120" value="${esc(d.owner)}" placeholder="Rajesh Sharma"></label>
+          <div class="two"><label for="ob-city">${esc(x('ob.city'))}<input id="ob-city" name="city" required maxlength="80" value="${esc(d.city)}" placeholder="Sitapur"></label>
+          <label for="ob-pin">${esc(x('ob.pin'))}<input id="ob-pin" name="pincode" inputmode="numeric" maxlength="6" value="${esc(d.pincode)}" placeholder="261001"></label></div>
+          <label for="ob-credit">${esc(x('ob.creditQ'))}<select id="ob-credit" name="credit"><option value="yes" ${d.givesCredit ? 'selected' : ''}>${esc(x('sh.creditYes'))}</option><option value="no" ${d.givesCredit ? '' : 'selected'}>${esc(x('sh.creditNo'))}</option></select></label>
+          ${e}<button class="btn go" type="submit">${esc(x('ob.yesNext'))}</button></form></div>`, 1, stepTitle(2));
     } else if (ONB.step === 2) {
       const derived = d.gst === 'gst' && A.isValidGstin(d.gstin) ? `<div class="ok">PAN ${esc(A.panFromGstin(d.gstin))} · ${esc(A.stateFromGstin(d.gstin) || '')}</div>` : '';
-      html = onbShell(`<div class="bot plain">Kya dukaan ka <b>GST number</b> hai? Hai to har bill par chhap jayega.<br><span class="sub">Zaroori nahi · GST nahi hai to sirf PAN bhi chalega</span></div>
+      const mode = (k, label) => `<button type="button" class="opt" data-a="onb-gstmode" data-mode="${k}" style="${d.gst === k ? 'border-color:var(--green);background:#E8F6EE' : ''}">${esc(x(label))}</button>`;
+      html = onbShell(`<div class="bot plain">${x('ob.gstAsk')}<br><span class="sub">${esc(x('ob.gstOptional'))}</span></div>
         <div class="card"><form class="form" data-form="onb-gst">
-          <div class="opts">${[['gst', 'Haan, GST hai'], ['pan', 'Sirf PAN hai'], ['later', 'Baad mein']].map(([k, l]) => `<button type="button" class="opt" data-a="onb-gstmode" data-mode="${k}" style="${d.gst === k ? 'border-color:var(--green);background:#E8F6EE' : ''}">${l}</button>`).join('')}</div>
-          ${d.gst === 'gst' ? `<label for="ob-gstin">GSTIN (15 akshar)<input id="ob-gstin" name="gstin" maxlength="15" style="text-transform:uppercase" value="${esc(d.gstin)}" placeholder="09ABCDE1234F1Z5"></label>${derived}
-            <label for="ob-scheme">GST scheme<select id="ob-scheme" name="scheme"><option value="regular" ${d.gstScheme === 'regular' ? 'selected' : ''}>Regular (tax invoice)</option><option value="composition" ${d.gstScheme === 'composition' ? 'selected' : ''}>Composition (bill of supply)</option></select></label>` : ''}
-          ${d.gst === 'pan' ? `<label for="ob-pan">PAN (10 akshar)<input id="ob-pan" name="pan" maxlength="10" style="text-transform:uppercase" value="${esc(d.pan)}" placeholder="ABCDE1234F"></label>` : ''}
-          ${e}<button class="btn go" type="submit">${d.gst === 'later' ? 'Abhi nahi, aage' : 'Sahi hai, aage'}</button>
-          <span class="sub">Surakshit rakha jayega · sirf aapke bills ke liye</span></form></div>`, 2, 'Setup · step 3/5');
+          <div class="opts">${mode('gst', 'ob.hasGst')}${mode('pan', 'ob.panOnly')}${mode('later', 'ob.later')}</div>
+          ${d.gst === 'gst' ? `<label for="ob-gstin">${esc(x('ob.gstin'))}<input id="ob-gstin" name="gstin" maxlength="15" style="text-transform:uppercase" value="${esc(d.gstin)}"></label>${derived}
+            <label for="ob-scheme">${esc(x('ob.scheme'))}<select id="ob-scheme" name="scheme"><option value="regular" ${d.gstScheme === 'regular' ? 'selected' : ''}>${esc(x('ob.regular'))}</option><option value="composition" ${d.gstScheme === 'composition' ? 'selected' : ''}>${esc(x('ob.composition'))}</option></select></label>` : ''}
+          ${d.gst === 'pan' ? `<label for="ob-pan">${esc(x('ob.pan'))}<input id="ob-pan" name="pan" maxlength="10" style="text-transform:uppercase" value="${esc(d.pan)}" placeholder="ABCDE1234F"></label>` : ''}
+          ${e}<button class="btn go" type="submit">${esc(x(d.gst === 'later' ? 'ob.notNow' : 'ob.yesNext'))}</button>
+          <span class="sub">${esc(x('ob.safe'))}</span></form></div>`, 2, stepTitle(3));
     } else if (ONB.step === 3) {
-      const pick = (field, val, title, sub) => `<button type="button" class="opt" data-a="onb-pick" data-field="${field}" data-val="${val}" style="flex:1;${d[field] === val ? 'border-color:var(--green);background:#E8F6EE' : ''}"><b>${title}</b><br><span class="sub">${sub}</span></button>`;
-      html = onbShell(`<div class="bot plain">Kis bhasha mein baat karein?</div>
-        <div class="card"><div class="form"><div class="opts">${pick('language', 'hi', 'हिंदी', 'Shuddh Hindi mein jawab')}${pick('language', 'hinglish', 'Hinglish', 'Jaise aap bolte hain')}</div>
-        <div class="section-t">Jawab kaise chahiye?</div>
-        <div class="opts">${pick('replyStyle', 'voice_text', 'Awaaz + likha hua', 'Bheed mein bhi sun sakein')}${pick('replyStyle', 'text', 'Sirf likha hua', 'Chupchaap padh lein')}</div>
-        <button class="btn go" data-a="onb-next">Aage badho</button></div></div>`, 3, 'Setup · step 4/5');
+      const pick = (field, val, title, sub) => `<button type="button" class="opt" data-a="onb-pick" data-field="${field}" data-val="${val}" style="flex:1;min-width:96px;${d[field] === val ? 'border-color:var(--green);background:#E8F6EE' : ''}"><b>${esc(title)}</b><br><span class="sub">${esc(x(sub))}</span></button>`;
+      html = onbShell(`<div class="bot plain">${esc(x('ob.langAsk'))}</div>
+        <div class="card"><div class="form"><div class="opts">${pick('language', 'hi', 'हिंदी', 'ob.hiSub')}${pick('language', 'hinglish', 'Hinglish', 'ob.hinglishSub')}${pick('language', 'en', 'English', 'ob.enSub')}</div>
+        <div class="section-t">${esc(x('ob.replyAsk'))}</div>
+        <div class="opts">${pick('replyStyle', 'voice_text', x('sh.voiceText'), 'ob.voiceTextSub')}${pick('replyStyle', 'text', x('sh.textOnly'), 'ob.textSub')}</div>
+        <button class="btn go" data-a="onb-next">${esc(x('ob.next'))}</button></div></div>`, 3, stepTitle(4));
     } else if (ONB.step === 4) {
-      const list = d.items.map((it, k) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${it.stock} ${esc(it.stockLabel)}</span><span class="num">${it.price == null ? '₹ ?' : r(it.price)}</span><button class="btn tiny" data-a="onb-delitem" data-k="${k}" aria-label="Remove ${esc(it.name)}">✕</button></div>`).join('');
-      html = onbShell(`<div class="bot plain">Ab dukaan ka <b>saamaan</b> batao. Daam ya stock galat ho to baad mein badal sakte hain.</div>
-        <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${d.items.length} item</div><div class="sub">Asli app mein: bol ke, shelf ki photo, ya purani list upload</div></div><button class="btn tiny" data-a="onb-sample">Kirana list daalo</button></div>${list}
+      const list = d.items.map((it, k) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${it.stock} ${esc(it.stockLabel)}</span><span class="num">${it.price == null ? '₹ ?' : r(it.price)}</span><button class="btn tiny" data-a="onb-delitem" data-k="${k}" aria-label="${esc(x('remove_x', { name: it.name }))}">✕</button></div>`).join('');
+      html = onbShell(`<div class="bot plain">${x('ob.itemsAsk')}</div>
+        <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${d.items.length} ${esc(x('ob.items'))}</div><div class="sub">${esc(x('ob.itemsSub'))}</div></div><button class="btn tiny" data-a="onb-sample">${esc(x('ob.sample'))}</button></div>${list}
           <form class="form" data-form="onb-item" style="border-top:1px solid var(--line)">
-            <div class="three"><label for="oi-name">Item<input id="oi-name" name="name" required maxlength="80" placeholder="Cheeni"></label>
-            <label for="oi-size">Size<input id="oi-size" name="size" inputmode="decimal" value="1"></label>
-            <label for="oi-unit">Unit<select id="oi-unit" name="unit"><option value="kg">kg</option><option value="g">g</option><option value="l">L</option><option value="ml">ml</option><option value="pc">pc</option></select></label></div>
-            <div class="two"><label for="oi-price">Daam ₹<input id="oi-price" name="price" inputmode="decimal" placeholder="45"></label><label for="oi-stock">Stock<input id="oi-stock" name="stock" inputmode="decimal" value="10"></label></div>
-            <button class="btn sm" type="submit">+ Item jodo</button></form></div>
-        ${e}<button class="btn go" data-a="onb-finish" ${d.items.length ? '' : 'disabled'}>Sab sahi hai, shuru karo</button>`, 4, 'Setup · step 5/5');
+            <div class="three"><label for="oi-name">${esc(x('rv.item'))}<input id="oi-name" name="name" required maxlength="80" placeholder="${esc(x('ni.namePh'))}"></label>
+            <label for="oi-size">${esc(x('ni.size'))}<input id="oi-size" name="size" inputmode="decimal" value="1"></label>
+            <label for="oi-unit">${esc(x('ni.unit'))}<select id="oi-unit" name="unit">${['kg', 'g', 'l', 'ml', 'pc'].map((u) => `<option value="${u}">${esc(x(`u.${u}`))}</option>`).join('')}</select></label></div>
+            <div class="two"><label for="oi-price">${esc(x('ob.price'))}<input id="oi-price" name="price" inputmode="decimal" placeholder="45"></label><label for="oi-stock">${esc(x('ni.stock'))}<input id="oi-stock" name="stock" inputmode="decimal" value="10"></label></div>
+            <button class="btn sm" type="submit">${esc(x('ob.addItem'))}</button></form></div>
+        ${e}<button class="btn go" data-a="onb-finish" ${d.items.length ? '' : 'disabled'}>${esc(x('ob.finish'))}</button>`, 4, stepTitle(5));
     } else {
-      html = onbShell(`<div class="card"><div class="c-head"><div><div class="c-title" style="font-size:24px">Dukaan taiyaar hai!</div><div class="sub">${esc(d.name)} · ${esc(d.city)}</div></div></div>
-        <div class="grid2"><div class="tile"><b>${d.items.length}</b><span class="sub">item</span></div><div class="tile"><b>${d.language === 'hi' ? 'हिंदी' : 'Hinglish'}</b><span class="sub">bhasha</span></div><div class="tile"><b>${d.givesCredit ? 'On' : 'Off'}</b><span class="sub">udhaar khata</span></div><div class="tile"><b>${d.gst === 'gst' ? 'GST' : d.gst === 'pan' ? 'PAN' : '—'}</b><span class="sub">tax</span></div></div></div>
-        <div class="bot plain">Ab pehla bill try karo:<br><i>“Ramesh ko do kilo cheeni, udhaar mein likh do”</i><br><span class="sub">Neeche hara mic dabakar boliye. Naya grahak apne-aap jud jayega.</span></div>
-        <button class="btn go" data-a="onb-done">Pehla bill banao</button>`, -1, d.name);
+      const firstBill = EXAMPLES[d.language][0][0];
+      html = onbShell(`<div class="card"><div class="c-head"><div><div class="c-title" style="font-size:24px">${esc(x('ob.ready'))}</div><div class="sub">${esc(d.name)} · ${esc(d.city)}</div></div></div>
+        <div class="grid2"><div class="tile"><b>${d.items.length}</b><span class="sub">${esc(x('ob.items'))}</span></div><div class="tile"><b>${esc(LANG_NAMES[d.language])}</b><span class="sub">${esc(x('ob.language'))}</span></div><div class="tile"><b>${esc(x(d.givesCredit ? 'ob.on' : 'ob.off'))}</b><span class="sub">${esc(x('ob.creditKhata'))}</span></div><div class="tile"><b>${d.gst === 'gst' ? 'GST' : d.gst === 'pan' ? 'PAN' : '—'}</b><span class="sub">${esc(x('ob.tax'))}</span></div></div></div>
+        <div class="bot plain">${esc(x('ob.tryFirst'))}<br><i>“${esc(firstBill)}”</i><br><span class="sub">${esc(x('ob.tryHint'))}</span></div>
+        <button class="btn go" data-a="onb-done">${esc(x('ob.firstBill'))}</button>`, -1, d.name);
     }
     sheet.innerHTML = html;
     sheet.hidden = false;
     const firstInput = sheet.querySelector('input:not([type=checkbox])');
-    if (firstInput && !err) firstInput.focus({ preventScroll: true });
+    if (firstInput && !errKey) firstInput.focus({ preventScroll: true });
   }
 
   function onbSubmit(form) {
@@ -955,26 +1306,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     const f = form.dataset.form;
     if (f === 'onb-phone') {
       const phone = A.normalizePhone(form.phone.value);
-      if (!phone) return renderOnboarding('Sahi mobile number daaliye (10 ank).');
+      if (!phone) return renderOnboarding('ob.badPhone');
       d.phone = form.phone.value;
       if (!d.codeSent) { d.phoneE164 = phone; d.codeSent = String(Math.floor(100000 + Math.random() * 900000)); return renderOnboarding(); }
-      if (form.code.value.trim() !== d.codeSent) return renderOnboarding('Code galat hai. Upar diya code daaliye.');
-      d.verified = true; ONB.step = 1; return renderOnboarding();
+      if (form.code.value.trim() !== d.codeSent) return renderOnboarding('ob.badCode');
+      ONB.step = 1; return renderOnboarding();
     }
     if (f === 'onb-shop') {
       d.name = form.name.value.trim(); d.owner = form.owner.value.trim(); d.city = form.city.value.trim(); d.pincode = form.pincode.value.trim();
       d.givesCredit = form.credit.value === 'yes';
-      if (d.pincode && !/^[1-9]\d{5}$/.test(d.pincode)) return renderOnboarding('PIN code 6 ank ka hota hai.');
+      if (d.pincode && !/^[1-9]\d{5}$/.test(d.pincode)) return renderOnboarding('ob.badPin');
       ONB.step = 2; return renderOnboarding();
     }
     if (f === 'onb-gst') {
       if (d.gst === 'gst') {
         d.gstin = form.gstin.value.trim().toUpperCase(); d.gstScheme = form.scheme.value;
-        if (!A.isValidGstin(d.gstin)) return renderOnboarding('Yeh GSTIN sahi nahi lag raha. 15 akshar dobara check kijiye.');
+        if (!A.isValidGstin(d.gstin)) return renderOnboarding('ob.badGstin');
       }
       if (d.gst === 'pan') {
         d.pan = form.pan.value.trim().toUpperCase();
-        if (!A.isValidPan(d.pan)) return renderOnboarding('PAN sahi nahi hai (jaise ABCDE1234F).');
+        if (!A.isValidPan(d.pan)) return renderOnboarding('ob.badPan');
       }
       ONB.step = 3; return renderOnboarding();
     }
@@ -1003,18 +1354,36 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   const chatEl = document.getElementById('chat');
   const pane = document.getElementById('pane');
   const sheet = document.getElementById('sheet');
+  const input = document.getElementById('msg');
+
+  function renderChrome() {
+    for (const tab of ['chat', 'customers', 'stock', 'shop']) {
+      const el = document.getElementById(`tab-${tab}`);
+      el.textContent = t(`tab.${tab}`);
+      el.setAttribute('aria-selected', String(tab === S.ui.tab));
+    }
+    input.placeholder = t('placeholder');
+    document.getElementById('hint').textContent = t('listening');
+    document.getElementById('shopname').textContent = S.store.name;
+    document.getElementById('applang').value = LANG();
+    document.documentElement.lang = LANG() === 'en' ? 'en' : LANG() === 'hi' ? 'hi' : 'hi-Latn';
+    const ex = EXAMPLES[LANG()];
+    document.getElementById('try').innerHTML = ex.map(([text, d]) => `<button data-a="try" data-text="${esc(text)}">“${esc(text)}”<span>${esc(d)}</span></button>`).join('');
+    document.getElementById('chips').innerHTML = ex.map(([text, d]) => `<button class="sug" data-a="try" data-text="${esc(text)}" title="${esc(text)}">${esc(d)}</button>`).join('');
+    document.getElementById('try-lang').textContent = `(${LANG_NAMES[LANG()]})`;
+    document.getElementById('panel-lang').innerHTML = Object.entries(LANG_NAMES).map(([v, l]) => `<button data-a="setlang" data-val="${v}" aria-pressed="${LANG() === v}">${esc(l)}</button>`).join('');
+    document.getElementById('panel-voice').innerHTML = [['auto', `Auto (${voiceCode()})`], ['hi-IN', 'हिंदी (hi-IN)'], ['en-IN', 'English (en-IN)']].map(([v, l]) => `<button data-a="setvoice" data-val="${v}" aria-pressed="${S.voice === v}">${esc(l)}</button>`).join('');
+  }
 
   function renderChat(scroll = true) {
-    chatEl.innerHTML = `<div class="day">Aaj</div>` + S.chat.map(msgHtml).join('');
+    chatEl.innerHTML = `<div class="day">${esc(t('today'))}</div>` + S.chat.map(msgHtml).join('');
     if (scroll) chatEl.scrollTop = chatEl.scrollHeight;
   }
 
   function renderScreen(keepScroll = false) {
     const tab = S.ui.tab;
-    for (const t of ['chat', 'customers', 'stock', 'shop']) document.getElementById(`tab-${t}`).setAttribute('aria-selected', String(t === tab));
     document.getElementById('screen-chat').hidden = tab !== 'chat';
     document.getElementById('screen-other').hidden = tab === 'chat';
-    document.getElementById('shopname').textContent = S.store.name;
     if (tab === 'chat') return;
     const y = pane.scrollTop;
     pane.innerHTML = tab === 'customers' ? customersScreen() : tab === 'stock' ? stockScreen() : shopScreen();
@@ -1032,22 +1401,22 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       const changed = lastKhata[c.id] !== undefined && lastKhata[c.id] !== c.balance; lastKhata[c.id] = c.balance;
       return `<tr class="${changed ? 'flash' : ''}"><td>${esc(c.name)}</td><td class="r">${c.balance > 0 ? r(c.balance) : '—'}</td></tr>`;
     }).join('');
-    document.getElementById('khata').innerHTML = `<thead><tr><th>Grahak</th><th class="r">Baaki</th></tr></thead><tbody>${kRows || '<tr><td>Abhi koi grahak nahi</td><td></td></tr>'}</tbody>`;
+    document.getElementById('khata').innerHTML = `<thead><tr><th>Customer</th><th class="r">Due</th></tr></thead><tbody>${kRows || '<tr><td>No customers yet</td><td></td></tr>'}</tbody>`;
   }
 
-  const render = ({ scroll = true, keepScroll = false } = {}) => { renderChat(scroll); renderScreen(keepScroll); renderPanel(); save(); };
+  const render = ({ scroll = true, keepScroll = false } = {}) => { renderChrome(); renderChat(scroll); renderScreen(keepScroll); renderPanel(); syncButton(); save(); };
 
   function openReceipt(billId) {
     const b = S.bills.find((x) => x.id === billId);
     if (!b) return;
     const c = b.customerId ? byId(S.customers, b.customerId) : null;
     const lines = b.lines.map((l) => `<div class="row"><span class="grow">${esc(l.name)}${l.sizeLabel ? ` · ${esc(l.sizeLabel)}` : ''} × ${l.quantity}</span><span class="num">${r(l.amount)}</span></div>`).join('');
-    sheet.innerHTML = `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="close" aria-label="Back">${icon.back}</button><div class="logo" style="background:#F7F5F2;color:var(--ink);font-size:15px">${esc(initials(S.store.name))}</div><div><div class="bar-title">${esc(S.store.name)}</div><div class="bar-sub">Grahak ke phone par</div></div></div>
-      <div class="body"><div class="bot" style="max-width:none"><div class="rc-top"><div class="eyebrow">Rasid · ${esc(b.invoiceNumber)} · ${fmtDay(b.confirmedAt)}</div><div class="c-title">${c ? `Namaste ${esc(c.name)} ji` : 'Rasid'}</div></div>${lines}
-      <div class="total"><span class="lbl">Total</span><span class="amt">${r(b.total)}</span></div>
-      ${b.paidCash + b.paidUpi > 0 && b.credit > 0 ? `<div class="split"><span>Abhi diye</span><span class="num">${r(b.paidCash + b.paidUpi)}</span></div>` : ''}
-      ${b.credit > 0 && c ? `<div class="due"><div><div class="eyebrow" style="color:var(--udhaar-ink)">Udhaar mein likha ${r(b.credit)}</div><div class="sub">Aapka kul baaki</div></div><span class="big" style="font-size:26px">${r(c.balance)}</span></div>` : ''}
-      <div class="sub" style="padding:4px 14px 14px">Dhanyavaad! Kisi galti ke liye dukaan par bataiye.</div></div></div>`;
+    sheet.innerHTML = `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="close" aria-label="Back">${icon.back}</button><div class="logo" style="background:#F7F5F2;color:var(--ink);font-size:15px">${esc(initials(S.store.name))}</div><div><div class="bar-title">${esc(S.store.name)}</div><div class="bar-sub">${esc(t('rc.onPhone'))}</div></div></div>
+      <div class="body"><div class="bot" style="max-width:none"><div class="rc-top"><div class="eyebrow">${esc(t('rc.title'))} · ${esc(b.invoiceNumber)} · ${fmtDay(b.confirmedAt)}</div><div class="c-title">${c ? esc(t('rc.hello', { name: c.name })) : esc(t('rc.title'))}</div></div>${lines}
+      <div class="total"><span class="lbl">${esc(t('rc.total'))}</span><span class="amt">${r(b.total)}</span></div>
+      ${b.paidCash + b.paidUpi > 0 && b.credit > 0 ? `<div class="split"><span>${esc(t('rc.paidNow'))}</span><span class="num">${r(b.paidCash + b.paidUpi)}</span></div>` : ''}
+      ${b.credit > 0 && c ? `<div class="due"><div><div class="eyebrow" style="color:var(--udhaar-ink)">${esc(t('rc.credit', { x: r(b.credit) }))}</div><div class="sub">${esc(t('rc.yourDue'))}</div></div><span class="big" style="font-size:26px">${r(c.balance)}</span></div>` : ''}
+      <div class="sub" style="padding:4px 14px 14px">${esc(t('rc.thanks'))}</div></div></div>`;
     sheet.hidden = false;
     sheet.querySelector('[data-a="close"]').focus();
   }
@@ -1055,48 +1424,33 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   /* ---------- voice (browser speech recognition) ---------- */
   const VOICE_URL = '__VOICE_URL__';
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const input = document.getElementById('msg');
   const sendBtn = document.getElementById('send');
   const hint = document.getElementById('hint');
-  const langBtn = document.getElementById('lang');
-  const LANGS = [{ code: 'hi-IN', label: 'हिंदी' }, { code: 'en-IN', label: 'Hinglish' }];
-  let langIdx = 0;
-  try { langIdx = Number(localStorage.getItem('awaaz-demo-lang')) === 1 ? 1 : 0; } catch { /* ignore */ }
-  const showLang = () => { langBtn.textContent = LANGS[langIdx].label; langBtn.setAttribute('aria-label', `Voice language: ${LANGS[langIdx].label}. Tap to change`); };
-  showLang();
-  langBtn.addEventListener('click', () => {
-    langIdx = 1 - langIdx; showLang();
-    try { localStorage.setItem('awaaz-demo-lang', String(langIdx)); } catch { /* ignore */ }
-  });
+  // Hindi and Hinglish speakers are best served by the Hindi recogniser (Devanagari is transliterated);
+  // English uses the Indian English recogniser. The shopkeeper can override it.
+  const voiceCode = () => (S.voice && S.voice !== 'auto' ? S.voice : LANG() === 'en' ? 'en-IN' : 'hi-IN');
 
   let rec = null;
   let listening = false;
-  const syncButton = () => {
+  function syncButton() {
     const typing = input.value.trim().length > 0;
     document.getElementById('ic-mic').hidden = typing;
     document.getElementById('ic-send').hidden = !typing;
     sendBtn.setAttribute('aria-label', typing ? 'Send' : listening ? 'Stop listening' : 'Speak');
     sendBtn.classList.toggle('listening', listening);
     hint.hidden = !listening;
-  };
+  }
   input.addEventListener('input', syncButton);
 
   function voiceProblem(kind) {
-    const where = VOICE_URL ? ` Voice ke liye demo yahan kholiye: ${VOICE_URL}` : '';
-    const msg = {
-      unsupported: 'Is browser mein bolne wala feature nahi hai. Android/desktop par Chrome, ya iPhone par Safari mein kholiye.' + where,
-      blocked: 'Mic ki permission nahi mili. Browser mein is site ke liye microphone allow kijiye.' + where,
-      network: 'Awaaz pehchanne ke liye internet chahiye. Net check karke phir boliye.',
-      nothing: 'Kuch sunai nahi diya. Mic dabakar phir se boliye.',
-    }[kind];
-    say('bot', 'voice', { text: msg, url: kind === 'unsupported' || kind === 'blocked' ? VOICE_URL : '' });
+    say('bot', 'voice', { key: `v.${kind}`, url: kind === 'unsupported' || kind === 'blocked' ? VOICE_URL : '' });
     render();
   }
 
   function startListening() {
     if (!SR) return voiceProblem('unsupported');
     rec = new SR();
-    rec.lang = LANGS[langIdx].code;
+    rec.lang = voiceCode();
     rec.interimResults = true;
     rec.continuous = false;
     rec.maxAlternatives = 1;
@@ -1105,8 +1459,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     rec.onresult = (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t; else interim += t;
+        const txt = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += txt; else interim += txt;
       }
       input.value = (finalText + interim).trim();
     };
@@ -1131,10 +1485,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (listening) { rec?.stop(); return; }
     if (!text) { startListening(); return; }
     input.value = '';
-    syncButton();
     handle(text);
     render();
   });
+
+  document.getElementById('applang').addEventListener('change', (e) => { S.store.language = e.target.value; render({ scroll: false, keepScroll: true }); });
 
   /* ---------- events ---------- */
   const goTab = (tab, view) => {
@@ -1162,6 +1517,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     switch (a) {
       case 'tab': goTab(b.dataset.tab); break;
       case 'go': goTab(b.dataset.tab, b.dataset.view); break;
+      case 'setlang': S.store.language = b.dataset.val; render({ scroll: false, keepScroll: true }); break;
+      case 'setvoice': S.voice = b.dataset.val; render({ scroll: false, keepScroll: true }); break;
       case 'resolve': {
         const d = S.drafts[b.dataset.bill]; if (!d) return;
         resolveIssue(d, b.dataset.issue, { itemId: b.dataset.item, customerId: b.dataset.customer, newCustomer: b.dataset.new, remove: b.dataset.remove === '1' });
@@ -1199,7 +1556,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         sd.status = 'done';
         const msg = S.chat.find((m) => m.kind === 'stockin' && m.draftId === sd.id); if (msg) msg.done = sd;
         delete S.stockDrafts[sd.id];
-        botText(`Stock mein ${sd.lines.length} item jod diye${sd.supplier ? ` (${sd.supplier})` : ''}.`);
+        botText(t('si.toast', { n: sd.lines.length, sup: sd.supplier ? ` (${sd.supplier})` : '' }));
         render(); break;
       }
       case 'si-cancel': {
@@ -1221,7 +1578,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       case 'remind': {
         const c = byId(S.customers, b.dataset.customer); if (!c) return;
         sendReminder(c);
-        if (ui.tab !== 'chat') { ui.flash = 'Chat (Baat tab) mein reminder ka preview dekhiye.'; render({ scroll: true, keepScroll: true }); } else render();
+        if (ui.tab !== 'chat') { ui.flash = t('cu.remindSeeChat'); render({ scroll: true, keepScroll: true }); } else render();
         break;
       }
       case 'receipt': openReceipt(b.dataset.bill); break;
@@ -1236,25 +1593,25 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       case 'ceditopen': ui.editOpen = !ui.editOpen; ui.payOpen = false; ui.flash = ''; render({ scroll: false, keepScroll: true }); break;
       case 'consent': {
         const c = byId(S.customers, b.dataset.customer); if (!c || !c.phone) return;
-        c.consent = !c.consent; c.consentAt = c.consent ? now().toISOString() : null;
-        ui.flash = c.consent ? 'Sahmati likh li. Ab udhaar rasid aur reminder jaayenge.' : 'Sahmati hata di. Ab message nahi jaayenge.';
+        c.consent = !c.consent;
+        ui.flash = t(c.consent ? 'cu.consentSaved' : 'cu.consentWithdrawn');
         render({ scroll: false, keepScroll: true }); break;
       }
       case 'reverse': {
-        if (reversePayment(b.dataset.entry)) { ui.flash = 'Galat entry hata di. Khata pehle jaisa ho gaya.'; }
+        if (reversePayment(b.dataset.entry)) ui.flash = t('cu.reversed');
         render({ scroll: false, keepScroll: true }); break;
       }
       case 'sview': ui.stockView = b.dataset.view; ui.recvRows = 3; render({ scroll: false }); break;
-      case 'recvmore': ui.recvRows = (ui.recvRows || 3) + 1; {
-        // keep what was typed
+      case 'recvmore': {
         const form = pane.querySelector('[data-form="receive"]');
         const vals = form ? Object.fromEntries(new FormData(form)) : {};
+        ui.recvRows = (ui.recvRows || 3) + 1;
         render({ scroll: false, keepScroll: true });
         const nf = pane.querySelector('[data-form="receive"]');
         for (const [k, v] of Object.entries(vals)) if (nf.elements[k]) nf.elements[k].value = v;
-      } break;
-      case 'togglecredit': S.store.givesCredit = !S.store.givesCredit; render({ scroll: false }); break;
-      case 'togglelang': S.store.language = S.store.language === 'hi' ? 'hinglish' : 'hi'; render({ scroll: false }); break;
+        break;
+      }
+      case 'togglecredit': S.store.givesCredit = !S.store.givesCredit; render({ scroll: false, keepScroll: true }); break;
       case 'onboard': startOnboarding(); if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
       case 'onb-close': sheet.hidden = true; ONB = null; break;
       case 'onb-gstmode': {
@@ -1263,7 +1620,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         if (form?.pan) ONB.d.pan = form.pan.value.trim().toUpperCase();
         ONB.d.gst = b.dataset.mode; renderOnboarding(); break;
       }
-      case 'onb-pick': ONB.d[b.dataset.field] = b.dataset.val; renderOnboarding(); break;
+      case 'onb-pick':
+        ONB.d[b.dataset.field] = b.dataset.val;
+        if (b.dataset.field === 'language') ONB.d.langPicked = true;
+        renderOnboarding(); break;
       case 'onb-next': ONB.step += 1; renderOnboarding(); break;
       case 'onb-sample': {
         // Add the sample list to what was already entered, skipping items that are already there.
@@ -1281,7 +1641,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   document.addEventListener('input', (e) => {
     if (e.target.id === 'csearch') {
       S.ui.search = e.target.value;
-      document.getElementById('clist').innerHTML = customerRows(filtered(S.ui.filter, S.ui.search)) || '<div class="row sub">Koi grahak nahi mila</div>';
+      document.getElementById('clist').innerHTML = customerRows(filtered(S.ui.filter, S.ui.search)) || `<div class="row sub">${esc(t('cu.none'))}</div>`;
     }
     if (e.target.id === 'ob-gstin' && ONB) {
       const v = e.target.value.trim().toUpperCase();
@@ -1312,10 +1672,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       const name = form.name.value.trim();
       const raw = form.phone.value.trim();
       const phone = raw ? A.normalizePhone(raw) : null;
-      if (raw && !phone) { document.getElementById('nc-err').textContent = 'Sahi mobile number daaliye (10 ank).'; return; }
-      if (phone && S.customers.some((c) => c.phone === phone)) { document.getElementById('nc-err').textContent = 'Is number ka grahak pehle se hai.'; return; }
+      if (raw && !phone) { document.getElementById('nc-err').textContent = t('cu.badPhone'); return; }
+      if (phone && S.customers.some((c) => c.phone === phone)) { document.getElementById('nc-err').textContent = t('cu.phoneExists'); return; }
       const c = addCustomer(name, phone, phone && form.consent.checked);
-      ui.custId = c.id; ui.custView = 'detail'; ui.flash = `${c.name} jud gaye.`;
+      ui.custId = c.id; ui.custView = 'detail'; ui.flash = t('cu.added', { name: c.name });
       render({ scroll: false });
       return;
     }
@@ -1323,11 +1683,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       const c = byId(S.customers, form.dataset.customer); if (!c) return;
       const raw = form.phone.value.trim();
       const phone = raw ? A.normalizePhone(raw) : null;
-      if (raw && !phone) { document.getElementById('ec-err').textContent = 'Sahi mobile number daaliye (10 ank).'; return; }
-      if (phone && S.customers.some((x) => x.id !== c.id && x.phone === phone)) { document.getElementById('ec-err').textContent = 'Is number ka grahak pehle se hai.'; return; }
+      if (raw && !phone) { document.getElementById('ec-err').textContent = t('cu.badPhone'); return; }
+      if (phone && S.customers.some((x) => x.id !== c.id && x.phone === phone)) { document.getElementById('ec-err').textContent = t('cu.phoneExists'); return; }
       c.name = form.name.value.trim() || c.name;
-      if (phone !== c.phone) { c.phone = phone; if (!phone) { c.consent = false; c.consentAt = null; } }
-      ui.editOpen = false; ui.flash = 'Details save ho gayi.';
+      if (phone !== c.phone) { c.phone = phone; if (!phone) c.consent = false; }
+      ui.editOpen = false; ui.flash = t('cu.saved');
       render({ scroll: false, keepScroll: true });
       return;
     }
@@ -1339,7 +1699,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         const cost = form.elements[`cost${k}`]?.value;
         if (itemId && qty > 0) lines.push({ itemId, quantity: qty, costPrice: cost ? rupeesToPaise(cost) : null });
       }
-      if (!lines.length) { document.getElementById('rv-err').textContent = 'Kam se kam ek item aur kitna aaya, likhiye.'; return; }
+      if (!lines.length) { document.getElementById('rv-err').textContent = t('rv.err'); return; }
       receiveStock(form.supplier.value.trim(), lines);
       ui.stockView = 'list';
       render({ scroll: false });
@@ -1350,7 +1710,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
       const size = parseFloat(form.size.value) || 1;
       const unit = form.unit.value;
       if (S.items.some((i) => i.isActive && i.name.toLowerCase() === name.toLowerCase() && i.unit === unit && i.unitSize === size)) {
-        document.getElementById('ni-err').textContent = 'Yeh item isi size mein pehle se hai.'; return;
+        document.getElementById('ni-err').textContent = t('ni.exists'); return;
       }
       S.items.push(makeItem(name[0].toUpperCase() + name.slice(1), unit, size, form.price.value === '' ? null : parseFloat(form.price.value), parseFloat(form.stock.value) || 0));
       ui.stockView = 'list';
@@ -1358,26 +1718,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     }
   });
 
-  /* ---------- examples ---------- */
-  const EXAMPLES = [
-    ['Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do', 'Voice bill · asks “Kaunsa size?”'],
-    ['Maal aaya: 20 bag atta, 10 sarson tel 1 litre aur paanch kilo cheeni', 'Inventory in · by voice'],
-    ['Ramesh ka kitna baaki hai?', 'Khata check'],
-    ['Ramesh ne paanch sau rupaye diye UPI se', 'Payment record'],
-    ['Sunita ko do kilo cheeni, 50 abhi diye baaki udhaar', 'Part payment on udhaar'],
-    ['Paanch kilo chawal, ek namak, aur do kilo m…l?', 'Unclear word · best guesses'],
-    ['Grahak list dikhao', 'Customer list'],
-    ['aaj ka hisaab', 'Daily summary'],
-    ['kaunsa stock kam hai', 'Low stock'],
-  ];
-  document.getElementById('try').innerHTML = EXAMPLES.map(([t, d]) => `<button data-a="try" data-text="${esc(t)}">“${esc(t)}”<span>${esc(d)}</span></button>`).join('');
-  document.getElementById('chips').innerHTML = EXAMPLES.map(([t, d]) => `<button class="sug" data-a="try" data-text="${esc(t)}" title="${esc(t)}">${esc(d.split(' · ')[0])}</button>`).join('');
-
   document.getElementById('reset').addEventListener('click', () => {
-    S = seed(); lastStock = {}; lastKhata = {}; sheet.hidden = true; ONB = null; render();
+    S = seed(LANG()); lastStock = {}; lastKhata = {}; sheet.hidden = true; ONB = null; render();
   });
 
-  syncButton();
   render();
 })();
 </script>
