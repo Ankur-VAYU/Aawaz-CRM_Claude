@@ -29,27 +29,36 @@
 html, body { height: 100%; }
 body { background: var(--page); color: var(--ink); font-family: var(--font); font-size: 15px; padding-inline: 16px; padding-block: 24px; }
 button { font-family: inherit; cursor: pointer; color: inherit; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #2E9BD6; outline-offset: 2px; }
+input, select, textarea { font: inherit; color: var(--ink); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #2E9BD6; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-.wrap { max-width: 980px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
 
 /* ---------- phone ---------- */
-.phone { width: 390px; max-width: 100%; height: min(820px, calc(100vh - 48px)); min-height: 560px; border-radius: 32px; overflow: hidden; background: var(--chat); display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(11, 40, 34, .22), 0 0 0 8px #1d2b28; position: relative; }
-.bar { flex-shrink: 0; height: 64px; background: var(--green-dark); color: #F7F5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; }
-.logo { width: 40px; height: 40px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; flex-shrink: 0; }
-.bar-title { font-weight: 700; font-size: 18px; line-height: 1.1; }
-.bar-sub { font-size: 13px; color: var(--header-sub); }
-.demo-tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.16); padding: 4px 8px; border-radius: 999px; }
+.phone { width: 390px; max-width: 100%; height: min(840px, calc(100vh - 48px)); min-height: 580px; border-radius: 32px; overflow: hidden; background: var(--chat); display: flex; flex-direction: column; box-shadow: 0 18px 50px rgba(11, 40, 34, .22), 0 0 0 8px #1d2b28; position: relative; }
+.bar { flex-shrink: 0; height: 60px; background: var(--green-dark); color: #F7F5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; }
+.logo { width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 21px; flex-shrink: 0; }
+.bar-title { font-weight: 700; font-size: 17px; line-height: 1.1; }
+.bar-sub { font-size: 12.5px; color: var(--header-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.lang { margin-left: auto; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #F7F5F2; font-size: 13px; font-weight: 700; padding: 0 10px; }
+.demo-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.16); padding: 4px 7px; border-radius: 999px; }
+.tabs { flex-shrink: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--green-dark); }
+.tab { height: 42px; border: 0; background: transparent; color: #CFE9E2; font-size: 13px; font-weight: 700; letter-spacing: .03em; border-bottom: 3px solid transparent; }
+.tab[aria-selected="true"] { color: #fff; border-bottom-color: #fff; }
 
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .chat { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
 .chat > * { flex-shrink: 0; }
+.pane { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.pane > * { flex-shrink: 0; }
 .day { align-self: center; background: var(--chip); color: var(--ink-soft); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
 .me { align-self: flex-end; max-width: 300px; background: var(--mine); border-radius: 14px 4px 14px 14px; padding: 8px 12px; font-size: 15px; line-height: 1.35; }
 .me .said { font-style: italic; color: var(--ink-soft); }
 .time { font-size: 11px; color: var(--muted); text-align: right; margin-top: 2px; }
 .bot { align-self: flex-start; width: 100%; max-width: 330px; background: var(--card); border-radius: 4px 14px 14px 14px; box-shadow: 0 1px 2px rgba(11,20,26,.13); overflow: hidden; }
 .bot.plain { padding: 10px 14px; font-size: 15px; line-height: 1.4; width: auto; }
+.card { background: var(--card); border-radius: 14px; box-shadow: 0 1px 2px rgba(11,20,26,.13); overflow: hidden; }
 .wa { align-self: flex-start; max-width: 330px; background: #F0FAF4; border: 1px dashed #9CC9AE; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; color: var(--ink-soft); }
 .wa b { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--green); margin-bottom: 4px; white-space: normal; }
 
@@ -59,9 +68,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .pill { font-weight: 700; font-size: 12px; letter-spacing: .04em; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 .pill.udhaar { background: var(--udhaar-bg); color: var(--udhaar-ink); }
 .pill.cash { background: #DDF3E4; color: #0E6B38; }
+.pill.grey { background: var(--chip); color: var(--ink-soft); }
 .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 15px; }
 .row .grow { flex: 1; min-width: 0; }
-.qty { min-width: 52px; text-align: center; padding: 3px 6px; border-radius: 8px; background: var(--line); font-weight: 700; font-size: 13px; }
+.qty { min-width: 46px; text-align: center; padding: 3px 6px; border-radius: 8px; background: var(--line); font-weight: 700; font-size: 13px; }
 .num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 .ask { padding: 10px 14px 12px; border-top: 1px solid var(--line); background: var(--ask-bg); display: flex; flex-direction: column; gap: 8px; }
 .ask-q { font-size: 13px; color: var(--udhaar-ink); font-weight: 600; }
@@ -74,11 +84,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .total .lbl { font-size: 14px; color: var(--muted); font-weight: 600; }
 .total .amt { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 .split { padding: 0 14px 8px; font-size: 13px; color: var(--ink-soft); display: flex; justify-content: space-between; }
-.acts { padding: 4px 10px 10px; display: flex; gap: 8px; }
-.btn { white-space: nowrap; height: 50px; border-radius: 14px; border: 2px solid var(--border); background: var(--card); font-size: 15px; font-weight: 600; padding: 0 14px; }
+.acts { padding: 4px 10px 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { white-space: nowrap; height: 48px; border-radius: 14px; border: 2px solid var(--border); background: var(--card); font-size: 15px; font-weight: 600; padding: 0 14px; }
 .btn.go { flex: 1; border: 0; background: var(--green); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn.go:disabled { background: #A7C4B3; cursor: not-allowed; }
 .btn.sm { height: 44px; font-size: 14px; flex: 1; }
+.btn.tiny { height: 34px; font-size: 13px; border-radius: 10px; padding: 0 10px; border-width: 1px; }
 .done { margin: 0 10px 10px; height: 42px; border-radius: 12px; background: var(--mine); color: var(--green); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; }
 .fx { padding: 6px 14px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
 .fx div { display: flex; gap: 10px; align-items: center; }
@@ -90,6 +101,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .cust { width: 100%; min-height: 56px; border: 0; border-top: 1px solid var(--line); background: var(--card); display: flex; align-items: center; gap: 12px; padding: 8px 14px; text-align: left; }
 .av { width: 38px; height: 38px; border-radius: 50%; background: var(--green-dark); color: #F7F5F2; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
 .av.light { background: var(--chip); color: var(--ink); }
+.av.big { width: 54px; height: 54px; font-size: 19px; }
 .sub { font-size: 13px; color: var(--muted); }
 .filters { display: flex; gap: 6px; padding: 0 12px 10px; flex-wrap: wrap; }
 .fchip { height: 36px; padding: 0 12px; border-radius: 18px; border: 2px solid var(--border); background: var(--card); font-size: 13px; font-weight: 600; }
@@ -97,34 +109,54 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px 14px 12px; }
 .tile { background: #F7F5F2; border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; }
 .tile b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.form { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.form input, .form select, .form textarea { height: 46px; border-radius: 12px; border: 2px solid var(--border); padding: 0 12px; font-size: 16px; background: var(--card); min-width: 0; width: 100%; }
+.form textarea { height: auto; padding: 10px 12px; }
+.form .check { flex-direction: row; align-items: center; gap: 10px; font-weight: 500; color: var(--ink); }
+.form .check input { width: 22px; height: 22px; flex-shrink: 0; }
+.form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form .three { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 6px; align-items: end; }
 .payform { display: flex; gap: 8px; padding: 0 10px 10px; flex-wrap: wrap; }
-.payform input, .payform select { height: 44px; border-radius: 12px; border: 2px solid var(--border); padding: 0 10px; font: inherit; font-size: 15px; min-width: 0; }
+.payform input, .payform select { height: 44px; border-radius: 12px; border: 2px solid var(--border); padding: 0 10px; font-size: 15px; min-width: 0; }
 .payform input { flex: 1; }
 .err { color: var(--danger); font-size: 13px; font-weight: 600; padding: 0 14px 10px; }
+.form .err { padding: 0; }
+.ok { color: var(--green); font-size: 13px; font-weight: 600; }
+.search { height: 44px; border-radius: 22px; border: 0; padding: 0 16px; background: var(--card); box-shadow: 0 1px 1px rgba(11,20,26,.1); width: 100%; font-size: 15px; }
+.back { display: flex; align-items: center; gap: 6px; border: 0; background: transparent; font-weight: 700; color: var(--green-dark); font-size: 15px; height: 40px; padding: 0 4px; align-self: flex-start; }
+.section-t { font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 4px 4px 0; }
+.strike { text-decoration: line-through; color: var(--muted); }
 
 .chips { flex-shrink: 0; display: flex; gap: 6px; overflow-x: auto; padding: 6px 8px 2px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .sug { flex-shrink: 0; height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid #C9D7CF; background: rgba(255,255,255,.85); font-size: 13px; color: var(--ink); }
+.listen-hint { flex-shrink: 0; text-align: center; font-size: 13px; font-weight: 600; color: #C62828; padding: 4px 0 0; }
 .composer { flex-shrink: 0; padding: 8px 8px 12px; display: flex; gap: 6px; align-items: center; }
 .field { flex: 1; min-width: 0; height: 50px; border-radius: 25px; background: var(--card); display: flex; align-items: center; padding: 0 6px 0 16px; box-shadow: 0 1px 1px rgba(11,20,26,.1); }
-.field input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 16px; color: var(--ink); height: 44px; }
+.field input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 16px; height: 44px; }
 .field input:focus { outline: none; }
 .field:focus-within { outline: 3px solid #2E9BD6; outline-offset: 1px; }
+.send { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .send.listening { background: #C62828; animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(198,40,40,.45); } 50% { box-shadow: 0 0 0 10px rgba(198,40,40,0); } }
-.lang { margin-left: auto; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: #F7F5F2; font-size: 13px; font-weight: 700; padding: 0 10px; }
-.listen-hint { flex-shrink: 0; text-align: center; font-size: 13px; font-weight: 600; color: #C62828; padding: 4px 0 0; }
-.send { width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-/* receipt sheet (customer's view) */
+/* full-screen sheets inside the phone: receipt, onboarding */
 .sheet { position: absolute; inset: 0; background: var(--chat); display: flex; flex-direction: column; z-index: 5; }
-.sheet .bar { background: var(--green-dark); }
-.sheet .body { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 10px; }
+.sheet .body { flex: 1; overflow-y: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.sheet .body > * { flex-shrink: 0; }
 .rc-top { padding: 16px 14px 10px; text-align: center; border-bottom: 2px dashed var(--chip); }
 .rc-top .c-title { margin-top: 4px; }
+.steps { flex-shrink: 0; display: flex; gap: 4px; padding: 8px 10px; background: var(--green-dark); }
+.step { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; color: #9FD3C5; padding: 5px 0; border-radius: 8px; background: rgba(255,255,255,.08); }
+.step.on { background: #fff; color: var(--green-dark); }
+.step.done { color: #fff; }
+.code-hint { background: #F0FAF4; border: 1px dashed #9CC9AE; border-radius: 10px; padding: 8px 10px; font-size: 13px; color: var(--ink-soft); }
+.feat { display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.feat svg { flex-shrink: 0; color: var(--green-dark); }
 
 /* ---------- side panel ---------- */
-.panel { flex: 1; min-width: 280px; max-width: 520px; display: flex; flex-direction: column; gap: 18px; }
+.panel { flex: 1; min-width: 280px; max-width: 540px; display: flex; flex-direction: column; gap: 18px; }
 .panel h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
 .lead { margin: 0; color: var(--ink-soft); line-height: 1.55; max-width: 62ch; }
 .box { background: #F6F8F7; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -132,6 +164,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .try { display: flex; flex-direction: column; gap: 6px; }
 .try button { text-align: left; border: 1px solid #CFDAD4; background: var(--card); border-radius: 10px; padding: 8px 12px; font-size: 14px; line-height: 1.35; min-height: 44px; }
 .try button span { display: block; font-size: 12px; color: var(--muted); }
+.feats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.feats button { text-align: left; border: 1px solid #CFDAD4; background: var(--card); border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 700; min-height: 52px; }
+.feats button span { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
 .tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tbl td, .tbl th { padding: 6px 4px; border-bottom: 1px solid #E2E8E5; text-align: left; }
 .tbl th { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -143,42 +178,64 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .reset { align-self: flex-start; height: 40px; border-radius: 10px; border: 1px solid #C3CFC9; background: var(--card); padding: 0 14px; font-size: 14px; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 760px) {
-  .phone { height: 78vh; min-height: 520px; }
+  .phone { height: 80vh; min-height: 540px; }
   .panel { max-width: 100%; }
 }
-@media (max-width: 520px) { .cols { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .cols, .feats { grid-template-columns: 1fr; } }
 </style>
 
 <div class="wrap">
   <section class="phone" aria-label="AwaazCRM app">
     <div class="bar">
       <div class="logo" aria-hidden="true">आ</div>
-      <div><div class="bar-title">AwaazCRM</div><div class="bar-sub">Sharma Kirana Store</div></div>
+      <div style="min-width:0"><div class="bar-title">AwaazCRM</div><div class="bar-sub" id="shopname">Sharma Kirana Store</div></div>
       <button class="lang" id="lang" type="button" aria-label="Voice language">हिंदी</button>
       <span class="demo-tag">Demo</span>
     </div>
-    <div class="chat" id="chat" aria-live="polite"></div>
-    <div class="listen-hint" id="hint" hidden>Sun raha hoon… boliye</div>
-    <div class="chips" id="chips" aria-label="Example commands"></div>
-    <form class="composer" id="composer" autocomplete="off">
-      <label class="field" for="msg">
-        <input id="msg" name="msg" placeholder="Bolo ya likho…" aria-label="Type a command">
-      </label>
-      <button class="send" id="send" type="submit" aria-label="Speak">
-        <svg id="ic-mic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>
-        <svg id="ic-send" hidden width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
-      </button>
-    </form>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-a="tab" data-tab="chat" id="tab-chat">Baat</button>
+      <button class="tab" role="tab" data-a="tab" data-tab="customers" id="tab-customers">Grahak</button>
+      <button class="tab" role="tab" data-a="tab" data-tab="stock" id="tab-stock">Stock</button>
+      <button class="tab" role="tab" data-a="tab" data-tab="shop" id="tab-shop">Dukaan</button>
+    </div>
+
+    <div class="screen" id="screen-chat">
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <div class="listen-hint" id="hint" hidden>Sun raha hoon… boliye</div>
+      <div class="chips" id="chips" aria-label="Example commands"></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <label class="field" for="msg">
+          <input id="msg" name="msg" placeholder="Bolo ya likho…" aria-label="Type a command">
+        </label>
+        <button class="send" id="send" type="submit" aria-label="Speak">
+          <svg id="ic-mic" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>
+          <svg id="ic-send" hidden width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+        </button>
+      </form>
+    </div>
+    <div class="screen" id="screen-other" hidden>
+      <div class="pane" id="pane"></div>
+    </div>
+
     <div class="sheet" id="sheet" hidden></div>
   </section>
 
   <aside class="panel">
-    <div>
-      <h1>AwaazCRM demo</h1>
-    </div>
-    <p class="lead">Tap the green mic and speak, or type what a shopkeeper would say. The bill parsing and item matching are the same code as the backend; everything runs in your browser on sample data for Sharma Kirana Store.</p>
+    <h1>AwaazCRM demo</h1>
+    <p class="lead">Tap the green mic and speak, or type what a shopkeeper would say. The tabs on the phone show the other screens. Parsing, item matching and replies use the same code as the backend; everything runs in your browser.</p>
     <div class="box">
-      <h2>Try these</h2>
+      <h2>Open a function</h2>
+      <div class="feats">
+        <button data-a="onboard">Onboarding<span>New shop setup, step by step</span></button>
+        <button data-a="go" data-tab="stock" data-view="receive">Inventory in<span>“Maal aaya” form and history</span></button>
+        <button data-a="go" data-tab="customers" data-view="detail">Customer details<span>Profile, consent, totals</span></button>
+        <button data-a="go" data-tab="customers" data-view="alltx">Khata / transactions<span>Every bill and payment</span></button>
+        <button data-a="go" data-tab="customers" data-view="pay">Payment record<span>“Paisa mila”, undo a wrong entry</span></button>
+        <button data-a="go" data-tab="chat">Voice billing<span>Speak a bill in the chat</span></button>
+      </div>
+    </div>
+    <div class="box">
+      <h2>Try saying</h2>
       <div class="try" id="try"></div>
     </div>
     <div class="cols">
@@ -191,7 +248,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
         <table class="tbl" id="khata"></table>
       </div>
     </div>
-    <p class="note">Voice uses your browser's own speech recognition (Chrome on Android or desktop, Safari on iPhone) and needs internet. Choose हिंदी or Hinglish at the top of the phone. WhatsApp messages are shown as previews; nothing is sent. Your changes stay in this browser only.</p>
+    <p class="note">Voice uses your browser's own speech recognition (Chrome on Android or desktop, Safari on iPhone) and needs internet. Choose हिंदी or Hinglish at the top of the phone. WhatsApp messages and the login code are shown as previews; nothing is sent. GST invoices are built in the backend but not shown in this demo. Your changes stay in this browser only.</p>
     <button class="reset" id="reset" type="button">Start over with sample data</button>
   </aside>
 </div>
@@ -200,8 +257,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 <script>
 (() => {
   const A = window.Aawaz;
-  const LANG = 'hinglish';
-  const STORE = { name: 'Sharma Kirana Store' };
   const r = (p) => A.formatRupees(p);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
@@ -212,61 +267,82 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   const fmtDay = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
   const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
   const first = (n) => n.split(' ')[0];
+  const rupeesToPaise = (v) => Math.round(parseFloat(String(v).replace(/[,₹\s]/g, '')) * 100);
 
   /* ---------- sample data (from the design) ---------- */
+  const SAMPLE_ITEMS = [
+    ['Atta', 'kg', 5, 245, 24, 'bag'],
+    ['Toor dal', 'kg', 1, 160, 12, 'pc'],
+    ['Sarson tel', 'l', 1, 170, 10, 'pc'],
+    ['Sarson tel', 'ml', 500, 90, 10, 'pc'],
+    ['Moong dal', 'kg', 1, 130, 20, 'pc'],
+    ['Maida', 'kg', 1, 45, 20, 'pc'],
+    ['Chawal', 'kg', 1, 60, 50, 'pc'],
+    ['Namak', 'pc', 1, 25, 30, 'pc'],
+    ['Cheeni', 'kg', 1, 45, 3, 'pc'],
+  ];
+  const makeItem = (name, unit, unitSize, rupees, stock, stockLabel = 'pc') => ({
+    id: uid(), name, unit, unitSize: Number(unitSize), price: rupees == null || rupees === '' ? null : Math.round(Number(rupees) * 100),
+    stock: Number(stock) || 0, stockLabel, lowStockThreshold: 5, aliases: name === 'Sarson tel' ? ['mustard oil'] : [], isActive: true,
+  });
+  const makeCustomer = (name, phone, consent, daysSincePurchase = null, createdDaysAgo = 0) => ({
+    id: uid(), name, phone: phone || null, consent: Boolean(consent), consentAt: consent ? now().toISOString() : null,
+    balance: 0, totalPurchases: 0, totalPaid: 0,
+    lastPurchaseAt: daysSincePurchase === null ? null : new Date(Date.now() - daysSincePurchase * DAY).toISOString(),
+    createdAt: new Date(Date.now() - createdDaysAgo * DAY).toISOString(),
+  });
+
+  function baseState(store, items, customers) {
+    return {
+      v: 2, store, items, customers, ledger: [], bills: [], receipts: [], counter: 0, counterFy: null, drafts: {}, stockDrafts: {},
+      chat: [{ id: uid(), from: 'bot', kind: 'welcome', at: now().toISOString() }],
+      ui: { tab: 'chat', custView: 'list', custId: null, filter: 'all', search: '', stockView: 'list' },
+    };
+  }
+
   function seed() {
-    const t = Date.now();
-    const iso = (daysAgo) => new Date(t - daysAgo * DAY).toISOString();
-    const item = (name, unit, unitSize, rupees, stock, extra = {}) => ({
-      id: uid(), name, unit, unitSize, price: rupees * 100, stock, stockLabel: 'pc', lowStockThreshold: 5, aliases: [], isActive: true, ...extra,
-    });
-    const items = [
-      item('Atta', 'kg', 5, 245, 24, { stockLabel: 'bag' }),
-      item('Toor dal', 'kg', 1, 160, 12),
-      item('Sarson tel', 'l', 1, 170, 10, { aliases: ['mustard oil'] }),
-      item('Sarson tel', 'ml', 500, 90, 10),
-      item('Moong dal', 'kg', 1, 130, 20),
-      item('Maida', 'kg', 1, 45, 20),
-      item('Chawal', 'kg', 1, 60, 50),
-      item('Namak', 'pc', 1, 25, 30),
-      item('Cheeni', 'kg', 1, 45, 3),
-    ];
-    const cust = (name, phone, daysSincePurchase, consent = true) => ({
-      id: uid(), name, phone, consent, balance: 0, totalPurchases: 0, totalPaid: 0,
-      lastPurchaseAt: daysSincePurchase === null ? null : iso(daysSincePurchase), createdAt: iso(40),
-    });
+    const store = {
+      name: 'Sharma Kirana Store', owner: 'Rajesh Sharma', city: 'Sitapur', state: 'Uttar Pradesh', pincode: '261001',
+      phone: '+919876543450', givesCredit: true, gstin: null, pan: null, gstScheme: null, language: 'hinglish', replyStyle: 'voice_text',
+    };
+    const items = SAMPLE_ITEMS.map((x) => makeItem(...x));
     const customers = [
-      cust('Ramesh Yadav', '+919812345321', 2),
-      cust('Sunita Devi', '+919812345322', 2),
-      cust('Mohd. Irfan', null, 1),
-      cust('Kavita Sharma', null, 0),
-      cust('Pappu Singh', null, 21),
+      makeCustomer('Ramesh Yadav', '+919812345321', true, 2, 40),
+      makeCustomer('Sunita Devi', '+919812345322', true, 2, 40),
+      makeCustomer('Mohd. Irfan', null, false, 1, 30),
+      makeCustomer('Kavita Sharma', '+919812345324', false, 0, 30),
+      makeCustomer('Pappu Singh', null, false, 21, 60),
     ];
-    const s = { items, customers, ledger: [], bills: [], counter: 0, drafts: {}, chat: [] };
-    // Opening khata history, as on the "Khata" design screen.
+    const s = baseState(store, items, customers);
     const [ramesh, sunita, irfan] = customers;
-    const old = (c, daysAgo, type, amount, label) => {
+    const old = (c, daysAgo, type, amount, label, method) => {
       c.balance += amount;
       if (type === 'bill') c.totalPurchases += amount; else c.totalPaid -= amount;
-      s.ledger.push({ id: uid(), customerId: c.id, type, amount, balanceAfter: c.balance, label, at: iso(daysAgo) });
+      s.ledger.push({ id: uid(), customerId: c.id, type, amount, balanceAfter: c.balance, label, method, at: new Date(Date.now() - daysAgo * DAY).toISOString() });
     };
     old(ramesh, 13, 'bill', 112000, 'Bill #0118 · 4 item');
     old(ramesh, 7, 'bill', 62000, 'Bill #0131 · 5 item');
-    old(ramesh, 3, 'payment', -50000, 'Jama kiya · UPI');
+    old(ramesh, 3, 'payment', -50000, 'Jama kiya · UPI', 'upi');
     old(sunita, 5, 'bill', 145000, 'Bill #0127 · 6 item');
     old(irfan, 1, 'bill', 62000, 'Bill #0139 · 3 item');
-    s.chat.push({ id: uid(), from: 'bot', kind: 'welcome', at: now().toISOString() });
+    s.receipts.push({
+      id: uid(), supplier: 'Gupta Traders', at: new Date(Date.now() - 4 * DAY).toISOString(), totalCost: 528000,
+      lines: [{ itemId: items[0].id, name: 'Atta 5 kg', quantity: 20, costPrice: 22000 }, { itemId: items[6].id, name: 'Chawal 1 kg', quantity: 20, costPrice: 4400 }],
+    });
     return s;
   }
 
-  const KEY = 'awaaz-demo-v1';
+  const KEY = 'awaaz-demo-v2';
   let S;
   try { S = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { S = null; }
-  if (!S || !S.items) S = seed();
+  if (!S || S.v !== 2) S = seed();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage unavailable */ } };
+  const LANG = () => S.store.language;
+  const say_ = (key, vars) => A.reply(LANG(), key, vars);
 
   const byId = (list, id) => list.find((x) => x.id === id);
   const activeItems = () => S.items.filter((i) => i.isActive);
+  const canMessage = (c) => Boolean(c.phone && c.consent);
 
   /* ---------- business logic (mirrors the backend services) ---------- */
   function resolveCustomer(spoken) {
@@ -305,6 +381,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     return d;
   }
 
+  function addCustomer(name, phone, consent) {
+    const c = makeCustomer(name, phone, consent);
+    S.customers.push(c);
+    return c;
+  }
+
   function resolveIssue(d, issueId, choice) {
     const issue = d.issues.find((i) => i.id === issueId);
     if (!issue) return;
@@ -313,11 +395,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     } else if (choice.customerId) {
       d.customerId = choice.customerId;
     } else if (choice.newCustomer) {
-      const c = { id: uid(), name: choice.newCustomer, phone: null, consent: false, balance: 0, totalPurchases: 0, totalPaid: 0, lastPurchaseAt: null, createdAt: now().toISOString() };
-      S.customers.push(c);
-      d.customerId = c.id;
+      d.customerId = addCustomer(choice.newCustomer, null, false).id;
     } else if (choice.itemId) {
       const item = byId(S.items, choice.itemId);
+      if (item.price == null) return;
       const opt = issue.options.find((o) => o.itemId === choice.itemId);
       d.lines.push(lineFromItem(item, opt?.quantity ?? issue.quantity ?? 1));
     }
@@ -332,6 +413,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     if (d.paymentMode === 'cash') paidCash = total;
     else if (d.paymentMode === 'upi') paidUpi = total;
     else {
+      if (!S.store.givesCredit) return { error: 'Is dukaan mein udhaar band hai (Dukaan tab mein badlein).' };
       if (!d.customerId) return { error: 'Udhaar bill ke liye grahak chahiye.' };
       const up = d.upfront?.amount || 0;
       if (up >= total) return { error: 'Jitna diya utna poora bill hai. Cash ya UPI chuniye.' };
@@ -341,12 +423,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     const fy = A.financialYear(localDate());
     if (S.counterFy !== fy) { S.counterFy = fy; S.counter = 0; }
     S.counter += 1;
-    d.invoiceNumber = A.invoiceNumber(fy, S.counter);
-    d.status = 'confirmed';
-    d.confirmedAt = now().toISOString();
-    d.total = total; d.paidCash = paidCash; d.paidUpi = paidUpi; d.credit = credit;
+    Object.assign(d, { invoiceNumber: A.invoiceNumber(fy, S.counter), status: 'confirmed', confirmedAt: now().toISOString(), total, paidCash, paidUpi, credit });
     for (const l of d.lines) { const it = byId(S.items, l.itemId); if (it) it.stock = Math.round((it.stock - l.quantity) * 1000) / 1000; }
-    const fx = [A.reply(LANG, 'stockReduced', { n: d.lines.length })];
+    const fx = [say_('stockReduced', { n: d.lines.length })];
     let receipt = null;
     const c = d.customerId ? byId(S.customers, d.customerId) : null;
     if (c) {
@@ -356,16 +435,15 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
       if (credit > 0) {
         const before = c.balance;
         c.balance += credit;
-        S.ledger.push({ id: uid(), customerId: c.id, type: 'bill', amount: credit, balanceAfter: c.balance, label: `Bill ${d.invoiceNumber} · ${d.lines.length} item`, at: d.confirmedAt });
-        fx.push(A.reply(LANG, 'khataChanged', { name: first(c.name), before, after: c.balance }));
-        // Receipts are sent for udhaar bills only, and only with consent.
-        if (c.phone && c.consent) {
+        S.ledger.push({ id: uid(), customerId: c.id, type: 'bill', amount: credit, balanceAfter: c.balance, label: `Bill ${d.invoiceNumber} · ${d.lines.length} item`, at: d.confirmedAt, billId: d.id });
+        fx.push(say_('khataChanged', { name: first(c.name), before, after: c.balance }));
+        if (canMessage(c)) {
           receipt = A.receiptMessage({
-            storeName: STORE.name, customerName: c.name, invoiceNumber: d.invoiceNumber,
+            storeName: S.store.name, customerName: c.name, invoiceNumber: d.invoiceNumber,
             lines: d.lines.map((l) => ({ name: l.name, sizeLabel: l.sizeLabel, quantity: l.quantity, amount: l.amount })),
             total, paidNow: paidCash + paidUpi, credit, balance: c.balance, link: `aawaz.app/r/${d.id.slice(0, 8)}`,
           });
-          fx.push(A.reply(LANG, 'receiptSent', { name: first(c.name) }));
+          fx.push(say_('receiptSent', { name: first(c.name) }));
         } else {
           fx.push(c.phone ? `${first(c.name)} ki WhatsApp sahmati nahi hai, receipt nahi bheji` : `${first(c.name)} ka number nahi hai, receipt nahi bheji`);
         }
@@ -376,17 +454,43 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     return { fx, receipt };
   }
 
-  function recordPayment(c, paise, method) {
+  function recordPayment(c, paise, method, note) {
     c.balance -= paise;
     c.totalPaid += paise;
-    S.ledger.push({ id: uid(), customerId: c.id, type: 'payment', amount: -paise, balanceAfter: c.balance, label: `Jama kiya · ${method.toUpperCase()}`, at: now().toISOString() });
+    const e = { id: uid(), customerId: c.id, type: 'payment', amount: -paise, balanceAfter: c.balance, label: `Jama kiya · ${method.toUpperCase()}${note ? ` · ${note}` : ''}`, method, at: now().toISOString() };
+    S.ledger.push(e);
+    return e;
+  }
+
+  function reversePayment(entryId) {
+    const e = byId(S.ledger, entryId);
+    if (!e || e.type !== 'payment' || S.ledger.some((x) => x.reversesId === entryId)) return false;
+    const c = byId(S.customers, e.customerId);
+    c.balance += -e.amount;
+    c.totalPaid -= -e.amount;
+    S.ledger.push({ id: uid(), customerId: c.id, type: 'payment_reversed', amount: -e.amount, balanceAfter: c.balance, label: 'Galat entry hataayi', at: now().toISOString(), reversesId: e.id });
+    return true;
+  }
+
+  function receiveStock(supplier, lines) {
+    const rec = { id: uid(), supplier: supplier || null, at: now().toISOString(), totalCost: 0, lines: [] };
+    for (const l of lines) {
+      const it = byId(S.items, l.itemId);
+      if (!it || !(l.quantity > 0)) continue;
+      it.stock = Math.round((it.stock + l.quantity) * 1000) / 1000;
+      it.isActive = true;
+      rec.lines.push({ itemId: it.id, name: A.itemDisplayName(it), quantity: l.quantity, costPrice: l.costPrice ?? null });
+      if (l.costPrice != null) rec.totalCost += Math.round(l.costPrice * l.quantity);
+    }
+    if (rec.lines.length) S.receipts.unshift(rec);
+    return rec;
   }
 
   function summary() {
     const today = localDate();
-    const bills = S.bills.filter((b) => localDate(new Date(b.confirmedAt)) === today);
+    const bills = S.bills.filter((b) => b.status === 'confirmed' && localDate(new Date(b.confirmedAt)) === today);
     const sum = (f) => bills.reduce((t, b) => t + f(b), 0);
-    const repaid = S.ledger.filter((e) => e.type === 'payment' && localDate(new Date(e.at)) === today).reduce((t, e) => t - e.amount, 0);
+    const repaid = S.ledger.filter((e) => (e.type === 'payment' || e.type === 'payment_reversed') && localDate(new Date(e.at)) === today).reduce((t, e) => t - e.amount, 0);
     return {
       total: sum((b) => b.total), count: bills.length, paidNow: sum((b) => b.paidCash + b.paidUpi), credit: sum((b) => b.credit), repaid,
       newCustomers: S.customers.filter((c) => localDate(new Date(c.createdAt)) === today).length,
@@ -395,6 +499,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     };
   }
   const isInactive = (c) => Date.now() - new Date(c.lastPurchaseAt || c.createdAt).getTime() > 14 * DAY;
+
+  /** A customer's full history: khata entries plus bills paid in full (no khata change). */
+  function customerTx(c) {
+    const out = S.ledger.filter((e) => e.customerId === c.id).map((e) => ({ ...e, kind: 'ledger' }));
+    for (const b of S.bills) {
+      if (b.customerId === c.id && b.status === 'confirmed' && b.credit === 0) {
+        out.push({ id: b.id, kind: 'paidbill', at: b.confirmedAt, label: `Bill ${b.invoiceNumber} · ${b.lines.length} item · ${b.paymentMode.toUpperCase()}`, amount: b.total, billId: b.id });
+      }
+    }
+    return out.sort((a, b) => new Date(b.at) - new Date(a.at));
+  }
 
   /* ---------- conversation ---------- */
   const say = (from, kind, data = {}) => { S.chat.push({ id: uid(), from, kind, at: now().toISOString(), ...data }); };
@@ -406,23 +521,36 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     const withCustomer = (name, fn) => {
       const m = resolveCustomer(name);
       if (m.status === 'found') return fn(m.customer);
-      if (m.status === 'ambiguous') return say('bot', 'pickCustomer', { text: A.reply(LANG, 'customerAmbiguous', { name }), ids: m.candidates.map((c) => c.id), then: intent.type });
-      return botText(A.reply(LANG, 'customerNotFound', { name }));
+      if (m.status === 'ambiguous') return say('bot', 'pickCustomer', { text: say_('customerAmbiguous', { name }), ids: m.candidates.map((c) => c.id) });
+      return botText(say_('customerNotFound', { name }));
     };
     switch (intent.type) {
       case 'create_bill': {
         const d = createDraft(intent, text);
-        botText(d.issues.length ? A.reply(LANG, 'billNeedsInput', { n: d.issues.length }) : A.reply(LANG, 'billDraft', { customer: d.customerId ? byId(S.customers, d.customerId).name : null, count: d.lines.length, total: draftTotal(d) }));
+        botText(d.issues.length ? say_('billNeedsInput', { n: d.issues.length }) : say_('billDraft', { customer: d.customerId ? byId(S.customers, d.customerId).name : null, count: d.lines.length, total: draftTotal(d) }));
         say('bot', 'bill', { billId: d.id });
         break;
       }
+      case 'stock_in': {
+        const sd = { id: uid(), supplier: intent.supplier, status: 'draft', lines: [], unmatched: [] };
+        for (const line of intent.lines) {
+          const res = A.resolveLine(activeItems(), line);
+          if (res.kind === 'ok') sd.lines.push({ itemId: res.item.id, quantity: res.quantity });
+          else if (res.issue.kind === 'price_missing' && res.issue.itemId) sd.lines.push({ itemId: res.issue.itemId, quantity: res.issue.quantity ?? 1 });
+          else sd.unmatched.push({ id: uid(), raw: res.issue.raw || line.raw, quantity: line.count ?? 1, options: res.issue.options });
+        }
+        S.stockDrafts[sd.id] = sd;
+        botText(sd.unmatched.length ? `${sd.lines.length} item mile, ${sd.unmatched.length} saaf nahi hue. Check karke pakka karein.` : `${sd.lines.length} item ka maal. Check karke pakka karein.`);
+        say('bot', 'stockin', { draftId: sd.id });
+        break;
+      }
       case 'query_balance':
-        withCustomer(intent.customerName, (c) => { botText(A.reply(LANG, 'balance', { name: c.name, balance: c.balance })); say('bot', 'khata', { customerId: c.id }); });
+        withCustomer(intent.customerName, (c) => { botText(say_('balance', { name: c.name, balance: c.balance })); say('bot', 'khata', { customerId: c.id }); });
         break;
       case 'record_payment':
         withCustomer(intent.customerName, (c) => {
           recordPayment(c, intent.amount, intent.method);
-          botText(A.reply(LANG, 'paymentRecorded', { name: c.name, amount: intent.amount, balance: c.balance }));
+          botText(say_('paymentRecorded', { name: c.name, amount: intent.amount, balance: c.balance }));
         });
         break;
       case 'send_reminder':
@@ -430,49 +558,53 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
         break;
       case 'list_customers': {
         const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
-        botText(A.reply(LANG, 'customers', { total: S.customers.length, dues }));
+        botText(say_('customers', { total: S.customers.length, dues }));
         say('bot', 'customers', { filter: 'all' });
         break;
       }
       case 'daily_summary': {
         const s = summary();
-        botText(A.reply(LANG, 'summary', { sales: s.total, bills: s.count }));
+        botText(say_('summary', { sales: s.total, bills: s.count }));
         say('bot', 'summary');
         break;
       }
       case 'low_stock': {
         const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold);
-        botText(A.reply(LANG, 'lowStock', { n: low.length }));
+        botText(say_('lowStock', { n: low.length }));
         if (low.length) say('bot', 'lowstock');
         break;
       }
       default:
-        botText(A.reply(LANG, 'notUnderstood'));
+        botText(say_('notUnderstood'));
     }
   }
 
   function sendReminder(c) {
     if (c.balance <= 0) return botText(`${c.name} ka kuch baaki nahi hai.`);
     if (!c.phone) return botText(`${c.name} ka phone number nahi hai, yaad nahi dila sakte.`);
-    if (!c.consent) return botText(`${c.name} ne WhatsApp messages ki sahmati nahi di hai.`);
-    botText(A.reply(LANG, 'reminderQueued', { name: c.name }));
-    say('bot', 'wa', { title: `WhatsApp → ${c.name}`, text: A.reminderMessage({ storeName: STORE.name, customerName: c.name, balance: c.balance, link: `aawaz.app/c/${c.id.slice(0, 8)}` }) });
+    if (!c.consent) return botText(`${c.name} ne WhatsApp messages ki sahmati nahi di hai. Grahak tab mein sahmati likh sakte hain.`);
+    botText(say_('reminderQueued', { name: c.name }));
+    say('bot', 'wa', { title: `WhatsApp → ${c.name}`, text: A.reminderMessage({ storeName: S.store.name, customerName: c.name, balance: c.balance, link: `aawaz.app/c/${c.id.slice(0, 8)}` }) });
   }
 
-  /* ---------- rendering ---------- */
+  /* ---------- icons ---------- */
   const icon = {
     check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
     box: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>',
     book: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h5"/></svg>',
     send: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>',
+    back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    mic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>',
+    moon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
   };
-  const fxIcon = (t) => (t.startsWith('Stock') ? icon.box : t.includes('khata') ? icon.book : icon.send);
+  const fxIcon = (t) => (/stock|स्टॉक/i.test(t) ? icon.box : /khata|खाता/i.test(t) ? icon.book : icon.send);
 
+  /* ---------- chat rendering ---------- */
   const ISSUE_Q = {
     choose_variant: (i) => `${esc(i.name)}: kaunsa size? Ek tap mein chuniye`,
-    unclear: (i) => 'Ek item saaf nahi suna. Kaunsa tha?',
+    unclear: () => 'Ek item saaf nahi suna. Kaunsa tha?',
     not_found: (i) => `"${esc(i.name)}" saamaan list mein nahi hai`,
-    price_missing: (i) => `${esc(i.name)} ka daam nahi pata`,
+    price_missing: (i) => `${esc(i.name)} ka daam nahi pata. Stock tab mein daam daaliye.`,
     customer_unknown: (i) => `"${esc(i.name)}" naam ka grahak nahi mila`,
     customer_ambiguous: (i) => `"${esc(i.name)}" naam ke ek se zyada grahak hain. Kaun?`,
     customer_required: () => 'Udhaar kiske naam likhein?',
@@ -480,17 +612,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 
   function issueHtml(d, i) {
     const opts = [];
+    const btn = (attrs, label, ghost = false) => `<button class="opt${ghost ? ' ghost' : ''}" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" ${attrs}>${label}</button>`;
     if (i.kind === 'customer_required') {
-      for (const c of S.customers.slice(0, 5)) opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-customer="${c.id}">${esc(c.name)}</button>`);
+      for (const c of S.customers.slice(0, 5)) opts.push(btn(`data-customer="${c.id}"`, esc(c.name)));
     } else if (i.kind === 'customer_unknown') {
-      opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-new="${esc(i.name)}">+ Naya grahak: ${esc(i.name)}</button>`);
-      if (d.paymentMode !== 'udhaar') opts.push(`<button class="opt ghost" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-remove="1">Bina naam ke</button>`);
+      opts.push(btn(`data-new="${esc(i.name)}"`, `+ Naya grahak: ${esc(i.name)}`));
+      if (d.paymentMode !== 'udhaar') opts.push(btn('data-remove="1"', 'Bina naam ke', true));
     } else {
       for (const o of i.options) {
-        if (o.customerId) opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-customer="${o.customerId}">${esc(o.label)}</button>`);
-        else opts.push(`<button class="opt" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-item="${o.itemId}">${esc(o.label)}${o.quantity && o.quantity !== 1 ? ` × ${o.quantity}` : ''}${o.amount != null ? ` · ${r(o.amount)}` : ''}</button>`);
+        if (o.customerId) opts.push(btn(`data-customer="${o.customerId}"`, esc(o.label)));
+        else opts.push(btn(`data-item="${o.itemId}"`, `${esc(o.label)}${o.quantity && o.quantity !== 1 ? ` × ${o.quantity}` : ''}${o.amount != null ? ` · ${r(o.amount)}` : ''}`));
       }
-      opts.push(`<button class="opt ghost" data-a="resolve" data-bill="${d.id}" data-issue="${i.id}" data-remove="1">Hatao</button>`);
+      opts.push(btn('data-remove="1"', 'Hatao', true));
     }
     return `<div class="ask"><div class="ask-q">${ISSUE_Q[i.kind](i)}</div>${i.raw ? `<div class="ask-raw">Suna: “${esc(i.raw)}”</div>` : ''}<div class="opts">${opts.join('')}</div></div>`;
   }
@@ -504,7 +637,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     const lines = d.lines.map((l) => `<div class="row"><span class="qty">${l.quantity}${l.sizeLabel ? '' : ' pc'}</span><span class="grow">${esc(l.name)}${l.sizeLabel ? ` <span class="sub">${esc(l.sizeLabel)}</span>` : ''}</span><span class="num">${r(l.amount)}</span></div>`).join('');
     const issues = d.status === 'draft' ? d.issues.map((i) => issueHtml(d, i)).join('') : '';
     const up = d.upfront?.amount ? `<div class="split"><span>Abhi diye (${d.upfront.method === 'upi' ? 'UPI' : 'cash'})</span><span class="num">${r(d.upfront.amount)}</span></div><div class="split"><span>Udhaar mein</span><span class="num">${r(Math.max(total - d.upfront.amount, 0))}</span></div>` : '';
-    let foot = '';
+    let foot;
     if (d.status === 'draft') {
       foot = `${msg.error ? `<div class="err">${esc(msg.error)}</div>` : ''}<div class="acts"><button class="btn" data-a="discard" data-bill="${d.id}">Radd karo</button><button class="btn go" data-a="confirm" data-bill="${d.id}" ${d.issues.length || !d.lines.length ? 'disabled' : ''}>${icon.check}Haan, pakka karo</button></div>`;
     } else if (d.status === 'confirmed') {
@@ -515,26 +648,48 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     return `<div class="bot"><div class="c-head"><div><div class="eyebrow">${d.status === 'draft' ? 'Bill · check karein' : `Bill ${esc(d.invoiceNumber || '')}`}</div><div class="c-title">${c ? esc(c.name) : 'Grahak'}</div></div>${mode}</div>${lines}${issues}<div class="total"><span class="lbl">Total · ${d.lines.length} item</span><span class="amt">${r(total)}</span></div>${up}${foot}</div>`;
   }
 
+  function stockInHtml(msg) {
+    const sd = S.stockDrafts[msg.draftId] || msg.done;
+    if (!sd) return '';
+    const lines = sd.lines.map((l) => { const it = byId(S.items, l.itemId); return `<div class="row"><span class="qty">+${l.quantity}</span><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">abhi ${it.stock} ${esc(it.stockLabel)}</span></div>`; }).join('');
+    const unmatched = sd.status === 'draft' ? sd.unmatched.map((u) => `<div class="ask"><div class="ask-q">Yeh item list mein nahi mila</div><div class="ask-raw">Suna: “${esc(u.raw)}”</div><div class="opts">${u.options.map((o) => `<button class="opt" data-a="si-pick" data-draft="${sd.id}" data-u="${u.id}" data-item="${o.itemId}">${esc(o.label)}</button>`).join('')}<button class="opt ghost" data-a="si-drop" data-draft="${sd.id}" data-u="${u.id}">Hatao</button></div></div>`).join('') : '';
+    const foot = sd.status === 'draft'
+      ? `<div class="acts"><button class="btn" data-a="si-cancel" data-draft="${sd.id}">Radd karo</button><button class="btn go" data-a="si-confirm" data-draft="${sd.id}" ${sd.unmatched.length || !sd.lines.length ? 'disabled' : ''}>${icon.check}Stock mein jodo</button></div>`
+      : sd.status === 'done' ? `<div class="done">${icon.check}Stock mein jod diya</div>` : '<div class="done" style="background:#F1E3E1;color:#8C2B20">Radd kiya</div>';
+    return `<div class="bot"><div class="c-head"><div><div class="eyebrow">Maal aaya${sd.supplier ? ` · ${esc(sd.supplier)}` : ''}</div><div class="c-title">${sd.lines.length} item</div></div><span class="pill grey">STOCK IN</span></div>${lines}${unmatched}${foot}</div>`;
+  }
+
   function khataHtml(msg) {
     const c = byId(S.customers, msg.customerId);
     if (!c) return '';
-    const entries = S.ledger.filter((e) => e.customerId === c.id).slice(-4).reverse();
-    const rows = entries.map((e) => `<div class="row"><span class="sub" style="width:48px">${fmtDay(e.at)}</span><span class="grow">${esc(e.label)}</span><span class="num" style="${e.amount < 0 ? 'color:var(--green)' : ''}">${e.amount < 0 ? '− ' + r(-e.amount) : '+ ' + r(e.amount)}</span></div>`).join('');
-    const pay = msg.payOpen ? `<form class="payform" data-a="payform" data-customer="${c.id}" data-msg="${msg.id}"><input id="amt-${msg.id}" name="amt" inputmode="decimal" placeholder="Kitne rupaye?" aria-label="Amount in rupees" required><select id="m-${msg.id}" name="method" aria-label="Method"><option value="upi">UPI</option><option value="cash">Cash</option></select><button class="btn go" type="submit" style="flex:0 0 auto">Jama</button></form>` : '';
-    return `<div class="bot"><div class="c-head"><div style="display:flex;gap:10px;align-items:center"><span class="av">${initials(c.name)}</span><div><div class="c-title" style="font-size:18px">${esc(c.name)}</div><div class="sub">Khata · ${entries.length ? S.ledger.filter((e) => e.customerId === c.id).length + ' entry' : 'koi entry nahi'}</div></div></div></div>
-      <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">Kul baaki</div><div class="big">${r(Math.max(c.balance, 0))}</div></div></div>
+    const entries = S.ledger.filter((e) => e.customerId === c.id);
+    const rows = entries.slice(-4).reverse().map((e) => `<div class="row"><span class="sub" style="width:48px">${fmtDay(e.at)}</span><span class="grow">${esc(e.label)}</span><span class="num" style="${e.amount < 0 ? 'color:var(--green)' : ''}">${e.amount < 0 ? '− ' + r(-e.amount) : '+ ' + r(e.amount)}</span></div>`).join('');
+    const pay = msg.payOpen ? `<form class="payform" data-form="pay" data-customer="${c.id}" data-msg="${msg.id}"><input id="amt-${msg.id}" name="amt" inputmode="decimal" placeholder="Kitne rupaye?" aria-label="Amount in rupees" required><select id="m-${msg.id}" name="method" aria-label="Method"><option value="upi">UPI</option><option value="cash">Cash</option></select><button class="btn go" type="submit" style="flex:0 0 auto">Jama</button></form>` : '';
+    return `<div class="bot"><div class="c-head"><div style="display:flex;gap:10px;align-items:center"><span class="av">${initials(c.name)}</span><div><div class="c-title" style="font-size:18px">${esc(c.name)}</div><div class="sub">Khata · ${entries.length} entry</div></div></div></div>
+      <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">Kul baaki</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><button class="link" data-a="open" data-customer="${c.id}">Poora hisaab</button></div>
       ${rows ? `<div class="eyebrow" style="padding:0 14px 4px">Pichhla hisaab</div>${rows}` : ''}
       <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="payopen" data-msg="${msg.id}">Paisa mila</button><button class="btn sm" data-a="remind" data-customer="${c.id}">Yaad dilao</button></div>${pay}</div>`;
   }
 
-  function customersHtml(msg) {
+  function customerRows(list) {
+    return list.map((c) => `<button class="cust" data-a="open" data-customer="${c.id}"><span class="av ${c.balance > 0 ? '' : 'light'}">${initials(c.name)}</span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600">${esc(c.name)}</span><span class="sub" style="${isInactive(c) ? 'color:var(--udhaar-ink);font-weight:600' : ''}">${isInactive(c) ? `${Math.max(2, Math.floor((Date.now() - new Date(c.lastPurchaseAt || c.createdAt)) / (7 * DAY)))} hafte se nahi aaye` : `Aakhri kharid · ${c.lastPurchaseAt ? (localDate(new Date(c.lastPurchaseAt)) === localDate() ? 'aaj' : fmtDay(c.lastPurchaseAt)) : '—'}`}</span></span>${c.balance > 0 ? `<span class="num" style="color:var(--udhaar-ink)">${r(c.balance)}</span>` : '<span class="sub" style="color:var(--green);font-weight:600">Hisaab saaf</span>'}</button>`).join('');
+  }
+
+  function filtered(f, search = '') {
+    const q = search.trim().toLowerCase();
+    return S.customers
+      .filter((c) => f === 'all' || (f === 'dues' ? c.balance > 0 : isInactive(c)))
+      .filter((c) => !q || c.name.toLowerCase().includes(q) || (c.phone || '').includes(q))
+      .sort((a, b) => b.balance - a.balance);
+  }
+  const counts = () => ({ all: S.customers.length, dues: S.customers.filter((c) => c.balance > 0).length, inactive: S.customers.filter(isInactive).length });
+
+  function customersCardHtml(msg) {
     const f = msg.filter || 'all';
-    const list = S.customers.filter((c) => f === 'all' || (f === 'dues' ? c.balance > 0 : isInactive(c))).sort((a, b) => b.balance - a.balance);
-    const counts = { all: S.customers.length, dues: S.customers.filter((c) => c.balance > 0).length, inactive: S.customers.filter(isInactive).length };
+    const n = counts();
     const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
-    const chip = (k, label) => `<button class="fchip" aria-pressed="${f === k}" data-a="filter" data-msg="${msg.id}" data-f="${k}">${label} ${counts[k]}</button>`;
-    const rows = list.map((c) => `<button class="cust" data-a="open" data-customer="${c.id}"><span class="av ${c.balance > 0 ? '' : 'light'}">${initials(c.name)}</span><span class="grow" style="flex:1;min-width:0"><span style="display:block;font-weight:600">${esc(c.name)}</span><span class="sub" style="${isInactive(c) ? 'color:var(--udhaar-ink);font-weight:600' : ''}">${isInactive(c) ? `${Math.floor((Date.now() - new Date(c.lastPurchaseAt || c.createdAt)) / (7 * DAY))} hafte se nahi aaye` : `Aakhri kharid · ${c.lastPurchaseAt ? (localDate(new Date(c.lastPurchaseAt)) === localDate() ? 'aaj' : fmtDay(c.lastPurchaseAt)) : '—'}`}</span></span>${c.balance > 0 ? `<span class="num" style="color:var(--udhaar-ink)">${r(c.balance)}</span>` : '<span class="sub" style="color:var(--green);font-weight:600">Hisaab saaf</span>'}</button>`).join('');
-    return `<div class="bot"><div class="c-head"><div><div class="c-title">Aapke grahak · ${counts.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div></div><div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>${rows || '<div class="row sub">Koi grahak nahi</div>'}</div>`;
+    const chip = (k, label) => `<button class="fchip" aria-pressed="${f === k}" data-a="filter" data-msg="${msg.id}" data-f="${k}">${label} ${n[k]}</button>`;
+    return `<div class="bot"><div class="c-head"><div><div class="c-title">Aapke grahak · ${n.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div></div><div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>${customerRows(filtered(f)) || '<div class="row sub">Koi grahak nahi</div>'}</div>`;
   }
 
   function summaryHtml() {
@@ -547,11 +702,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 
   function lowHtml() {
     const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold);
-    return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">Kal ki kharid list</div></div>${low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)} bache</span></div>`).join('')}</div>`;
+    return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">Kal ki kharid list</div></div>${low.map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}</span><span class="num low">${i.stock} ${esc(i.stockLabel)} bache</span></div>`).join('')}<div class="acts" style="padding-top:8px"><button class="btn sm" data-a="go" data-tab="stock" data-view="receive">Maal aaya? Stock jodo</button></div></div>`;
   }
 
   function welcomeHtml() {
-    return `<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Hara mic dabaiye aur boliye, jaise:<br><i>“Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do”</i><br><span class="sub">Neeche diye sujhaav par tap karke bhi try kar sakte hain.</span></div>`;
+    return `<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Hara mic dabaiye aur boliye, jaise:<br><i>“Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do”</i><br><span class="sub">Upar ke tab mein Grahak, Stock aur Dukaan ki details hain.</span></div>`;
   }
 
   function msgHtml(m) {
@@ -559,49 +714,335 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     switch (m.kind) {
       case 'welcome': return welcomeHtml();
       case 'text': return `<div class="bot plain">${esc(m.text)}</div>`;
+      case 'voice': return `<div class="bot plain">${esc(m.text.replace(m.url, '').trim())}${m.url ? `<br><a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700;word-break:break-all">${esc(m.url)}</a>` : ''}</div>`;
       case 'bill': return billHtml(m);
+      case 'stockin': return stockInHtml(m);
       case 'khata': return khataHtml(m);
-      case 'customers': return customersHtml(m);
+      case 'customers': return customersCardHtml(m);
       case 'summary': return summaryHtml();
       case 'lowstock': return lowHtml();
       case 'fx': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:18px">${esc(m.title)}</div></div><div class="fx">${m.lines.map((t) => `<div>${fxIcon(t)}<span>${esc(t)}</span></div>`).join('')}${m.billId ? `<div><button class="link" data-a="receipt" data-bill="${m.billId}">Grahak ki rasid dekho</button></div>` : ''}</div></div>`;
-      case 'voice': return `<div class="bot plain">${esc(m.text.replace(m.url, '').trim())}${m.url ? `<br><a href="${esc(m.url)}" target="_blank" rel="noopener" style="color:var(--green-dark);font-weight:700;word-break:break-all">${esc(m.url)}</a>` : ''}</div>`;
       case 'wa': return `<div class="wa"><b>${esc(m.title)} · preview</b>${esc(m.text)}</div>`;
       case 'pickCustomer': return `<div class="bot"><div class="c-head"><div class="c-title" style="font-size:16px">${esc(m.text)}</div></div><div class="opts" style="padding:0 14px 12px">${m.ids.map((id) => { const c = byId(S.customers, id); return c ? `<button class="opt" data-a="open" data-customer="${id}">${esc(c.name)}</button>` : ''; }).join('')}</div></div>`;
       default: return '';
     }
   }
 
+  /* ---------- Grahak tab ---------- */
+  function customersScreen() {
+    const ui = S.ui;
+    if (ui.custView === 'detail' && byId(S.customers, ui.custId)) return customerDetail(byId(S.customers, ui.custId));
+    if (ui.custView === 'alltx') return allTransactions();
+    if (ui.custView === 'add') return addCustomerForm();
+    const n = counts();
+    const dues = S.customers.reduce((t, c) => t + Math.max(c.balance, 0), 0);
+    const chip = (k, label) => `<button class="fchip" aria-pressed="${ui.filter === k}" data-a="cfilter" data-f="${k}">${label} ${n[k]}</button>`;
+    return `
+      <input class="search" id="csearch" type="search" placeholder="Naam ya number se dhoondho" aria-label="Search customers" value="${esc(ui.search)}">
+      <div class="card"><div class="c-head"><div><div class="c-title">Grahak · ${n.all}</div><div class="sub">Kul udhaar baaki <b style="color:var(--udhaar-ink)">${r(dues)}</b></div></div><button class="btn tiny" data-a="cview" data-view="alltx">Sab len-den</button></div>
+      <div class="filters">${chip('all', 'Sab')}${chip('dues', 'Udhaar wale')}${chip('inactive', 'Kaafi din se nahi aaye')}</div>
+      <div id="clist">${customerRows(filtered(ui.filter, ui.search)) || '<div class="row sub">Koi grahak nahi mila</div>'}</div>
+      <div class="acts" style="padding-top:10px"><button class="btn go" data-a="cview" data-view="add">+ Naya grahak</button></div></div>`;
+  }
+
+  function addCustomerForm(err = '') {
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
+      <div class="card"><div class="c-head"><div class="c-title">Naya grahak</div></div>
+      <form class="form" data-form="addcust">
+        <label for="nc-name">Naam<input id="nc-name" name="name" required maxlength="120" placeholder="Jaise: Ramesh Yadav"></label>
+        <label for="nc-phone">Mobile number (optional)<input id="nc-phone" name="phone" inputmode="tel" placeholder="98765 43210"></label>
+        <label class="check" for="nc-consent"><input id="nc-consent" name="consent" type="checkbox">Grahak WhatsApp par rasid aur yaad dilane ke message lene ko taiyaar hai</label>
+        <div class="err" id="nc-err">${esc(err)}</div>
+        <button class="btn go" type="submit">Grahak jodo</button>
+      </form></div>`;
+  }
+
+  function txRow(e, withName = false) {
+    const c = withName && e.customerId ? byId(S.customers, e.customerId) : null;
+    const reversed = e.type === 'payment' && S.ledger.some((x) => x.reversesId === e.id);
+    const sign = e.kind === 'paidbill' ? '' : e.amount < 0 ? '− ' : '+ ';
+    const color = e.kind === 'paidbill' ? '' : e.amount < 0 ? 'color:var(--green)' : '';
+    const undo = e.type === 'payment' && !reversed ? `<button class="btn tiny" data-a="reverse" data-entry="${e.id}" aria-label="Undo this payment">Galat? Hatao</button>` : '';
+    const view = e.billId ? `<button class="link" data-a="receipt" data-bill="${e.billId}" style="font-size:12px;min-height:24px">Rasid</button>` : '';
+    return `<div class="row" style="align-items:flex-start"><span class="sub" style="width:48px;padding-top:2px">${fmtDay(e.at)}</span><span class="grow"><span class="${reversed ? 'strike' : ''}">${withName && c ? `<b>${esc(c.name)}</b> · ` : ''}${esc(e.label)}</span>${e.kind === 'ledger' && !withName ? `<br><span class="sub">Baaki ${r(e.balanceAfter)}</span>` : ''} ${view}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="num" style="${color}">${sign}${r(Math.abs(e.amount))}</span>${undo}</span></div>`;
+  }
+
+  function customerDetail(c) {
+    const tx = customerTx(c);
+    const ui = S.ui;
+    const payForm = ui.payOpen ? `<form class="form" data-form="cpay" data-customer="${c.id}" style="border-top:1px solid var(--line)">
+        <div class="two"><label for="cp-amt">Kitne rupaye<input id="cp-amt" name="amt" inputmode="decimal" required placeholder="500"></label>
+        <label for="cp-m">Kaise<select id="cp-m" name="method"><option value="cash">Cash</option><option value="upi">UPI</option></select></label></div>
+        <label for="cp-note">Note (optional)<input id="cp-note" name="note" maxlength="60" placeholder="Jaise: aadha hisaab"></label>
+        <button class="btn go" type="submit">Paisa mila · jama karo</button></form>` : '';
+    const edit = ui.editOpen ? `<form class="form" data-form="editcust" data-customer="${c.id}" style="border-top:1px solid var(--line)">
+        <label for="ec-name">Naam<input id="ec-name" name="name" required maxlength="120" value="${esc(c.name)}"></label>
+        <label for="ec-phone">Mobile number<input id="ec-phone" name="phone" inputmode="tel" value="${esc(c.phone ? c.phone.replace('+91', '') : '')}"></label>
+        <div class="err" id="ec-err"></div>
+        <button class="btn go" type="submit">Save karo</button></form>` : '';
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
+      <div class="card">
+        <div class="c-head"><div style="display:flex;gap:12px;align-items:center"><span class="av big">${initials(c.name)}</span><div><div class="c-title">${esc(c.name)}</div><div class="sub">${c.phone ? esc(A.maskPhone(c.phone)) : 'Number nahi hai'} · ${fmtDay(c.createdAt)} se grahak</div></div></div></div>
+        <div class="due ${c.balance > 0 ? '' : 'clear'}"><div><div class="eyebrow" style="color:${c.balance > 0 ? 'var(--udhaar-ink)' : 'var(--green)'}">${c.balance > 0 ? 'Kul baaki' : 'Hisaab saaf'}</div><div class="big">${r(Math.max(c.balance, 0))}</div></div><span class="sub" style="text-align:right">${fmtDay(now().toISOString())} tak<br>ka hisaab</span></div>
+        <div class="grid2"><div class="tile"><span class="sub">Kul kharid</span><b>${r(c.totalPurchases)}</b></div><div class="tile"><span class="sub">Jama kiya</span><b style="color:var(--green)">${r(c.totalPaid)}</b></div></div>
+        <div class="row"><span class="grow">WhatsApp sahmati<br><span class="sub">${canMessage(c) ? 'Rasid aur yaad dilane ke message jaayenge' : c.phone ? 'Message nahi jaayenge' : 'Pehle number jodiye'}</span></span><button class="btn tiny" data-a="consent" data-customer="${c.id}" ${c.phone ? '' : 'disabled'}>${c.consent ? 'Hatao' : 'Haan, di hai'}</button></div>
+        <div class="acts" style="padding-top:10px"><button class="btn sm go" data-a="cpayopen">Paisa mila</button><button class="btn sm" data-a="remind" data-customer="${c.id}">Yaad dilao</button><button class="btn sm" data-a="ceditopen">Badlo</button></div>
+        ${payForm}${edit}
+        ${ui.flash ? `<div class="ok" style="padding:0 14px 10px">${esc(ui.flash)}</div>` : ''}
+      </div>
+      <div class="section-t">Len-den · ${tx.length}</div>
+      <div class="card">${tx.map((e) => txRow(e)).join('') || '<div class="row sub">Abhi koi len-den nahi</div>'}</div>`;
+  }
+
+  function allTransactions() {
+    const all = [];
+    for (const e of S.ledger) all.push({ ...e, kind: 'ledger' });
+    for (const b of S.bills) {
+      if (b.status !== 'confirmed') continue;
+      if (b.credit > 0) continue; // already in the khata
+      all.push({ id: b.id, kind: 'paidbill', customerId: b.customerId, at: b.confirmedAt, label: `Bill ${b.invoiceNumber} · ${b.lines.length} item · ${b.paymentMode.toUpperCase()}`, amount: b.total, billId: b.id });
+    }
+    all.sort((a, b) => new Date(b.at) - new Date(a.at));
+    return `<button class="back" data-a="cview" data-view="list">${icon.back}Grahak</button>
+      <div class="card"><div class="c-head"><div><div class="c-title">Sab len-den</div><div class="sub">Udhaar bill, jama, aur cash/UPI bill — sab ek jagah</div></div></div>
+      ${all.map((e) => txRow(e, true)).join('') || '<div class="row sub">Abhi koi len-den nahi</div>'}</div>`;
+  }
+
+  /* ---------- Stock tab ---------- */
+  function stockScreen() {
+    const ui = S.ui;
+    if (ui.stockView === 'receive') return receiveForm();
+    if (ui.stockView === 'additem') return addItemForm();
+    const low = S.items.filter((i) => i.isActive && i.stock <= i.lowStockThreshold).length;
+    const rows = S.items.filter((i) => i.isActive).map((i) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(i))}<br><span class="sub">${i.price == null ? 'Daam nahi' : r(i.price)}</span></span><span class="num ${i.stock <= i.lowStockThreshold ? 'low' : ''}">${i.stock} ${esc(i.stockLabel)}</span></div>`).join('');
+    const history = S.receipts.slice(0, 8).map((rc) => `<div class="row" style="align-items:flex-start"><span class="sub" style="width:48px">${fmtDay(rc.at)}</span><span class="grow">${rc.supplier ? `<b>${esc(rc.supplier)}</b><br>` : ''}${rc.lines.map((l) => `${esc(l.name)} +${l.quantity}`).join(', ')}</span><span class="num">${rc.totalCost ? r(rc.totalCost) : ''}</span></div>`).join('');
+    return `<div class="card"><div class="c-head"><div><div class="c-title">Saamaan · ${S.items.filter((i) => i.isActive).length}</div><div class="sub">${low ? `<span class="low">${low} item ka stock kam</span>` : 'Sab ka stock theek hai'}</div></div></div>
+      <div class="acts"><button class="btn go" data-a="sview" data-view="receive">${icon.box}Maal aaya</button><button class="btn sm" data-a="sview" data-view="additem">+ Naya item</button></div>${rows}</div>
+      <div class="section-t">Maal aane ki history</div>
+      <div class="card">${history || '<div class="row sub">Abhi koi entry nahi</div>'}</div>
+      <p class="sub" style="margin:0 4px">Tip: Baat tab mein boliye — “Maal aaya: 20 bag atta, 10 sarson tel 1 litre”</p>`;
+  }
+
+  const itemOptions = (sel = '') => S.items.filter((i) => i.isActive).map((i) => `<option value="${i.id}" ${i.id === sel ? 'selected' : ''}>${esc(A.itemDisplayName(i))}</option>`).join('');
+
+  function receiveForm() {
+    const rows = S.ui.recvRows || 3;
+    const lines = Array.from({ length: rows }, (_, k) => `<div class="three">
+        <label for="rv-item-${k}">${k === 0 ? 'Item' : '<span hidden>Item</span>'}<select id="rv-item-${k}" name="item${k}"><option value="">— chuniye —</option>${itemOptions()}</select></label>
+        <label for="rv-qty-${k}">${k === 0 ? 'Kitna' : '<span hidden>Kitna</span>'}<input id="rv-qty-${k}" name="qty${k}" inputmode="decimal" placeholder="20"></label>
+        <label for="rv-cost-${k}">${k === 0 ? 'Kharid ₹' : '<span hidden>Kharid</span>'}<input id="rv-cost-${k}" name="cost${k}" inputmode="decimal" placeholder="opt."></label></div>`).join('');
+    return `<button class="back" data-a="sview" data-view="list">${icon.back}Stock</button>
+      <div class="card"><div class="c-head"><div><div class="c-title">Maal aaya</div><div class="sub">Kitna aaya likhiye; kharid daam optional hai</div></div></div>
+      <form class="form" data-form="receive">
+        <label for="rv-sup">Kahan se (supplier, optional)<input id="rv-sup" name="supplier" maxlength="120" placeholder="Jaise: Gupta Traders"></label>
+        ${lines}
+        <button class="btn tiny" type="button" data-a="recvmore" style="align-self:flex-start">+ Aur item</button>
+        <div class="err" id="rv-err"></div>
+        <button class="btn go" type="submit">${icon.box}Stock mein jodo</button>
+      </form></div>`;
+  }
+
+  function addItemForm() {
+    return `<button class="back" data-a="sview" data-view="list">${icon.back}Stock</button>
+      <div class="card"><div class="c-head"><div class="c-title">Naya item</div></div>
+      <form class="form" data-form="additem">
+        <label for="ni-name">Naam<input id="ni-name" name="name" required maxlength="80" placeholder="Jaise: Cheeni"></label>
+        <div class="two"><label for="ni-size">Size<input id="ni-size" name="size" inputmode="decimal" value="1"></label>
+        <label for="ni-unit">Unit<select id="ni-unit" name="unit"><option value="kg">kg</option><option value="g">gram</option><option value="l">litre</option><option value="ml">ml</option><option value="pc">piece</option></select></label></div>
+        <div class="two"><label for="ni-price">Bechne ka daam ₹<input id="ni-price" name="price" inputmode="decimal" placeholder="45"></label>
+        <label for="ni-stock">Abhi stock<input id="ni-stock" name="stock" inputmode="decimal" value="0"></label></div>
+        <div class="err" id="ni-err"></div>
+        <button class="btn go" type="submit">Item jodo</button>
+      </form></div>`;
+  }
+
+  /* ---------- Dukaan tab ---------- */
+  function shopScreen() {
+    const s = S.store;
+    const row = (k, v) => `<div class="row"><span class="grow sub">${k}</span><span style="text-align:right">${v}</span></div>`;
+    return `<div class="card"><div class="c-head"><div><div class="c-title">${esc(s.name)}</div><div class="sub">${esc(s.owner)} · ${esc(s.city)}</div></div></div>
+      ${row('Mobile', esc(A.maskPhone(s.phone)))}
+      ${row('PIN code', esc(s.pincode || '—'))}
+      ${row('Udhaar', s.givesCredit ? 'Haan, dete hain' : 'Nahi')}
+      ${row('GST', s.gstin ? `${esc(s.gstin)}<br><span class="sub">${s.gstScheme === 'composition' ? 'Composition' : 'Regular'} · ${esc(s.state || '')}</span>` : s.pan ? `Sirf PAN · ${esc(s.pan)}` : 'Nahi')}
+      ${row('Bhasha', s.language === 'hi' ? 'हिंदी' : 'Hinglish')}
+      ${row('Jawab', s.replyStyle === 'voice_text' ? 'Awaaz + likha hua' : 'Sirf likha hua')}
+      <div class="acts" style="padding-top:10px"><button class="btn sm" data-a="togglecredit">${s.givesCredit ? 'Udhaar band karo' : 'Udhaar chalu karo'}</button><button class="btn sm" data-a="togglelang">${s.language === 'hi' ? 'Hinglish mein jawab' : 'हिंदी में जवाब'}</button></div></div>
+      <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">Nayi dukaan setup</div><div class="sub">Onboarding: number, dukaan, GST, bhasha, saamaan</div></div></div>
+      <div class="acts"><button class="btn go" data-a="onboard">Onboarding shuru karo</button></div></div>`;
+  }
+
+  /* ---------- onboarding (design screens 4a–4f) ---------- */
+  let ONB = null;
+  const STEP_LABELS = ['Number', 'Dukaan', 'GST', 'Bhasha', 'Saamaan'];
+
+  function startOnboarding() {
+    ONB = { step: 0, d: { phone: '', codeSent: null, verified: false, name: '', owner: '', city: '', pincode: '', givesCredit: true, gst: 'later', gstin: '', pan: '', gstScheme: 'regular', language: 'hinglish', replyStyle: 'voice_text', items: [] } };
+    renderOnboarding();
+  }
+
+  function onbShell(body, stepIdx, title) {
+    const steps = STEP_LABELS.map((l, i) => `<span class="step ${i === stepIdx ? 'on' : i < stepIdx ? 'done' : ''}">${i < stepIdx ? '✓ ' : ''}${l}</span>`).join('');
+    return `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="onb-close" aria-label="Close setup">${icon.back}</button><div class="logo" aria-hidden="true">आ</div><div><div class="bar-title">AwaazCRM</div><div class="bar-sub">${esc(title)}</div></div></div>
+      ${stepIdx >= 0 ? `<div class="steps" aria-label="Setup steps">${steps}</div>` : ''}<div class="body">${body}</div>`;
+  }
+
+  function renderOnboarding(err = '') {
+    const d = ONB.d;
+    const e = err ? `<div class="err">${esc(err)}</div>` : '';
+    let html;
+    if (ONB.step === 0) {
+      html = onbShell(`<div class="bot plain"><b>Namaste! Main AwaazCRM hoon.</b><br>Aapki dukaan ka bolne wala bahi-khata. Na typing, na lamba form.</div>
+        <div class="card"><div class="form"><div class="feat">${icon.mic}Bol ke bill banao</div><div class="feat">${icon.book}Udhaar apne-aap khate mein</div><div class="feat">${icon.moon}Har raat dukaan ka hisaab</div></div></div>
+        <div class="card"><form class="form" data-form="onb-phone">
+          <label for="ob-phone">Aapka WhatsApp number<input id="ob-phone" name="phone" inputmode="tel" required value="${esc(d.phone)}" placeholder="98765 43210"></label>
+          ${d.codeSent ? `<div class="code-hint">Demo: asli app mein yeh code WhatsApp par aata. Aapka code: <b>${d.codeSent}</b></div>
+          <label for="ob-code">6 ank ka code<input id="ob-code" name="code" inputmode="numeric" maxlength="6" placeholder="••••••"></label>` : ''}
+          ${e}<button class="btn go" type="submit">${d.codeSent ? 'Code check karo' : 'Code bhejo'}</button>
+          <span class="sub">Aage badhne par aap Shartein aur Privacy Policy maante hain. Aapka aur grahakon ka data sirf aapki dukaan ke liye use hoga.</span>
+        </form></div>`, 0, 'Setup · step 1/5');
+    } else if (ONB.step === 1) {
+      html = onbShell(`<div class="bot plain">Badhiya! Ab <b>dukaan ka naam, shahar</b> aur <b>aapka naam</b> bataiye.</div>
+        <div class="card"><form class="form" data-form="onb-shop">
+          <label for="ob-name">Dukaan ka naam<input id="ob-name" name="name" required maxlength="120" value="${esc(d.name)}" placeholder="Sharma Kirana Store"></label>
+          <label for="ob-owner">Maalik ka naam<input id="ob-owner" name="owner" required maxlength="120" value="${esc(d.owner)}" placeholder="Rajesh Sharma"></label>
+          <div class="two"><label for="ob-city">Shahar<input id="ob-city" name="city" required maxlength="80" value="${esc(d.city)}" placeholder="Sitapur"></label>
+          <label for="ob-pin">PIN code<input id="ob-pin" name="pincode" inputmode="numeric" maxlength="6" value="${esc(d.pincode)}" placeholder="261001"></label></div>
+          <label for="ob-credit">Kya aap udhaar dete hain?<select id="ob-credit" name="credit"><option value="yes" ${d.givesCredit ? 'selected' : ''}>Haan, dete hain</option><option value="no" ${d.givesCredit ? '' : 'selected'}>Nahi</option></select></label>
+          ${e}<button class="btn go" type="submit">Sahi hai, aage</button></form></div>`, 1, 'Setup · step 2/5');
+    } else if (ONB.step === 2) {
+      const derived = d.gst === 'gst' && A.isValidGstin(d.gstin) ? `<div class="ok">PAN ${esc(A.panFromGstin(d.gstin))} · ${esc(A.stateFromGstin(d.gstin) || '')}</div>` : '';
+      html = onbShell(`<div class="bot plain">Kya dukaan ka <b>GST number</b> hai? Hai to har bill par chhap jayega.<br><span class="sub">Zaroori nahi · GST nahi hai to sirf PAN bhi chalega</span></div>
+        <div class="card"><form class="form" data-form="onb-gst">
+          <div class="opts">${[['gst', 'Haan, GST hai'], ['pan', 'Sirf PAN hai'], ['later', 'Baad mein']].map(([k, l]) => `<button type="button" class="opt" data-a="onb-gstmode" data-mode="${k}" style="${d.gst === k ? 'border-color:var(--green);background:#E8F6EE' : ''}">${l}</button>`).join('')}</div>
+          ${d.gst === 'gst' ? `<label for="ob-gstin">GSTIN (15 akshar)<input id="ob-gstin" name="gstin" maxlength="15" style="text-transform:uppercase" value="${esc(d.gstin)}" placeholder="09ABCDE1234F1Z5"></label>${derived}
+            <label for="ob-scheme">GST scheme<select id="ob-scheme" name="scheme"><option value="regular" ${d.gstScheme === 'regular' ? 'selected' : ''}>Regular (tax invoice)</option><option value="composition" ${d.gstScheme === 'composition' ? 'selected' : ''}>Composition (bill of supply)</option></select></label>` : ''}
+          ${d.gst === 'pan' ? `<label for="ob-pan">PAN (10 akshar)<input id="ob-pan" name="pan" maxlength="10" style="text-transform:uppercase" value="${esc(d.pan)}" placeholder="ABCDE1234F"></label>` : ''}
+          ${e}<button class="btn go" type="submit">${d.gst === 'later' ? 'Abhi nahi, aage' : 'Sahi hai, aage'}</button>
+          <span class="sub">Surakshit rakha jayega · sirf aapke bills ke liye</span></form></div>`, 2, 'Setup · step 3/5');
+    } else if (ONB.step === 3) {
+      const pick = (field, val, title, sub) => `<button type="button" class="opt" data-a="onb-pick" data-field="${field}" data-val="${val}" style="flex:1;${d[field] === val ? 'border-color:var(--green);background:#E8F6EE' : ''}"><b>${title}</b><br><span class="sub">${sub}</span></button>`;
+      html = onbShell(`<div class="bot plain">Kis bhasha mein baat karein?</div>
+        <div class="card"><div class="form"><div class="opts">${pick('language', 'hi', 'हिंदी', 'Shuddh Hindi mein jawab')}${pick('language', 'hinglish', 'Hinglish', 'Jaise aap bolte hain')}</div>
+        <div class="section-t">Jawab kaise chahiye?</div>
+        <div class="opts">${pick('replyStyle', 'voice_text', 'Awaaz + likha hua', 'Bheed mein bhi sun sakein')}${pick('replyStyle', 'text', 'Sirf likha hua', 'Chupchaap padh lein')}</div>
+        <button class="btn go" data-a="onb-next">Aage badho</button></div></div>`, 3, 'Setup · step 4/5');
+    } else if (ONB.step === 4) {
+      const list = d.items.map((it, k) => `<div class="row"><span class="grow">${esc(A.itemDisplayName(it))}</span><span class="sub">${it.stock} ${esc(it.stockLabel)}</span><span class="num">${it.price == null ? '₹ ?' : r(it.price)}</span><button class="btn tiny" data-a="onb-delitem" data-k="${k}" aria-label="Remove ${esc(it.name)}">✕</button></div>`).join('');
+      html = onbShell(`<div class="bot plain">Ab dukaan ka <b>saamaan</b> batao. Daam ya stock galat ho to baad mein badal sakte hain.</div>
+        <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${d.items.length} item</div><div class="sub">Asli app mein: bol ke, shelf ki photo, ya purani list upload</div></div><button class="btn tiny" data-a="onb-sample">Kirana list daalo</button></div>${list}
+          <form class="form" data-form="onb-item" style="border-top:1px solid var(--line)">
+            <div class="three"><label for="oi-name">Item<input id="oi-name" name="name" required maxlength="80" placeholder="Cheeni"></label>
+            <label for="oi-size">Size<input id="oi-size" name="size" inputmode="decimal" value="1"></label>
+            <label for="oi-unit">Unit<select id="oi-unit" name="unit"><option value="kg">kg</option><option value="g">g</option><option value="l">L</option><option value="ml">ml</option><option value="pc">pc</option></select></label></div>
+            <div class="two"><label for="oi-price">Daam ₹<input id="oi-price" name="price" inputmode="decimal" placeholder="45"></label><label for="oi-stock">Stock<input id="oi-stock" name="stock" inputmode="decimal" value="10"></label></div>
+            <button class="btn sm" type="submit">+ Item jodo</button></form></div>
+        ${e}<button class="btn go" data-a="onb-finish" ${d.items.length ? '' : 'disabled'}>Sab sahi hai, shuru karo</button>`, 4, 'Setup · step 5/5');
+    } else {
+      html = onbShell(`<div class="card"><div class="c-head"><div><div class="c-title" style="font-size:24px">Dukaan taiyaar hai!</div><div class="sub">${esc(d.name)} · ${esc(d.city)}</div></div></div>
+        <div class="grid2"><div class="tile"><b>${d.items.length}</b><span class="sub">item</span></div><div class="tile"><b>${d.language === 'hi' ? 'हिंदी' : 'Hinglish'}</b><span class="sub">bhasha</span></div><div class="tile"><b>${d.givesCredit ? 'On' : 'Off'}</b><span class="sub">udhaar khata</span></div><div class="tile"><b>${d.gst === 'gst' ? 'GST' : d.gst === 'pan' ? 'PAN' : '—'}</b><span class="sub">tax</span></div></div></div>
+        <div class="bot plain">Ab pehla bill try karo:<br><i>“Ramesh ko do kilo cheeni, udhaar mein likh do”</i><br><span class="sub">Neeche hara mic dabakar boliye. Naya grahak apne-aap jud jayega.</span></div>
+        <button class="btn go" data-a="onb-done">Pehla bill banao</button>`, -1, d.name);
+    }
+    sheet.innerHTML = html;
+    sheet.hidden = false;
+    const firstInput = sheet.querySelector('input:not([type=checkbox])');
+    if (firstInput && !err) firstInput.focus({ preventScroll: true });
+  }
+
+  function onbSubmit(form) {
+    const d = ONB.d;
+    const f = form.dataset.form;
+    if (f === 'onb-phone') {
+      const phone = A.normalizePhone(form.phone.value);
+      if (!phone) return renderOnboarding('Sahi mobile number daaliye (10 ank).');
+      d.phone = form.phone.value;
+      if (!d.codeSent) { d.phoneE164 = phone; d.codeSent = String(Math.floor(100000 + Math.random() * 900000)); return renderOnboarding(); }
+      if (form.code.value.trim() !== d.codeSent) return renderOnboarding('Code galat hai. Upar diya code daaliye.');
+      d.verified = true; ONB.step = 1; return renderOnboarding();
+    }
+    if (f === 'onb-shop') {
+      d.name = form.name.value.trim(); d.owner = form.owner.value.trim(); d.city = form.city.value.trim(); d.pincode = form.pincode.value.trim();
+      d.givesCredit = form.credit.value === 'yes';
+      if (d.pincode && !/^[1-9]\d{5}$/.test(d.pincode)) return renderOnboarding('PIN code 6 ank ka hota hai.');
+      ONB.step = 2; return renderOnboarding();
+    }
+    if (f === 'onb-gst') {
+      if (d.gst === 'gst') {
+        d.gstin = form.gstin.value.trim().toUpperCase(); d.gstScheme = form.scheme.value;
+        if (!A.isValidGstin(d.gstin)) return renderOnboarding('Yeh GSTIN sahi nahi lag raha. 15 akshar dobara check kijiye.');
+      }
+      if (d.gst === 'pan') {
+        d.pan = form.pan.value.trim().toUpperCase();
+        if (!A.isValidPan(d.pan)) return renderOnboarding('PAN sahi nahi hai (jaise ABCDE1234F).');
+      }
+      ONB.step = 3; return renderOnboarding();
+    }
+    if (f === 'onb-item') {
+      const name = form.name.value.trim();
+      if (!name) return;
+      const size = parseFloat(form.size.value) || 1;
+      d.items.push(makeItem(name[0].toUpperCase() + name.slice(1), form.unit.value, size, form.price.value === '' ? null : parseFloat(form.price.value), parseFloat(form.stock.value) || 0));
+      return renderOnboarding();
+    }
+  }
+
+  function finishOnboarding() {
+    const d = ONB.d;
+    const store = {
+      name: d.name, owner: d.owner, city: d.city, pincode: d.pincode, phone: d.phoneE164, givesCredit: d.givesCredit,
+      gstin: d.gst === 'gst' ? d.gstin : null, gstScheme: d.gst === 'gst' ? d.gstScheme : null,
+      pan: d.gst === 'gst' ? A.panFromGstin(d.gstin) : d.gst === 'pan' ? d.pan : null,
+      state: d.gst === 'gst' ? A.stateFromGstin(d.gstin) : null, language: d.language, replyStyle: d.replyStyle,
+    };
+    S = baseState(store, d.items, []);
+    lastStock = {}; lastKhata = {};
+  }
+
+  /* ---------- rendering ---------- */
   const chatEl = document.getElementById('chat');
+  const pane = document.getElementById('pane');
+  const sheet = document.getElementById('sheet');
+
   function renderChat(scroll = true) {
     chatEl.innerHTML = `<div class="day">Aaj</div>` + S.chat.map(msgHtml).join('');
     if (scroll) chatEl.scrollTop = chatEl.scrollHeight;
   }
 
+  function renderScreen(keepScroll = false) {
+    const tab = S.ui.tab;
+    for (const t of ['chat', 'customers', 'stock', 'shop']) document.getElementById(`tab-${t}`).setAttribute('aria-selected', String(t === tab));
+    document.getElementById('screen-chat').hidden = tab !== 'chat';
+    document.getElementById('screen-other').hidden = tab === 'chat';
+    document.getElementById('shopname').textContent = S.store.name;
+    if (tab === 'chat') return;
+    const y = pane.scrollTop;
+    pane.innerHTML = tab === 'customers' ? customersScreen() : tab === 'stock' ? stockScreen() : shopScreen();
+    pane.scrollTop = keepScroll ? y : 0;
+  }
+
   let lastStock = {}, lastKhata = {};
   function renderPanel() {
-    const stockRows = S.items.map((i) => {
-      const k = i.id; const changed = lastStock[k] !== undefined && lastStock[k] !== i.stock; lastStock[k] = i.stock;
+    const stockRows = S.items.filter((i) => i.isActive).map((i) => {
+      const changed = lastStock[i.id] !== undefined && lastStock[i.id] !== i.stock; lastStock[i.id] = i.stock;
       return `<tr class="${changed ? 'flash' : ''}"><td>${esc(A.itemDisplayName(i))}</td><td class="r ${i.stock <= i.lowStockThreshold ? 'low' : ''}">${i.stock}</td></tr>`;
     }).join('');
-    document.getElementById('stock').innerHTML = `<thead><tr><th>Item</th><th class="r">Stock</th></tr></thead><tbody>${stockRows}</tbody>`;
+    document.getElementById('stock').innerHTML = `<thead><tr><th>Item</th><th class="r">Stock</th></tr></thead><tbody>${stockRows || '<tr><td>—</td><td></td></tr>'}</tbody>`;
     const kRows = [...S.customers].sort((a, b) => b.balance - a.balance).map((c) => {
       const changed = lastKhata[c.id] !== undefined && lastKhata[c.id] !== c.balance; lastKhata[c.id] = c.balance;
       return `<tr class="${changed ? 'flash' : ''}"><td>${esc(c.name)}</td><td class="r">${c.balance > 0 ? r(c.balance) : '—'}</td></tr>`;
     }).join('');
-    document.getElementById('khata').innerHTML = `<thead><tr><th>Grahak</th><th class="r">Baaki</th></tr></thead><tbody>${kRows}</tbody>`;
+    document.getElementById('khata').innerHTML = `<thead><tr><th>Grahak</th><th class="r">Baaki</th></tr></thead><tbody>${kRows || '<tr><td>Abhi koi grahak nahi</td><td></td></tr>'}</tbody>`;
   }
 
-  const render = (scroll = true) => { renderChat(scroll); renderPanel(); save(); };
+  const render = ({ scroll = true, keepScroll = false } = {}) => { renderChat(scroll); renderScreen(keepScroll); renderPanel(); save(); };
 
-  /* ---------- receipt sheet (what the customer sees) ---------- */
-  const sheet = document.getElementById('sheet');
   function openReceipt(billId) {
     const b = S.bills.find((x) => x.id === billId);
     if (!b) return;
     const c = b.customerId ? byId(S.customers, b.customerId) : null;
     const lines = b.lines.map((l) => `<div class="row"><span class="grow">${esc(l.name)}${l.sizeLabel ? ` · ${esc(l.sizeLabel)}` : ''} × ${l.quantity}</span><span class="num">${r(l.amount)}</span></div>`).join('');
-    sheet.innerHTML = `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="close" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="logo" style="background:#F7F5F2;color:var(--ink);font-size:15px">SK</div><div><div class="bar-title">${esc(STORE.name)}</div><div class="bar-sub">Grahak ke phone par</div></div></div>
+    sheet.innerHTML = `<div class="bar"><button class="send" style="width:44px;height:44px;background:transparent" data-a="close" aria-label="Back">${icon.back}</button><div class="logo" style="background:#F7F5F2;color:var(--ink);font-size:15px">${esc(initials(S.store.name))}</div><div><div class="bar-title">${esc(S.store.name)}</div><div class="bar-sub">Grahak ke phone par</div></div></div>
       <div class="body"><div class="bot" style="max-width:none"><div class="rc-top"><div class="eyebrow">Rasid · ${esc(b.invoiceNumber)} · ${fmtDay(b.confirmedAt)}</div><div class="c-title">${c ? `Namaste ${esc(c.name)} ji` : 'Rasid'}</div></div>${lines}
       <div class="total"><span class="lbl">Total</span><span class="amt">${r(b.total)}</span></div>
       ${b.paidCash + b.paidUpi > 0 && b.credit > 0 ? `<div class="split"><span>Abhi diye</span><span class="num">${r(b.paidCash + b.paidUpi)}</span></div>` : ''}
@@ -611,18 +1052,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     sheet.querySelector('[data-a="close"]').focus();
   }
 
-  /* ---------- events ---------- */
-  const input = document.getElementById('msg');
   /* ---------- voice (browser speech recognition) ---------- */
   const VOICE_URL = '__VOICE_URL__';
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const input = document.getElementById('msg');
   const sendBtn = document.getElementById('send');
   const hint = document.getElementById('hint');
   const langBtn = document.getElementById('lang');
-  const LANGS = [
-    { code: 'hi-IN', label: 'हिंदी' },
-    { code: 'en-IN', label: 'Hinglish' },
-  ];
+  const LANGS = [{ code: 'hi-IN', label: 'हिंदी' }, { code: 'en-IN', label: 'Hinglish' }];
   let langIdx = 0;
   try { langIdx = Number(localStorage.getItem('awaaz-demo-lang')) === 1 ? 1 : 0; } catch { /* ignore */ }
   const showLang = () => { langBtn.textContent = LANGS[langIdx].label; langBtn.setAttribute('aria-label', `Voice language: ${LANGS[langIdx].label}. Tap to change`); };
@@ -682,21 +1119,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     rec.onend = () => {
       listening = false;
       const text = (finalText || input.value).trim();
-      if (!failed && text) {
-        input.value = '';
-        handle(text);
-        render();
-      }
+      if (!failed && text) { input.value = ''; handle(text); render(); }
       syncButton();
     };
-    try {
-      rec.start();
-      listening = true;
-      input.value = '';
-      syncButton();
-    } catch {
-      voiceProblem('blocked');
-    }
+    try { rec.start(); listening = true; input.value = ''; syncButton(); } catch { voiceProblem('blocked'); }
   }
 
   document.getElementById('composer').addEventListener('submit', (e) => {
@@ -710,84 +1136,248 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     render();
   });
 
+  /* ---------- events ---------- */
+  const goTab = (tab, view) => {
+    S.ui.tab = tab;
+    if (tab === 'customers') {
+      S.ui.payOpen = false; S.ui.editOpen = false; S.ui.flash = '';
+      if (view === 'detail' || view === 'pay') {
+        S.ui.custView = 'detail';
+        S.ui.custId = S.ui.custId && byId(S.customers, S.ui.custId) ? S.ui.custId : (S.customers.find((c) => c.balance > 0) || S.customers[0])?.id || null;
+        if (!S.ui.custId) S.ui.custView = 'list';
+        S.ui.payOpen = view === 'pay';
+      } else S.ui.custView = view || 'list';
+    }
+    if (tab === 'stock') { S.ui.stockView = view || 'list'; S.ui.recvRows = 3; }
+    sheet.hidden = true;
+    render({ scroll: true });
+    if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-a]');
-    if (!b || b.tagName === 'FORM') return;
+    if (!b || b.tagName === 'FORM' || b.disabled) return;
     const a = b.dataset.a;
-    if (a === 'resolve') {
-      const d = S.drafts[b.dataset.bill]; if (!d) return;
-      resolveIssue(d, b.dataset.issue, { itemId: b.dataset.item, customerId: b.dataset.customer, newCustomer: b.dataset.new, remove: b.dataset.remove === '1' });
-      render(false);
-    } else if (a === 'confirm') {
-      const d = S.drafts[b.dataset.bill]; if (!d) return;
-      const msg = S.chat.find((m) => m.kind === 'bill' && m.billId === d.id);
-      const res = confirmDraft(d);
-      if (res.error) { if (msg) msg.error = res.error; render(false); return; }
-      if (msg) delete msg.error;
-      say('bot', 'fx', { title: A.reply(LANG, 'billConfirmed'), lines: res.fx, billId: d.id });
-      if (res.receipt) say('bot', 'wa', { title: 'WhatsApp → ' + byId(S.customers, d.customerId).name, text: res.receipt });
-      render();
-    } else if (a === 'discard') {
-      const d = S.drafts[b.dataset.bill]; if (!d) return;
-      d.status = 'cancelled'; S.bills.push(d); delete S.drafts[d.id];
-      render(false);
-    } else if (a === 'open') {
-      const c = byId(S.customers, b.dataset.customer); if (!c) return;
-      say('me', 'said', { text: `${first(c.name)} ka khata` });
-      say('bot', 'khata', { customerId: c.id });
-      render();
-    } else if (a === 'filter') {
-      const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.filter = b.dataset.f;
-      render(false);
-    } else if (a === 'payopen') {
-      const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.payOpen = !m.payOpen;
-      render(false);
-      document.getElementById(`amt-${b.dataset.msg}`)?.focus();
-    } else if (a === 'remind') {
-      const c = byId(S.customers, b.dataset.customer); if (c) { sendReminder(c); render(); }
-    } else if (a === 'receipt') {
-      openReceipt(b.dataset.bill);
-    } else if (a === 'close') {
-      sheet.hidden = true;
-    } else if (a === 'try') {
-      handle(b.dataset.text); render();
-      if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const ui = S.ui;
+    switch (a) {
+      case 'tab': goTab(b.dataset.tab); break;
+      case 'go': goTab(b.dataset.tab, b.dataset.view); break;
+      case 'resolve': {
+        const d = S.drafts[b.dataset.bill]; if (!d) return;
+        resolveIssue(d, b.dataset.issue, { itemId: b.dataset.item, customerId: b.dataset.customer, newCustomer: b.dataset.new, remove: b.dataset.remove === '1' });
+        render({ scroll: false }); break;
+      }
+      case 'confirm': {
+        const d = S.drafts[b.dataset.bill]; if (!d) return;
+        const msg = S.chat.find((m) => m.kind === 'bill' && m.billId === d.id);
+        const res = confirmDraft(d);
+        if (res.error) { if (msg) msg.error = res.error; render({ scroll: false }); return; }
+        if (msg) delete msg.error;
+        say('bot', 'fx', { title: say_('billConfirmed'), lines: res.fx, billId: d.id });
+        if (res.receipt) say('bot', 'wa', { title: 'WhatsApp → ' + byId(S.customers, d.customerId).name, text: res.receipt });
+        render(); break;
+      }
+      case 'discard': {
+        const d = S.drafts[b.dataset.bill]; if (!d) return;
+        d.status = 'cancelled'; S.bills.push(d); delete S.drafts[d.id];
+        render({ scroll: false }); break;
+      }
+      case 'si-pick': {
+        const sd = S.stockDrafts[b.dataset.draft]; if (!sd) return;
+        const u = sd.unmatched.find((x) => x.id === b.dataset.u);
+        if (u) { sd.lines.push({ itemId: b.dataset.item, quantity: u.quantity || 1 }); sd.unmatched = sd.unmatched.filter((x) => x !== u); }
+        render({ scroll: false }); break;
+      }
+      case 'si-drop': {
+        const sd = S.stockDrafts[b.dataset.draft]; if (!sd) return;
+        sd.unmatched = sd.unmatched.filter((x) => x.id !== b.dataset.u);
+        render({ scroll: false }); break;
+      }
+      case 'si-confirm': {
+        const sd = S.stockDrafts[b.dataset.draft]; if (!sd) return;
+        receiveStock(sd.supplier, sd.lines);
+        sd.status = 'done';
+        const msg = S.chat.find((m) => m.kind === 'stockin' && m.draftId === sd.id); if (msg) msg.done = sd;
+        delete S.stockDrafts[sd.id];
+        botText(`Stock mein ${sd.lines.length} item jod diye${sd.supplier ? ` (${sd.supplier})` : ''}.`);
+        render(); break;
+      }
+      case 'si-cancel': {
+        const sd = S.stockDrafts[b.dataset.draft]; if (!sd) return;
+        sd.status = 'cancelled';
+        const msg = S.chat.find((m) => m.kind === 'stockin' && m.draftId === sd.id); if (msg) msg.done = sd;
+        delete S.stockDrafts[sd.id];
+        render({ scroll: false }); break;
+      }
+      case 'open': {
+        const c = byId(S.customers, b.dataset.customer); if (!c) return;
+        ui.custId = c.id; goTab('customers', 'detail'); break;
+      }
+      case 'filter': { const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.filter = b.dataset.f; render({ scroll: false }); break; }
+      case 'payopen': {
+        const m = S.chat.find((x) => x.id === b.dataset.msg); if (m) m.payOpen = !m.payOpen;
+        render({ scroll: false }); document.getElementById(`amt-${b.dataset.msg}`)?.focus(); break;
+      }
+      case 'remind': {
+        const c = byId(S.customers, b.dataset.customer); if (!c) return;
+        sendReminder(c);
+        if (ui.tab !== 'chat') { ui.flash = 'Chat (Baat tab) mein reminder ka preview dekhiye.'; render({ scroll: true, keepScroll: true }); } else render();
+        break;
+      }
+      case 'receipt': openReceipt(b.dataset.bill); break;
+      case 'close': sheet.hidden = true; break;
+      case 'try':
+        S.ui.tab = 'chat'; handle(b.dataset.text); render();
+        if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      case 'cfilter': ui.filter = b.dataset.f; render({ scroll: false }); break;
+      case 'cview': ui.custView = b.dataset.view; ui.payOpen = false; ui.editOpen = false; ui.flash = ''; render({ scroll: false }); break;
+      case 'cpayopen': ui.payOpen = !ui.payOpen; ui.editOpen = false; ui.flash = ''; render({ scroll: false, keepScroll: true }); document.getElementById('cp-amt')?.focus(); break;
+      case 'ceditopen': ui.editOpen = !ui.editOpen; ui.payOpen = false; ui.flash = ''; render({ scroll: false, keepScroll: true }); break;
+      case 'consent': {
+        const c = byId(S.customers, b.dataset.customer); if (!c || !c.phone) return;
+        c.consent = !c.consent; c.consentAt = c.consent ? now().toISOString() : null;
+        ui.flash = c.consent ? 'Sahmati likh li. Ab udhaar rasid aur reminder jaayenge.' : 'Sahmati hata di. Ab message nahi jaayenge.';
+        render({ scroll: false, keepScroll: true }); break;
+      }
+      case 'reverse': {
+        if (reversePayment(b.dataset.entry)) { ui.flash = 'Galat entry hata di. Khata pehle jaisa ho gaya.'; }
+        render({ scroll: false, keepScroll: true }); break;
+      }
+      case 'sview': ui.stockView = b.dataset.view; ui.recvRows = 3; render({ scroll: false }); break;
+      case 'recvmore': ui.recvRows = (ui.recvRows || 3) + 1; {
+        // keep what was typed
+        const form = pane.querySelector('[data-form="receive"]');
+        const vals = form ? Object.fromEntries(new FormData(form)) : {};
+        render({ scroll: false, keepScroll: true });
+        const nf = pane.querySelector('[data-form="receive"]');
+        for (const [k, v] of Object.entries(vals)) if (nf.elements[k]) nf.elements[k].value = v;
+      } break;
+      case 'togglecredit': S.store.givesCredit = !S.store.givesCredit; render({ scroll: false }); break;
+      case 'togglelang': S.store.language = S.store.language === 'hi' ? 'hinglish' : 'hi'; render({ scroll: false }); break;
+      case 'onboard': startOnboarding(); if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
+      case 'onb-close': sheet.hidden = true; ONB = null; break;
+      case 'onb-gstmode': {
+        const form = sheet.querySelector('[data-form="onb-gst"]');
+        if (form?.gstin) ONB.d.gstin = form.gstin.value.trim().toUpperCase();
+        if (form?.pan) ONB.d.pan = form.pan.value.trim().toUpperCase();
+        ONB.d.gst = b.dataset.mode; renderOnboarding(); break;
+      }
+      case 'onb-pick': ONB.d[b.dataset.field] = b.dataset.val; renderOnboarding(); break;
+      case 'onb-next': ONB.step += 1; renderOnboarding(); break;
+      case 'onb-sample': {
+        // Add the sample list to what was already entered, skipping items that are already there.
+        const key = (i) => `${i.name.toLowerCase()}|${i.unit}|${i.unitSize}`;
+        const have = new Set(ONB.d.items.map(key));
+        for (const x of SAMPLE_ITEMS) { const it = makeItem(...x); if (!have.has(key(it))) ONB.d.items.push(it); }
+        renderOnboarding(); break;
+      }
+      case 'onb-delitem': ONB.d.items.splice(Number(b.dataset.k), 1); renderOnboarding(); break;
+      case 'onb-finish': ONB.step = 5; renderOnboarding(); break;
+      case 'onb-done': finishOnboarding(); ONB = null; sheet.hidden = true; S.ui.tab = 'chat'; render(); input.focus(); break;
+    }
+  });
+
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'csearch') {
+      S.ui.search = e.target.value;
+      document.getElementById('clist').innerHTML = customerRows(filtered(S.ui.filter, S.ui.search)) || '<div class="row sub">Koi grahak nahi mila</div>';
+    }
+    if (e.target.id === 'ob-gstin' && ONB) {
+      const v = e.target.value.trim().toUpperCase();
+      ONB.d.gstin = v;
+      const box = e.target.closest('form').querySelector('.ok');
+      if (A.isValidGstin(v) && !box) renderOnboarding(); else if (!A.isValidGstin(v) && box) box.remove();
     }
   });
 
   document.addEventListener('submit', (e) => {
-    const f = e.target.closest('[data-a="payform"]');
-    if (!f) return;
+    const form = e.target.closest('form[data-form]');
+    if (!form) return;
     e.preventDefault();
-    const rupees = parseFloat(String(f.amt.value).replace(/[,₹\s]/g, ''));
-    const c = byId(S.customers, f.dataset.customer);
-    if (!c || !(rupees > 0)) return;
-    const paise = Math.round(rupees * 100);
-    recordPayment(c, paise, f.method.value);
-    const m = S.chat.find((x) => x.id === f.dataset.msg); if (m) m.payOpen = false;
-    botText(A.reply(LANG, 'paymentRecorded', { name: c.name, amount: paise, balance: c.balance }));
-    render();
+    const f = form.dataset.form;
+    const ui = S.ui;
+    if (f.startsWith('onb-')) return onbSubmit(form);
+    if (f === 'pay' || f === 'cpay') {
+      const paise = rupeesToPaise(form.amt.value);
+      const c = byId(S.customers, form.dataset.customer);
+      if (!c || !(paise > 0)) return;
+      recordPayment(c, paise, form.method.value, form.note?.value.trim());
+      const text = say_('paymentRecorded', { name: c.name, amount: paise, balance: c.balance });
+      if (f === 'pay') { const m = S.chat.find((x) => x.id === form.dataset.msg); if (m) m.payOpen = false; botText(text); render(); }
+      else { ui.payOpen = false; ui.flash = text; render({ scroll: false }); }
+      return;
+    }
+    if (f === 'addcust') {
+      const name = form.name.value.trim();
+      const raw = form.phone.value.trim();
+      const phone = raw ? A.normalizePhone(raw) : null;
+      if (raw && !phone) { document.getElementById('nc-err').textContent = 'Sahi mobile number daaliye (10 ank).'; return; }
+      if (phone && S.customers.some((c) => c.phone === phone)) { document.getElementById('nc-err').textContent = 'Is number ka grahak pehle se hai.'; return; }
+      const c = addCustomer(name, phone, phone && form.consent.checked);
+      ui.custId = c.id; ui.custView = 'detail'; ui.flash = `${c.name} jud gaye.`;
+      render({ scroll: false });
+      return;
+    }
+    if (f === 'editcust') {
+      const c = byId(S.customers, form.dataset.customer); if (!c) return;
+      const raw = form.phone.value.trim();
+      const phone = raw ? A.normalizePhone(raw) : null;
+      if (raw && !phone) { document.getElementById('ec-err').textContent = 'Sahi mobile number daaliye (10 ank).'; return; }
+      if (phone && S.customers.some((x) => x.id !== c.id && x.phone === phone)) { document.getElementById('ec-err').textContent = 'Is number ka grahak pehle se hai.'; return; }
+      c.name = form.name.value.trim() || c.name;
+      if (phone !== c.phone) { c.phone = phone; if (!phone) { c.consent = false; c.consentAt = null; } }
+      ui.editOpen = false; ui.flash = 'Details save ho gayi.';
+      render({ scroll: false, keepScroll: true });
+      return;
+    }
+    if (f === 'receive') {
+      const lines = [];
+      for (let k = 0; k < (ui.recvRows || 3); k++) {
+        const itemId = form.elements[`item${k}`]?.value;
+        const qty = parseFloat(form.elements[`qty${k}`]?.value);
+        const cost = form.elements[`cost${k}`]?.value;
+        if (itemId && qty > 0) lines.push({ itemId, quantity: qty, costPrice: cost ? rupeesToPaise(cost) : null });
+      }
+      if (!lines.length) { document.getElementById('rv-err').textContent = 'Kam se kam ek item aur kitna aaya, likhiye.'; return; }
+      receiveStock(form.supplier.value.trim(), lines);
+      ui.stockView = 'list';
+      render({ scroll: false });
+      return;
+    }
+    if (f === 'additem') {
+      const name = form.name.value.trim();
+      const size = parseFloat(form.size.value) || 1;
+      const unit = form.unit.value;
+      if (S.items.some((i) => i.isActive && i.name.toLowerCase() === name.toLowerCase() && i.unit === unit && i.unitSize === size)) {
+        document.getElementById('ni-err').textContent = 'Yeh item isi size mein pehle se hai.'; return;
+      }
+      S.items.push(makeItem(name[0].toUpperCase() + name.slice(1), unit, size, form.price.value === '' ? null : parseFloat(form.price.value), parseFloat(form.stock.value) || 0));
+      ui.stockView = 'list';
+      render({ scroll: false });
+    }
   });
 
   /* ---------- examples ---------- */
   const EXAMPLES = [
     ['Ramesh ko paanch kilo atta, ek kilo toor dal, do sarson tel… udhaar mein likh do', 'Voice bill · asks “Kaunsa size?”'],
+    ['Maal aaya: 20 bag atta, 10 sarson tel 1 litre aur paanch kilo cheeni', 'Inventory in · by voice'],
     ['Ramesh ka kitna baaki hai?', 'Khata check'],
-    ['Paanch kilo chawal, ek namak, aur do kilo m…l?', 'Unclear word · offers best guesses'],
+    ['Ramesh ne paanch sau rupaye diye UPI se', 'Payment record'],
     ['Sunita ko do kilo cheeni, 50 abhi diye baaki udhaar', 'Part payment on udhaar'],
-    ['Ramesh ne paanch sau rupaye diye UPI se', 'Payment received'],
-    ['Grahak list dikhao', 'Customer list with filters'],
-    ['Pappu ko teen kilo maida udhaar mein likh do', 'New customer on the fly'],
+    ['Paanch kilo chawal, ek namak, aur do kilo m…l?', 'Unclear word · best guesses'],
+    ['Grahak list dikhao', 'Customer list'],
     ['aaj ka hisaab', 'Daily summary'],
-    ['kaunsa stock kam hai', 'Low stock / kharid list'],
+    ['kaunsa stock kam hai', 'Low stock'],
   ];
   document.getElementById('try').innerHTML = EXAMPLES.map(([t, d]) => `<button data-a="try" data-text="${esc(t)}">“${esc(t)}”<span>${esc(d)}</span></button>`).join('');
   document.getElementById('chips').innerHTML = EXAMPLES.map(([t, d]) => `<button class="sug" data-a="try" data-text="${esc(t)}" title="${esc(t)}">${esc(d.split(' · ')[0])}</button>`).join('');
 
   document.getElementById('reset').addEventListener('click', () => {
-    S = seed(); lastStock = {}; lastKhata = {}; sheet.hidden = true; render();
+    S = seed(); lastStock = {}; lastKhata = {}; sheet.hidden = true; ONB = null; render();
   });
 
+  syncButton();
   render();
 })();
 </script>
