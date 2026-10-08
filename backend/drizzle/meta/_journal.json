@@ -29,6 +29,13 @@
       "when": 1791289896998,
       "tag": "0003_english_language",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791474428129,
+      "tag": "0004_voice_learning",
+      "breakpoints": true
     }
   ]
 }

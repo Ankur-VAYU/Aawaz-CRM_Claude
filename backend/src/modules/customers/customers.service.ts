@@ -14,7 +14,8 @@ export async function findCustomersByName(db: Db, storeId: string, spoken: strin
   return all
     .map((c) => {
       const first = c.name.split(' ')[0];
-      return { customer: c, score: Math.max(similarity(spoken, c.name), similarity(spoken, first)) };
+      const names = [c.name, first, ...c.aliases];
+      return { customer: c, score: Math.max(...names.map((n) => similarity(spoken, n))) };
     })
     .filter((m) => m.score >= 0.75)
     .sort((a, b) => b.score - a.score)

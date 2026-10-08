@@ -23,6 +23,7 @@ import { generateShareToken } from '../../lib/tokens.js';
 import type { PaymentMode, ParsedLine } from '../assistant/parser.js';
 import { enqueueCustomerMessage, postLedgerEntry, resolveCustomer, shareLink } from '../customers/customers.service.js';
 import { quantityFor, resolveLine } from './matching.js';
+import { learnCustomerAlias, learnItemAlias, logVoiceEvent, type Learned } from '../learning/learning.service.js';
 
 export interface LineInput {
   itemId?: string;
@@ -127,7 +128,7 @@ export class BillsService {
         },
       };
     }
-    const issues: BillIssue[] = resolved.flatMap((r) => (r.kind === 'issue' ? [r.issue] : []));
+    const issues: BillIssue[] = resolved.flatMap((r, k) => (r.kind === 'issue' ? [{ ...r.issue, spoken: input.lines[k].name }] : []));
     const lines: StoredLine[] = resolved.flatMap((r) => (r.kind === 'ok' ? [this.lineFromItem(r.item, r.quantity, r.item.price!)] : []));
 
     let customerId: string | null = null;
@@ -142,7 +143,7 @@ export class BillsService {
           options: match.candidates.map((c) => ({ customerId: c.id, label: c.name })),
         });
       } else {
-        issues.unshift({ id: crypto.randomUUID(), kind: 'customer_unknown', name: input.customerName, options: [] });
+        issues.unshift({ id: crypto.randomUUID(), kind: 'customer_unknown', name: input.customerName, spoken: input.customerName, options: [] });
       }
     } else if (input.paymentMode === 'udhaar') {
       issues.unshift({ id: crypto.randomUUID(), kind: 'customer_required', options: [] });
@@ -400,11 +401,24 @@ export class BillsService {
 
   /** Answers one open question on a draft, e.g. picks "1 litre · ₹170" for "Kaunsa size?". */
   async resolveIssue(store: Store, billId: string, input: ResolveInput) {
+    // Set inside the transaction below.
+    let learned = null as Learned;
+    let correction = null as Record<string, unknown> | null;
+    let transcript = '';
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
       const bill = await this.lockDraft(tx, store.id, billId);
       const issue = bill.issues.find((i) => i.id === input.issueId);
       if (!issue) throw notFound('Issue not found on this bill');
+      transcript = bill.transcript ?? '';
+      // Learn from the shopkeeper's answer: what was heard means this item / this customer.
+      if (input.customerId && issue.kind === 'customer_unknown') {
+        learned = await learnCustomerAlias(tx, store.id, input.customerId, issue.spoken ?? issue.name);
+        correction = { heard: issue.spoken ?? issue.name, chose: { customerId: input.customerId }, kind: issue.kind };
+      } else if (input.itemId && ['unclear', 'not_found', 'price_missing'].includes(issue.kind) && input.itemId !== issue.itemId) {
+        learned = await learnItemAlias(tx, store.id, input.itemId, issue.spoken);
+        correction = { heard: issue.spoken ?? issue.raw, chose: { itemId: input.itemId }, kind: issue.kind };
+      }
       let issues = bill.issues.filter((i) => i.id !== issue.id);
       const update: Partial<Bill> = {};
       let lines: StoredLine[] | null = null;
@@ -482,7 +496,10 @@ export class BillsService {
       if (lines) await this.writeLines(tx, store, billId, lines);
       else await this.recalc(tx, store, billId);
     });
-    return this.get(store.id, billId);
+    if (correction) {
+      await logVoiceEvent(this.db, store, { text: transcript, outcome: 'corrected', details: { ...correction, learned } });
+    }
+    return { bill: await this.get(store.id, billId), learned };
   }
 
   /**

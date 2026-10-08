@@ -117,7 +117,8 @@ export default async function billRoutes(
   app.post('/:id/resolve', async (req) => {
     const { id } = validate(idParams, req.params);
     const body = validate(resolveBody, req.body);
-    return { bill: await billsService.resolveIssue(req.store, id, body) };
+    // `learned` says what the app will now recognise, e.g. "raam" → Ram Kumar.
+    return billsService.resolveIssue(req.store, id, body);
   });
 
   app.post('/:id/confirm', async (req) => {

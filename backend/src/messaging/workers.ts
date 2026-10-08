@@ -2,6 +2,7 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Db } from '../db/index.js';
 import { outboundMessages, stores, users } from '../db/schema.js';
+import { purgeOldVoiceEvents } from '../modules/learning/learning.service.js';
 import { dailySummary, localDate, summaryMessage } from '../modules/summary/summary.service.js';
 import type { MessageSender } from './sender.js';
 
@@ -97,8 +98,11 @@ export function startWorkers(db: Db, sender: MessageSender, log: FastifyBaseLogg
   };
   const outbox = setInterval(() => void tick(() => deliverPendingMessages(db, sender, log), 'outbox'), 5_000);
   const summaries = setInterval(() => void tick(() => queueDailySummaries(db), 'daily summary'), 60_000);
+  // Voice logs are kept for a limited time only.
+  const purge = setInterval(() => void tick(() => purgeOldVoiceEvents(db), 'voice log purge'), 60 * 60_000);
   return () => {
     clearInterval(outbox);
     clearInterval(summaries);
+    clearInterval(purge);
   };
 }

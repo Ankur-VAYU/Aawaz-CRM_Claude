@@ -54,6 +54,7 @@ curl -s localhost:3000/api/v1/assistant/message -H "authorization: Bearer <acces
 | `npm test` | Unit + integration tests (needs PostgreSQL, see below) |
 | `npm run db:generate` | Create a migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (the server also does this on start-up) |
+| `npm run voice:report` | Weekly report of misunderstood commands and corrections (opted-in shops) |
 | `npm run seed:demo` | Demo shop, items and customers from the design (not in production) |
 
 Tests use `TEST_DATABASE_URL` (default `postgres://postgres:postgres@localhost:5432/aawaz_test`) and **wipe its tables**.
@@ -183,6 +184,21 @@ Sales total, bill count (and how many by voice), cash / UPI / udhaar split, udha
 - `GET /reports/gst?from=YYYY-MM-DD&to=YYYY-MM-DD` gives your CA: totals by rate, by HSN, B2B invoices, documents issued and cancelled.
 
 **Have a CA confirm before going live:** the GST rate and HSN code for each product (rates change); whether your turnover requires HSN on B2C invoices; and the invoice fields required for your shop. **Not supported yet:** credit/debit notes (a cancelled invoice is excluded from the report, not offset by a credit note), e-invoicing, and reverse charge.
+
+## Voice improvement
+
+**Learning from corrections (per shop, always on).** Each shop learns how *its* shopkeeper speaks:
+- A misheard or unknown item that the shopkeeper resolves by picking an existing item saves the heard word as an alias for that item. For example, "moongi" → Moong dal; the next time it matches straight away.
+- A customer name that wasn't recognised and is resolved by picking an existing customer saves the spoken name as an alias for that customer. For example, "Pintu" → Pradeep Kumar.
+- The resolve response says what was learned (`learned: { type, heard, name }`).
+- `GET /assistant/learned` lists what was learned. `DELETE /assistant/learned { kind, id, alias }` forgets a wrong one.
+- Fragments of unclear speech ("m l"), numbers and very short words are never learned.
+
+**Failure log (only with the shopkeeper's permission).**
+- With `PATCH /store { voiceLogOptIn: true }`, the app keeps commands it didn't understand, ones where it had to ask, and the shopkeeper's corrections.
+- Entries are deleted automatically after 90 days. The shop can see them (`GET /assistant/voice-log`) and delete them (`DELETE /assistant/voice-log`).
+- For the team, `npm run voice:report [-- --days 7] [-- --purge]` prints a markdown report across opted-in shops: the most common misunderstood sentences, words that needed questions, and corrections. Use it each week to add parser rules and default aliases.
+- These texts can contain customer names. Treat the report as personal data.
 
 ## Messages (OTP, receipts, reminders, summaries)
 

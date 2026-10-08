@@ -18,6 +18,8 @@ export const updateStoreBody = createStoreBody
   .extend({
     pincode: z.string().trim().regex(/^[1-9]\d{5}$/, 'PIN code must be 6 digits').nullable().optional(),
     address: text(200).nullable().optional(),
+    /** Allow sharing misunderstood commands so voice understanding can be improved. */
+    voiceLogOptIn: z.boolean().optional(),
     summaryTime: z
       .string()
       .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use 24-hour HH:MM')

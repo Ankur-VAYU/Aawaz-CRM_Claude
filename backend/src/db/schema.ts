@@ -117,6 +117,8 @@ export const stores = pgTable(
     // Local time (HH:MM) at which the daily summary is sent to the owner.
     summaryTime: varchar('summary_time', { length: 5 }).notNull().default('21:00'),
     lastSummaryDate: date('last_summary_date', { mode: 'string' }),
+    // Shopkeeper allows sharing commands the app misunderstood, to improve voice understanding.
+    voiceLogOptIn: boolean('voice_log_opt_in').notNull().default(false),
     // Invoice numbers restart every financial year (April–March), e.g. "2026-27/0001".
     billCounter: integer('bill_counter').notNull().default(0),
     billCounterFy: varchar('bill_counter_fy', { length: 7 }),
@@ -212,6 +214,8 @@ export const customers = pgTable(
       .references(() => stores.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 120 }).notNull(),
     phone: varchar('phone', { length: 16 }),
+    // Other ways this name was heard ("raam" for Ram Kumar), learned from the shopkeeper's corrections.
+    aliases: text('aliases').array().notNull().default(sql`'{}'::text[]`),
     // Outstanding udhaar in paise (positive = customer owes the store). Kept in sync with ledger_entries.
     balance: money('balance').notNull().default(0),
     totalPurchases: money('total_purchases').notNull().default(0),
@@ -271,6 +275,8 @@ export interface BillIssue {
   options: BillIssueOption[];
   /** The item was added to the inventory automatically from this bill (removed again if dropped). */
   autoAdded?: boolean;
+  /** The words as heard ("m l", "pyaaz"), used to learn from the shopkeeper's correction. */
+  spoken?: string;
 }
 
 export const documentType = pgEnum('document_type', ['tax_invoice', 'bill_of_supply', 'bill']);
@@ -386,6 +392,33 @@ export const ledgerEntries = pgTable(
   ],
 );
 
+
+/* ---------- Voice improvement ---------- */
+
+export const voiceOutcome = pgEnum('voice_outcome', ['not_understood', 'needs_input', 'corrected']);
+
+/**
+ * Commands the app didn't fully understand, and the corrections the shopkeeper made. Kept only for
+ * shops that opted in, and deleted after the retention period. Reviewed by the team to improve the
+ * parser.
+ */
+export const voiceEvents = pgTable(
+  'voice_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    source: varchar('source', { length: 10 }),
+    language: varchar('language', { length: 10 }),
+    intent: varchar('intent', { length: 30 }),
+    outcome: voiceOutcome('outcome').notNull(),
+    details: jsonb('details').notNull().default({}),
+    createdAt: createdAt(),
+  },
+  (t) => [index('voice_events_store_idx').on(t.storeId, t.createdAt), index('voice_events_created_idx').on(t.createdAt)],
+);
 
 /* ---------- Outbound messages (receipts, reminders, summaries) ---------- */
 

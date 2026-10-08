@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "test": "vitest run",
-    "seed:demo": "tsx src/scripts/seed-demo.ts"
+    "seed:demo": "tsx src/scripts/seed-demo.ts",
+    "voice:report": "tsx src/scripts/voice-report.ts"
   },
   "license": "ISC",
   "dependencies": {
