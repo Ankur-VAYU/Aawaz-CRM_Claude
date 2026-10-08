@@ -241,6 +241,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         <button data-a="go" data-tab="customers" data-view="alltx">Khata / transactions<span>Every bill and payment</span></button>
         <button data-a="go" data-tab="customers" data-view="pay">Payment record<span>“Paisa mila”, undo a wrong entry</span></button>
         <button data-a="go" data-tab="chat">Voice billing<span>Speak a bill in the chat</span></button>
+        <button data-a="go" data-tab="shop">Voice learning<span>Learned names, opt-in log</span></button>
       </div>
     </div>
     <div class="box">
@@ -319,6 +320,25 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     'issue.newItem': ['+ Naya item: {name}', '+ नया आइटम: {name}', '+ New item: {name}'],
     'issue.autoAdded': ['{name} naya item hai. Inventory mein jod diya — bas daam bataiye.', '{name} नया आइटम है। इन्वेंटरी में जोड़ दिया — बस दाम बताइए।', '{name} is a new item. Added to your inventory — just tell me the price.'],
     'issue.orPick': ['Ya inme se koi:', 'या इनमें से कोई:', 'Or one of these:'],
+    'issue.orCustomer': ['Ya pehle se grahak:', 'या पहले से ग्राहक:', 'Or an existing customer:'],
+    'learn.done': ['Seekh liya: "{heard}" matlab {name}. Agli baar seedha samjhunga.', 'सीख लिया: "{heard}" मतलब {name}। अगली बार सीधे समझूँगा।', 'Learned: "{heard}" means {name}. Next time I will get it directly.'],
+    'learn.title': ['Awaaz sudhaar', 'आवाज़ सुधार', 'Voice improvement'],
+    'learn.sub': ['Aap jo sudhaarte hain, app yaad rakhta hai — sirf aapki dukaan ke liye.', 'आप जो सुधारते हैं, ऐप याद रखता है — सिर्फ़ आपकी दुकान के लिए।', 'What you correct, the app remembers — for your shop only.'],
+    'learn.names': ['Seekhe hue naam', 'सीखे हुए नाम', 'Learned names'],
+    'learn.none': ['Abhi kuch nahi seekha. Bill mein galat naam ko sahi item/grahak chunkar sudhaariye.', 'अभी कुछ नहीं सीखा। बिल में गलत नाम को सही आइटम/ग्राहक चुनकर सुधारिए।', 'Nothing learned yet. Correct a wrong name on a bill by picking the right item or customer.'],
+    'learn.forget': ['Bhoolo', 'भूलो', 'Forget'],
+    'log.title': ['Galat samjhe gaye vakya', 'गलत समझे गए वाक्य', 'Misunderstood commands'],
+    'log.optin': ['Team ko bhejein taaki app behtar samjhe', 'टीम को भेजें ताकि ऐप बेहतर समझे', 'Share with the team so the app understands better'],
+    'log.optinSub': ['Sirf woh vakya jo samajh nahi aaye ya sudhaare gaye, 90 din tak. Kabhi bhi band kar sakte hain.', 'सिर्फ़ वे वाक्य जो समझ नहीं आए या सुधारे गए, 90 दिन तक। कभी भी बंद कर सकते हैं।', 'Only commands that were not understood or were corrected, kept for 90 days. Turn off anytime.'],
+    'log.on': ['Chalu hai', 'चालू है', 'On'],
+    'log.off': ['Band hai', 'बंद है', 'Off'],
+    'log.turnOn': ['Chalu karo', 'चालू करें', 'Turn on'],
+    'log.turnOff': ['Band karo', 'बंद करें', 'Turn off'],
+    'log.empty': ['Kuch record nahi', 'कुछ रिकॉर्ड नहीं', 'Nothing recorded'],
+    'log.clear': ['Sab mitao', 'सब मिटाओ', 'Delete all'],
+    'log.not_understood': ['Samajh nahi aaya', 'समझ नहीं आया', 'Not understood'],
+    'log.needs_input': ['Poochna pada', 'पूछना पड़ा', 'Had to ask'],
+    'log.corrected': ['Sudhaara', 'सुधारा', 'Corrected'],
     'price.submit': ['Daam daalo, bill mein jodo', 'दाम डालो, बिल में जोड़ो', 'Set price, add to bill'],
     'si.new': ['NAYA', 'नया', 'NEW'],
     'si.newAdded': ['{n} naye item inventory mein jode', '{n} नए आइटम इन्वेंटरी में जोड़े', '{n} new item(s) added to inventory'],
@@ -616,10 +636,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   ];
   const makeItem = (name, unit, unitSize, rupees, stock, stockLabel = 'pc', aliases = []) => ({
     id: uid(), name, unit, unitSize: Number(unitSize), price: rupees == null || rupees === '' ? null : Math.round(Number(rupees) * 100),
-    stock: Number(stock) || 0, stockLabel, lowStockThreshold: 5, aliases, isActive: true,
+    stock: Number(stock) || 0, stockLabel, lowStockThreshold: 5, aliases, seedAliases: [...aliases], isActive: true,
   });
   const makeCustomer = (name, phone, consent, daysSincePurchase = null, createdDaysAgo = 0) => ({
-    id: uid(), name, phone: phone || null, consent: Boolean(consent),
+    id: uid(), name, phone: phone || null, consent: Boolean(consent), aliases: [],
     balance: 0, totalPurchases: 0, totalPaid: 0,
     lastPurchaseAt: daysSincePurchase === null ? null : new Date(Date.now() - daysSincePurchase * DAY).toISOString(),
     createdAt: new Date(Date.now() - createdDaysAgo * DAY).toISOString(),
@@ -628,7 +648,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function baseState(store, items, customers) {
     return {
       v: 3, store, items, customers, ledger: [], bills: [], receipts: [], counter: 0, counterFy: null, drafts: {}, stockDrafts: {},
-      voice: 'auto',
+      voice: 'auto', voiceLog: [],
       chat: [{ id: uid(), from: 'bot', kind: 'welcome', at: now().toISOString() }],
       ui: { tab: 'chat', custView: 'list', custId: null, filter: 'all', search: '', stockView: 'list' },
     };
@@ -688,7 +708,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   /* ---------- business logic (mirrors the backend services) ---------- */
   function resolveCustomer(spoken) {
     const matches = S.customers
-      .map((c) => ({ c, score: Math.max(A.similarity(spoken, c.name), A.similarity(spoken, first(c.name))) }))
+      .map((c) => ({ c, score: Math.max(...[c.name, first(c.name), ...(c.aliases || [])].map((n) => A.similarity(spoken, n))) }))
       .filter((m) => m.score >= 0.75)
       .sort((a, b) => b.score - a.score);
     if (!matches.length) return { status: 'not_found' };
@@ -708,14 +728,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     for (const line of intent.lines) {
       const res = A.resolveLine(activeItems(), line);
       if (res.kind === 'ok') d.lines.push(lineFromItem(res.item, res.quantity));
-      else if (res.issue.kind === 'not_found') d.issues.push(autoAddIssue(line, res.issue));
-      else d.issues.push(res.issue);
+      else if (res.issue.kind === 'not_found') d.issues.push({ ...autoAddIssue(line, res.issue), spoken: line.name });
+      else d.issues.push({ ...res.issue, spoken: line.name });
     }
     if (intent.customerName) {
       const m = resolveCustomer(intent.customerName);
       if (m.status === 'found') d.customerId = m.customer.id;
       else if (m.status === 'ambiguous') d.issues.unshift({ id: uid(), kind: 'customer_ambiguous', name: intent.customerName, options: m.candidates.map((c) => ({ customerId: c.id, label: c.name })) });
-      else d.issues.unshift({ id: uid(), kind: 'customer_unknown', name: intent.customerName, options: [] });
+      else d.issues.unshift({ id: uid(), kind: 'customer_unknown', name: intent.customerName, spoken: intent.customerName, options: [] });
     } else if (intent.paymentMode === 'udhaar') {
       d.issues.unshift({ id: uid(), kind: 'customer_required', options: [] });
     }
@@ -745,6 +765,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     if (it && it.price == null && !used) S.items = S.items.filter((i) => i.id !== itemId);
   }
 
+  /* ---------- learning from corrections + opt-in voice log (mirrors backend) ---------- */
+  function aliasFrom(spoken) {
+    if (!spoken) return null;
+    const a = spoken.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    if (/\d/.test(a) || a.replace(/[^\p{L}]/gu, '').length < 3 || a.split(' ').some((w) => w.length === 1)) return null;
+    return a;
+  }
+  function learn(target, displayName, spoken) {
+    const alias = aliasFrom(spoken);
+    if (!alias || !target) return null;
+    target.aliases = target.aliases || [];
+    if ([target.name, ...target.aliases].map((x) => x.toLowerCase()).includes(alias)) return null;
+    target.aliases = [...target.aliases, alias].slice(-10);
+    return { heard: alias, name: displayName };
+  }
+  function logVoice(text, outcome, details = {}) {
+    if (!S.store.voiceLogOptIn) return;
+    S.voiceLog = [{ id: uid(), at: now().toISOString(), text, outcome, details }, ...(S.voiceLog || [])].slice(0, 100);
+  }
+
   function addCustomer(name, phone, consent) {
     const c = makeCustomer(name, phone, consent);
     S.customers.push(c);
@@ -754,6 +794,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   function resolveIssue(d, issueId, choice) {
     const issue = d.issues.find((i) => i.id === issueId);
     if (!issue) return;
+    let learned = null;
+    if (choice.customerId && issue.kind === 'customer_unknown') {
+      const c = byId(S.customers, choice.customerId);
+      learned = learn(c, c?.name, issue.spoken || issue.name);
+    } else if (choice.itemId && ['unclear', 'not_found', 'price_missing'].includes(issue.kind) && choice.itemId !== issue.itemId) {
+      const it = byId(S.items, choice.itemId);
+      learned = learn(it, it && A.itemDisplayName(it), issue.spoken);
+    }
+    if (learned || (choice.customerId && issue.kind === 'customer_unknown') || (choice.itemId && choice.itemId !== issue.itemId && issue.kind !== 'choose_variant')) {
+      logVoice(d.transcript, 'corrected', { heard: issue.spoken || issue.name, learned });
+    }
+    if (learned) say('bot', 'text', { text: t('learn.done', learned) });
     // Dropped, or swapped for an existing item: undo the automatic inventory entry if unused.
     if (issue.autoAdded && (choice.remove || (choice.itemId && choice.itemId !== issue.itemId))) dropAutoItem(issue.itemId);
     if (choice.remove) {
@@ -898,6 +950,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     switch (intent.type) {
       case 'create_bill': {
         const d = createDraft(intent, text);
+        const unsure = d.issues.filter((i) => ['unclear', 'not_found', 'customer_unknown'].includes(i.kind) || i.autoAdded);
+        if (unsure.length) logVoice(text, 'needs_input', { heard: unsure.map((i) => i.spoken || i.name).join(', ') });
         botText(d.issues.length ? say_('billNeedsInput', { n: d.issues.length }) : say_('billDraft', { customer: d.customerId ? byId(S.customers, d.customerId).name : null, count: d.lines.length, total: draftTotal(d) }));
         say('bot', 'bill', { billId: d.id });
         break;
@@ -950,6 +1004,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         break;
       }
       default:
+        logVoice(text, 'not_understood');
         botText(say_('notUnderstood'));
     }
   }
@@ -984,6 +1039,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     } else if (i.kind === 'customer_unknown') {
       opts.push(btn(`data-new="${esc(i.name)}"`, esc(t('issue.newCustomer', { name: i.name }))));
       if (d.paymentMode !== 'udhaar') opts.push(btn('data-remove="1"', esc(t('issue.noName')), true));
+      const existing = S.customers.slice(0, 6).map((c) => btn(`data-customer="${c.id}"`, esc(c.name))).join('');
+      if (existing) return `<div class="ask"><div class="ask-q">${esc(t('issue.customer_unknown', { name: i.name }))}</div><div class="opts">${opts.join('')}</div><div class="sub">${esc(t('issue.orCustomer'))}</div><div class="opts">${existing}</div></div>`;
     } else if (i.kind === 'price_missing' && i.itemId && byId(S.items, i.itemId)) {
       const it = byId(S.items, i.itemId);
       const fid = `${d.id.slice(0, 6)}-${i.id.slice(0, 6)}`;
@@ -1289,8 +1346,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         <div><div class="section-t" style="padding:0 0 6px">${esc(t('sh.appLang'))}</div>${seg(Object.entries(LANG_NAMES), s.language, 'setlang')}</div>
         <div><div class="section-t" style="padding:0 0 6px">${esc(t('sh.voice'))}</div>${seg(VOICE_CHOICES(), S.voice, 'setvoice')}</div>
       </div></div>
+      ${voiceImprovementHtml()}
       <div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${esc(t('sh.newShop'))}</div><div class="sub">${esc(t('sh.newShopSub'))}</div></div></div>
       <div class="acts"><button class="btn go" data-a="onboard">${esc(t('sh.start'))}</button></div></div>`;
+  }
+
+  function voiceImprovementHtml() {
+    const learned = [
+      ...S.items.filter((i) => i.isActive).flatMap((i) => (i.aliases || []).filter((a) => !(i.seedAliases || []).includes(a)).map((a) => ({ kind: 'item', id: i.id, alias: a, name: A.itemDisplayName(i) }))),
+      ...S.customers.flatMap((c) => (c.aliases || []).map((a) => ({ kind: 'customer', id: c.id, alias: a, name: c.name }))),
+    ];
+    const names = learned.length
+      ? learned.map((l) => `<div class="row"><span class="grow">“${esc(l.alias)}” → <b>${esc(l.name)}</b></span><button class="btn tiny" data-a="forget" data-kind="${l.kind}" data-id="${l.id}" data-alias="${esc(l.alias)}">${esc(t('learn.forget'))}</button></div>`).join('')
+      : `<div class="row sub">${esc(t('learn.none'))}</div>`;
+    const on = S.store.voiceLogOptIn;
+    const log = (S.voiceLog || []).slice(0, 10).map((e) => `<div class="row" style="align-items:flex-start"><span class="sub" style="width:52px">${fmtDay(e.at)}</span><span class="grow">“${esc(e.text)}”${e.details?.heard ? `<br><span class="sub">${esc(t('heard'))}: ${esc(e.details.heard)}${e.details.learned ? ` → ${esc(e.details.learned.name)}` : ''}</span>` : ''}</span><span class="pill ${e.outcome === 'corrected' ? 'cash' : 'udhaar'}">${esc(t(`log.${e.outcome}`))}</span></div>`).join('');
+    return `<div class="card"><div class="c-head"><div><div class="c-title" style="font-size:17px">${esc(t('learn.title'))}</div><div class="sub">${esc(t('learn.sub'))}</div></div></div>
+      <div class="section-t" style="padding:0 14px 4px">${esc(t('learn.names'))}</div>${names}
+      <div class="row" style="margin-top:6px"><span class="grow">${esc(t('log.optin'))}<br><span class="sub">${esc(t('log.optinSub'))}</span></span><span style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="pill ${on ? 'cash' : 'grey'}">${esc(t(on ? 'log.on' : 'log.off'))}</span><button class="btn tiny" data-a="voicelog-toggle">${esc(t(on ? 'log.turnOff' : 'log.turnOn'))}</button></span></div>
+      ${on || (S.voiceLog || []).length ? `<div class="section-t" style="padding:8px 14px 4px">${esc(t('log.title'))}</div>${log || `<div class="row sub">${esc(t('log.empty'))}</div>`}${(S.voiceLog || []).length ? `<div class="acts" style="padding-top:8px"><button class="btn tiny" data-a="voicelog-clear">${esc(t('log.clear'))}</button></div>` : ''}` : ''}
+    </div>`;
   }
 
   /* ---------- onboarding (design screens 4a–4f) ---------- */
@@ -1704,6 +1779,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
         for (const [k, v] of Object.entries(vals)) if (nf.elements[k]) nf.elements[k].value = v;
         break;
       }
+      case 'forget': {
+        const target = b.dataset.kind === 'item' ? byId(S.items, b.dataset.id) : byId(S.customers, b.dataset.id);
+        if (target) target.aliases = (target.aliases || []).filter((x) => x !== b.dataset.alias);
+        render({ scroll: false, keepScroll: true }); break;
+      }
+      case 'voicelog-toggle': S.store.voiceLogOptIn = !S.store.voiceLogOptIn; render({ scroll: false, keepScroll: true }); break;
+      case 'voicelog-clear': S.voiceLog = []; render({ scroll: false, keepScroll: true }); break;
       case 'togglecredit': S.store.givesCredit = !S.store.givesCredit; render({ scroll: false, keepScroll: true }); break;
       case 'onboard': startOnboarding(); if (window.matchMedia('(max-width: 760px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' }); break;
       case 'onb-close': sheet.hidden = true; ONB = null; break;
