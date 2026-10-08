@@ -441,6 +441,8 @@ export const outboundMessages = pgTable(
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
     sendAfter: timestamp('send_after', { withTimezone: true }).notNull().defaultNow(),
+    // Claimed by a sender until this time; an expired claim (crashed sender) can be retried.
+    lockedUntil: timestamp('locked_until', { withTimezone: true }),
     sentAt: timestamp('sent_at', { withTimezone: true }),
     createdAt: createdAt(),
   },

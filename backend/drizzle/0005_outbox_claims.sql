@@ -1,0 +1,1 @@
+ALTER TABLE "outbound_messages" ADD COLUMN "locked_until" timestamp with time zone;

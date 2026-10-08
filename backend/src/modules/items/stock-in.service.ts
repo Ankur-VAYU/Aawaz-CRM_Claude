@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../../db/index.js';
+import { lockStore } from '../../db/locks.js';
 import { items, stockReceiptItems, stockReceipts, type Item } from '../../db/schema.js';
 import { badRequest, isUniqueViolation } from '../../lib/errors.js';
 import { itemDisplayName } from '../../lib/serialize.js';
@@ -32,6 +33,7 @@ export async function receiveStock(db: Db, storeId: string, input: ReceiveInput)
   try {
     const id = await db.transaction(async (txRaw) => {
       const tx = txRaw as unknown as Db;
+      await lockStore(tx, storeId);
       // New items come into the inventory here (no selling price yet).
       for (const l of input.lines) {
         if (l.itemId) continue;
@@ -53,7 +55,7 @@ export async function receiveStock(db: Db, storeId: string, input: ReceiveInput)
       await tx.insert(stockReceiptItems).values(
         input.lines.map((l) => ({ receiptId: receipt.id, itemId: l.itemId!, quantity: l.quantity, costPrice: l.costPrice ?? null })),
       );
-      for (const l of input.lines) {
+      for (const l of [...input.lines].sort((a, b) => a.itemId!.localeCompare(b.itemId!))) {
         await tx.update(items).set({ stock: sql`${items.stock} + ${l.quantity}`, isActive: true }).where(eq(items.id, l.itemId!));
       }
       return receipt.id;

@@ -49,11 +49,24 @@ export default fp<AuthPluginOptions>(async (app, opts) => {
     req.currentUser = user;
   });
 
-  /** Authenticates and loads the shopkeeper's store; every shop endpoint is scoped to it. */
+  /**
+   * Authenticates and loads the shopkeeper's store in one query; every shop endpoint is scoped to it.
+   */
   app.decorate('requireStore', async (req: FastifyRequest) => {
-    await app.authenticate(req);
-    const [store] = await opts.db.select().from(stores).where(eq(stores.ownerId, req.currentUser.id)).limit(1);
-    if (!store) throw new AppError(409, 'STORE_NOT_SET_UP', 'Set up your shop first (POST /api/v1/store)');
-    req.store = store;
+    try {
+      await req.jwtVerify();
+    } catch {
+      throw unauthorized('Invalid or expired access token');
+    }
+    const [row] = await opts.db
+      .select({ user: users, store: stores })
+      .from(users)
+      .leftJoin(stores, eq(stores.ownerId, users.id))
+      .where(eq(users.id, req.user.sub))
+      .limit(1);
+    if (!row || !row.user.isActive) throw unauthorized('Account is not active');
+    req.currentUser = row.user;
+    if (!row.store) throw new AppError(409, 'STORE_NOT_SET_UP', 'Set up your shop first (POST /api/v1/store)');
+    req.store = row.store;
   });
 });

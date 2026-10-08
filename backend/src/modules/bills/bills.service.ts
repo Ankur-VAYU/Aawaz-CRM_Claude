@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../../db/index.js';
+import { lockStore } from '../../db/locks.js';
 import {
   billItems,
   bills,
@@ -322,18 +323,33 @@ export class BillsService {
     const interState = isInterState(store.gstin, customer?.gstin ?? null);
     const lines = await tx.select().from(billItems).where(eq(billItems.billId, billId));
     const totals = { total: 0, taxableTotal: 0, cgstTotal: 0, sgstTotal: 0, igstTotal: 0 };
+    const changed: { id: string; t: { amount: number; taxableValue: number; cgst: number; sgst: number; igst: number } }[] = [];
     for (const l of lines) {
       const gross = lineAmount(l.unitPrice, l.quantity);
       const t =
         docType === 'tax_invoice' && l.gstRate !== null
           ? lineTax(gross, l.gstRate, { inclusive: store.pricesIncludeTax, interState })
           : { amount: gross, taxableValue: gross, cgst: 0, sgst: 0, igst: 0 };
-      await tx.update(billItems).set(t).where(eq(billItems.id, l.id));
+      if (t.amount !== l.amount || t.taxableValue !== l.taxableValue || t.cgst !== l.cgst || t.sgst !== l.sgst || t.igst !== l.igst) {
+        changed.push({ id: l.id, t });
+        Object.assign(l, t);
+      }
       totals.total += t.amount;
       totals.taxableTotal += t.taxableValue;
       totals.cgstTotal += t.cgst;
       totals.sgstTotal += t.sgst;
       totals.igstTotal += t.igst;
+    }
+    // Only lines whose figures changed, in one statement.
+    if (changed.length) {
+      const rows = sql.join(
+        changed.map((c) => sql`(${c.id}::uuid, ${c.t.amount}::bigint, ${c.t.taxableValue}::bigint, ${c.t.cgst}::bigint, ${c.t.sgst}::bigint, ${c.t.igst}::bigint)`),
+        sql`, `,
+      );
+      await tx.execute(sql`
+        update ${billItems} as b set amount = v.amount, taxable_value = v.taxable, cgst = v.cgst, sgst = v.sgst, igst = v.igst
+        from (values ${rows}) as v(id, amount, taxable, cgst, sgst, igst)
+        where b.id = v.id`);
     }
     await tx.update(bills).set(totals).where(eq(bills.id, billId));
     return { ...totals, docType, lines };
@@ -362,6 +378,7 @@ export class BillsService {
   ) {
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
+      await lockStore(tx, store.id);
       const bill = await this.lockDraft(tx, store.id, billId);
       const update: Partial<Bill> = {};
       let issues = bill.issues;
@@ -407,6 +424,7 @@ export class BillsService {
     let transcript = '';
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
+      await lockStore(tx, store.id);
       const bill = await this.lockDraft(tx, store.id, billId);
       const issue = bill.issues.find((i) => i.id === input.issueId);
       if (!issue) throw notFound('Issue not found on this bill');
@@ -509,12 +527,13 @@ export class BillsService {
   async confirm(storeArg: Store, billId: string) {
     const result = await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
+      await lockStore(tx, storeArg.id);
       const bill = await this.lockDraft(tx, storeArg.id, billId);
       if (bill.issues.length) {
         throw new AppError(409, 'BILL_HAS_ISSUES', 'Some items still need your answer', { issues: bill.issues });
       }
-      // Lock the store row: serialises invoice numbering and uses the latest GST settings.
-      const [store] = await tx.select().from(stores).where(eq(stores.id, storeArg.id)).for('update');
+      // Latest GST settings; invoice numbering is serialised by the store lock above.
+      const [store] = await tx.select().from(stores).where(eq(stores.id, storeArg.id));
       const calc = await this.recalc(tx, store, billId);
       if (!calc.lines.length) throw badRequest('The bill has no items');
       if (calc.docType === 'tax_invoice') {
@@ -550,7 +569,7 @@ export class BillsService {
         .returning({ seq: stores.billCounter });
       const number = invoiceNumber(fy, seq);
 
-      const stocked = calc.lines.filter((l) => l.itemId);
+      const stocked = calc.lines.filter((l) => l.itemId).sort((a, b) => a.itemId!.localeCompare(b.itemId!));
       for (const l of stocked) {
         await tx.update(items).set({ stock: sql`${items.stock} - ${l.quantity}` }).where(eq(items.id, l.itemId!));
       }
@@ -650,6 +669,7 @@ export class BillsService {
   async cancel(store: Store, billId: string) {
     await this.db.transaction(async (txRaw) => {
       const tx = asTx(txRaw);
+      await lockStore(tx, store.id);
       const [bill] = await tx
         .select()
         .from(bills)
@@ -659,7 +679,7 @@ export class BillsService {
       if (bill.status === 'cancelled') throw conflict('Bill is already cancelled', 'BILL_NOT_DRAFT');
       if (bill.status === 'confirmed') {
         const lines = await tx.select().from(billItems).where(eq(billItems.billId, billId));
-        for (const l of lines.filter((x) => x.itemId)) {
+        for (const l of lines.filter((x) => x.itemId).sort((a, b) => a.itemId!.localeCompare(b.itemId!))) {
           await tx.update(items).set({ stock: sql`${items.stock} + ${l.quantity}` }).where(eq(items.id, l.itemId!));
         }
         if (bill.customerId) {

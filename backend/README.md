@@ -54,6 +54,7 @@ curl -s localhost:3000/api/v1/assistant/message -H "authorization: Bearer <acces
 | `npm test` | Unit + integration tests (needs PostgreSQL, see below) |
 | `npm run db:generate` | Create a migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` | Apply migrations (the server also does this on start-up) |
+| `npm run bench` | Latency benchmark (in-process, test database) |
 | `npm run voice:report` | Weekly report of misunderstood commands and corrections (opted-in shops) |
 | `npm run seed:demo` | Demo shop, items and customers from the design (not in production) |
 
@@ -246,6 +247,25 @@ src/
 drizzle/                     SQL migrations (commit these)
 test/                        Vitest: parser unit tests + API tests on real PostgreSQL
 ```
+
+## Reliability and performance
+
+- **Per-shop lock.** Every write that changes a shop's stock, khata or invoice numbers takes one per-shop lock first (`src/db/locks.ts`): confirm, cancel, payments, reversals, receiving stock and bulk item upload. They queue instead of deadlocking. Other shops are not affected.
+- **All or nothing.** Each change is one database transaction: the bill, stock, khata entry and receipt are saved together or not at all.
+- **Retries are safe.** Bills, payments and stock receipts sent with a `clientId` are recorded once, however often the phone retries.
+- **Message delivery** claims messages in one short statement and sends them with no transaction open. A claim expires after 2 minutes, so a crashed sender's messages are retried. Delivery is at-least-once: a crash between sending and recording can repeat one message.
+- **Limits.** Queries time out after 10 s, and transactions idle for 15 s are closed, so nothing hangs. Shutdown waits for in-flight requests and a running background job.
+- `test/integrity.test.ts` checks this under concurrency. It confirms, cancels, receives stock and takes payments at the same moment, then checks exact stock, consecutive invoice numbers, `balance = sum(ledger)` and `purchases − paid = balance` for every customer.
+- **`npm run bench`** measures in-process latency on the test database (no network). Last run, single requests:
+
+  | Request | Median | p95 |
+  | --- | --- | --- |
+  | Voice bill draft | ~17 ms | ~22 ms |
+  | Confirm bill | ~25 ms | ~33 ms |
+  | Payment | ~4 ms | ~6 ms |
+  | Customer list | ~3 ms | ~4 ms |
+
+  Real users also wait for the network and for speech recognition, which take longer than the server.
 
 ## Production notes
 

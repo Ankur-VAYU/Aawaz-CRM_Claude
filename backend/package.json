@@ -12,7 +12,8 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "test": "vitest run",
     "seed:demo": "tsx src/scripts/seed-demo.ts",
-    "voice:report": "tsx src/scripts/voice-report.ts"
+    "voice:report": "tsx src/scripts/voice-report.ts",
+    "bench": "tsx test/bench.ts"
   },
   "license": "ISC",
   "dependencies": {

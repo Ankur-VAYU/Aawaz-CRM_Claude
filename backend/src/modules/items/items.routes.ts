@@ -2,6 +2,7 @@ import { and, asc, eq, ilike, lte, or, sql, type SQL } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Db } from '../../db/index.js';
+import { lockStore } from '../../db/locks.js';
 import { items } from '../../db/schema.js';
 import { conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
 import { itemDisplayName } from '../../lib/serialize.js';
@@ -116,11 +117,14 @@ export default async function itemRoutes(app: FastifyInstance, { db }: { db: Db 
   app.post('/bulk', async (req, reply) => {
     const { items: input } = validate(bulkBody, req.body);
     const rows = await db.transaction(async (tx) => {
-      const out = [];
-      for (const item of input) {
-        const [row] = await tx
+      await lockStore(tx as unknown as Db, req.store.id);
+      // One statement for the whole list. The same variant twice in one upload keeps the last one
+      // (PostgreSQL cannot update a row twice in a single INSERT ... ON CONFLICT).
+      const key = (i: { name: string; unit: string; unitSize: number }) => `${i.name.toLowerCase()}|${i.unit}|${i.unitSize}`;
+      const unique = [...new Map(input.map((i) => [key(i), i])).values()];
+      const out = await tx
           .insert(items)
-          .values({ ...item, storeId: req.store.id })
+          .values(unique.map((item) => ({ ...item, storeId: req.store.id })))
           .onConflictDoUpdate({
             target: [items.storeId, items.nameKey, items.unit, items.unitSize],
             set: {
@@ -134,9 +138,8 @@ export default async function itemRoutes(app: FastifyInstance, { db }: { db: Db 
             },
           })
           .returning();
-        out.push(row);
-      }
-      return out;
+      const order = new Map(unique.map((i, k) => [key(i), k]));
+      return out.sort((a, b) => order.get(key({ ...a, unitSize: Number(a.unitSize) }))! - order.get(key({ ...b, unitSize: Number(b.unitSize) }))!);
     });
     return reply.code(201).send({ data: rows.map(present), missingPrice: rows.filter((r) => r.price === null).length });
   });

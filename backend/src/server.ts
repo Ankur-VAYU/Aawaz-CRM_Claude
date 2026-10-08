@@ -18,12 +18,12 @@ if (config.NODE_ENV === 'production') {
   app.log.warn('Messages (OTP, receipts, summaries) are only logged: configure a real MessageSender');
 }
 
-const stopWorkers = config.RUN_WORKERS ? startWorkers(db, sender, app.log) : () => {};
+const stopWorkers = config.RUN_WORKERS ? startWorkers(db, sender, app.log) : async () => {};
 
 const shutdown = async (signal: string) => {
   app.log.info(`${signal} received, shutting down`);
-  stopWorkers();
-  await app.close();
+  await app.close(); // stop taking requests, finish the ones in flight
+  await stopWorkers();
   await pool.end();
   process.exit(0);
 };

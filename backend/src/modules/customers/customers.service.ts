@@ -1,5 +1,6 @@
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../../db/index.js';
+import { lockStore } from '../../db/locks.js';
 import { customers, ledgerEntries, outboundMessages, type Customer, type Store } from '../../db/schema.js';
 import { AppError, badRequest, conflict, isUniqueViolation } from '../../lib/errors.js';
 import { reminderMessage } from '../../lib/replies.js';
@@ -150,8 +151,9 @@ export async function recordPayment(
   const prior = await existing();
   if (prior) return prior;
   try {
-    const result = await db.transaction((tx) =>
-      postLedgerEntry(tx as unknown as Db, {
+    const result = await db.transaction(async (tx) => {
+      await lockStore(tx as unknown as Db, p.storeId);
+      return postLedgerEntry(tx as unknown as Db, {
         storeId: p.storeId,
         customerId: p.customerId,
         type: 'payment',
@@ -159,8 +161,8 @@ export async function recordPayment(
         method: p.method,
         note: p.note,
         clientId: p.clientId,
-      }),
-    );
+      });
+    });
     return { entry: result.entry, customer: result.customer, duplicate: false };
   } catch (err) {
     const raced = isUniqueViolation(err) ? await existing() : null;
@@ -177,6 +179,7 @@ export async function reversePayment(db: Db, storeId: string, customerId: string
   try {
     return await db.transaction(async (txRaw) => {
       const tx = txRaw as unknown as Db;
+      await lockStore(tx, storeId);
       const [entry] = await tx
         .select()
         .from(ledgerEntries)

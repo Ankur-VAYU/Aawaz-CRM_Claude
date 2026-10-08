@@ -8,8 +8,21 @@ export function normalizeText(s: string): string {
     .trim();
 }
 
+// Item and customer names are matched against every command, so their phonetic form is cached.
+const phoneticCache = new Map<string, string>();
+const PHONETIC_CACHE_MAX = 20_000;
+
 /** Collapses common Hinglish spelling variation ("aata"/"atta", "daal"/"dal", "tel"/"teil"). */
 export function phonetic(s: string): string {
+  const hit = phoneticCache.get(s);
+  if (hit !== undefined) return hit;
+  const out = phoneticUncached(s);
+  if (phoneticCache.size >= PHONETIC_CACHE_MAX) phoneticCache.clear();
+  phoneticCache.set(s, out);
+  return out;
+}
+
+function phoneticUncached(s: string): string {
   return normalizeText(s)
     .replace(/\s+/g, '')
     .replace(/(.)\1+/g, '$1') // doubled letters

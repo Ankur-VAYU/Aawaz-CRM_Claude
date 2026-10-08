@@ -233,8 +233,8 @@ export async function publicApiRoutes(app: FastifyInstance, { db }: { db: Db }) 
   // request for the shopkeeper, since the khata has to be settled first.
   app.post('/customers/:token/delete-request', async (req) => {
     const { customer } = await customerByToken(db, validate(tokenParams, req.params).token);
-    if (customer.balance === 0) {
-      await anonymizeCustomer(db, customer);
+    // Checked and done in one statement, so a bill added at the same moment can't be lost.
+    if (customer.balance === 0 && (await anonymizeCustomer(db, customer))) {
       return { deleted: true };
     }
     await db
@@ -245,17 +245,21 @@ export async function publicApiRoutes(app: FastifyInstance, { db }: { db: Db }) 
   });
 }
 
+/** Removes a customer's personal details if nothing is due. Returns false if something is due now. */
 export async function anonymizeCustomer(db: Db, c: Customer) {
-  await db
+  const r = await db
     .update(customers)
     .set({
       name: 'Hataya gaya grahak',
       phone: null,
+      aliases: [],
       shareToken: generateShareToken(),
       messagesOptedOutAt: new Date(),
       anonymizedAt: new Date(),
     })
-    .where(eq(customers.id, c.id));
+    .where(and(eq(customers.id, c.id), eq(customers.balance, 0)))
+    .returning({ id: customers.id });
+  return r.length > 0;
 }
 
 export async function publicPageRoutes(app: FastifyInstance, { db }: { db: Db }) {
