@@ -122,3 +122,16 @@ describe('items', () => {
     expect((await t.inject('PATCH', `/api/v1/items/${atta.id}`, b.token, { price: 1 })).statusCode).toBe(404);
   });
 });
+
+describe('CORS', () => {
+  it('allows the methods the API uses in browser preflight requests', async () => {
+    const res = await t.app.inject({
+      method: 'OPTIONS',
+      url: '/api/v1/store/preferences',
+      headers: { origin: 'http://localhost:8081', 'access-control-request-method': 'PUT' },
+    });
+    expect(res.statusCode).toBe(204);
+    const allowed = String(res.headers['access-control-allow-methods']);
+    for (const m of ['PUT', 'PATCH', 'DELETE']) expect(allowed).toContain(m);
+  });
+});

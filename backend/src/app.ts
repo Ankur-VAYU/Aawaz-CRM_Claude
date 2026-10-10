@@ -44,6 +44,8 @@ export async function buildApp(
   await app.register(helmet);
   await app.register(cors, {
     origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN.split(',').map((o) => o.trim()),
+    // @fastify/cors only allows GET, HEAD and POST by default; the API also uses PUT, PATCH and DELETE.
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
   if (rateLimitEnabled) await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
   await app.register(authPlugin, { db, secret: config.JWT_ACCESS_SECRET, accessTokenTtl: config.ACCESS_TOKEN_TTL });

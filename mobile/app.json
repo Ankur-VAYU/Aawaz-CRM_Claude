@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Aawaz",
+    "slug": "aawaz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.aawaz.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#128C4A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "in.aawaz.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "aawaz",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Aawaz uses the microphone so you can make bills by speaking.",
+          "speechRecognitionPermission": "Aawaz turns your speech into text to make bills and update the khata."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
