@@ -20,10 +20,14 @@ const envSchema = z.object({
   // Returns the OTP in the API response. Only for local development; refused in production.
   OTP_DEV_ECHO: bool('false'),
   // Base URL of the customer-facing web pages (receipt / khata links sent on WhatsApp).
-  PUBLIC_BASE_URL: z.url().default('http://localhost:3000'),
+  // On Render it defaults to the service's own address (RENDER_EXTERNAL_URL).
+  PUBLIC_BASE_URL: z.url().default(process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'),
   CORS_ORIGIN: z.string().default('*'),
   // Runs the outbound message sender and daily-summary scheduler in this process.
   RUN_WORKERS: bool('true'),
+  // Log level. Default: info in development, warn otherwise. Until a real WhatsApp/SMS sender is
+  // configured, messages (including login codes) are only written to the log at info level.
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug']).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

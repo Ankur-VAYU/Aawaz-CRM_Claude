@@ -272,3 +272,18 @@ test/                        Vitest: parser unit tests + API tests on real Postg
 - Set `NODE_ENV=production`, long random `JWT_ACCESS_SECRET` and `OTP_SECRET`, and `OTP_DEV_ECHO=false` (the server refuses to start with it on in production). Set `PUBLIC_BASE_URL` to the public HTTPS address.
 - The API is stateless, so it can run several instances behind a load balancer. The rate limiter counts per instance (use a Redis store for shared limits). Workers are safe to run on every instance, or set `RUN_WORKERS=false` on all but one.
 - Clean up old rows periodically once volume grows: expired `otp_codes` and `refresh_tokens`, and sent `outbound_messages`.
+
+## Deploy on Render
+
+`render.yaml` (in the repository root) is a Render Blueprint. It creates the API server (from `backend/Dockerfile`) and a PostgreSQL database, links them, and generates the two secrets. The database tables are created automatically when the server starts.
+
+1. Sign up at [render.com](https://render.com) and connect your GitHub account.
+2. **New → Blueprint**, choose this repository and the branch that contains `render.yaml`, then **Apply**.
+3. Wait for the first deploy to finish. Render shows the server's address, e.g. `https://aawaz-api.onrender.com` (Render may add a suffix if the name is taken). Check `https://<address>/health` returns `{"status":"ok"}`.
+4. Build the app against it: set `EXPO_PUBLIC_API_URL=https://<address>/api/v1` (see [mobile/README.md](../mobile/README.md)).
+
+Things to know:
+
+- **Login codes.** Until a WhatsApp/SMS sender is connected, codes are not sent to the phone. With `LOG_LEVEL=info` they are written to the server log: open the service in Render → **Logs** and look for `AwaazCRM code: 123456`. This is for testing only; real shops cannot log in until a sender is configured.
+- **Free plan.** The Blueprint uses Render's free plans so you can try it. Free plans have limits (for example, a free server sleeps when unused, so the first request after that is slow; free databases have limits too). Check Render's pricing page, and switch both to paid plans before real shops use the app.
+- `PUBLIC_BASE_URL` (used in receipt and khata links) defaults to the address Render gives the service. Set it yourself if you add your own domain.

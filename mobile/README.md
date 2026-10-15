@@ -49,7 +49,7 @@ eas build -p android --profile preview      # installable APK for testing
 eas build -p android --profile production   # .aab for the Play Store
 ```
 
-Build profiles are in `eas.json`. The first build asks to link an Expo project. Set `EXPO_PUBLIC_API_URL` to your hosted backend (HTTPS) for preview and production builds, for example under `build.<profile>.env` in `eas.json`.
+Build profiles are in `eas.json`. To host the backend, see [Deploy on Render](../backend/README.md#deploy-on-render). The first build asks to link an Expo project. Set `EXPO_PUBLIC_API_URL` to your hosted backend (HTTPS) for preview and production builds, for example under `build.<profile>.env` in `eas.json`.
 
 The Android package name is `in.aawaz.app` (in `app.json`). **Change it before the first Play Store upload** if you want a different one; it cannot be changed after publishing.
 

@@ -1,0 +1,33 @@
+# Render Blueprint: creates the Aawaz API server and its PostgreSQL database.
+# In Render: New → Blueprint → pick this repository and branch. See backend/README.md ("Deploy on Render").
+services:
+  - type: web
+    name: aawaz-api
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free # change to a paid plan before real shops use it
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aawaz-db
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: RUN_WORKERS
+        value: "true"
+      # Login codes are only written to the log until a WhatsApp/SMS sender is connected,
+      # so keep "info" for testing and read codes in the Logs tab. Set to "warn" afterwards.
+      - key: LOG_LEVEL
+        value: info
+
+databases:
+  - name: aawaz-db
+    databaseName: aawaz
+    user: aawaz
+    plan: free # change to a paid plan before real shops use it

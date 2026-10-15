@@ -12,7 +12,7 @@ let app: Awaited<ReturnType<typeof buildApp>>;
 // Replace LogSender with a WhatsApp Business / SMS provider implementation for production.
 const sender = new LogSender({ info: (obj: unknown, msg?: string) => app.log.info(obj, msg) });
 app = await buildApp(config, db, sender, {
-  logger: config.NODE_ENV === 'development' ? { level: 'info' } : { level: 'warn' },
+  logger: { level: config.LOG_LEVEL ?? (config.NODE_ENV === 'development' ? 'info' : 'warn') },
 });
 if (config.NODE_ENV === 'production') {
   app.log.warn('Messages (OTP, receipts, summaries) are only logged: configure a real MessageSender');
